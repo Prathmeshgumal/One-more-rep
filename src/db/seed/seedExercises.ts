@@ -48,6 +48,7 @@ export async function seedExercises(
   // Explicit BEGIN/COMMIT rather than db.transaction(): the callback form is
   // synchronous under better-sqlite3 and asynchronous under op-sqlite, so one
   // body cannot satisfy both. Same reasoning as src/db/migrate.ts.
+  const started = Date.now();
   await db.run(sql.raw('BEGIN'));
   try {
     for (let i = 0; i < rows.length; i += BATCH_SIZE) {
@@ -57,6 +58,14 @@ export async function seedExercises(
   } catch (error) {
     await db.run(sql.raw('ROLLBACK'));
     throw error instanceof Error ? error : new Error(String(error));
+  }
+
+  // This runs once per install and holds the first launch behind a spinner,
+  // so the number matters and is otherwise invisible. Development only.
+  if (__DEV__) {
+    console.log(
+      `[seed] ${rows.length} exercises in ${Date.now() - started}ms`,
+    );
   }
 
   return {inserted: rows.length};

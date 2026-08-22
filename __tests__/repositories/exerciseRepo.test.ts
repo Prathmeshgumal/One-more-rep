@@ -185,4 +185,18 @@ describe('exerciseRepo', () => {
       updateCustomExercise(ctx.db, 'nope', {name: 'x'}),
     ).rejects.toThrow(/does not exist/);
   });
+
+  // Nine seeded exercises list their primary muscle again under secondary.
+  // Rendered naively that reads "Quadriceps · Quadriceps".
+  it('never repeats the primary muscle in the secondary list', async () => {
+    await ctx.db.run(
+      sql`INSERT INTO exercises (id, name, primary_muscle, secondary_muscles,
+            equipment, exercise_type, weight_applicable, is_custom, updated_at)
+          VALUES ('All_Fours_Quad_Stretch', 'All Fours Quad Stretch',
+            'quadriceps', '["quadriceps","glutes","quadriceps"]',
+            'body only', 'stretching', 0, 0, 0)`,
+    );
+    const found = await getExercise(ctx.db, 'All_Fours_Quad_Stretch');
+    expect(found!.secondaryMuscles).toEqual(['glutes']);
+  });
 });

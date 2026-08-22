@@ -108,7 +108,13 @@ function ambiguityReason(entry) {
 const ambiguous = [];
 const rows = source.map(entry => {
   const [first, ...restPrimary] = entry.primaryMuscles ?? [];
-  const secondary = [...restPrimary, ...(entry.secondaryMuscles ?? [])];
+  // Upstream lists nine exercises whose primary muscle also appears in their
+  // secondary list — "All Fours Quad Stretch" is quadriceps twice. Rendered,
+  // that reads "Quadriceps · Quadriceps". Deduped here so the stored data is
+  // right; the repository dedupes again for libraries already seeded.
+  const secondary = [
+    ...new Set([...restPrimary, ...(entry.secondaryMuscles ?? [])]),
+  ].filter(m => m !== first);
 
   const derived = deriveWeightApplicable(entry);
   const hasOverride = Object.prototype.hasOwnProperty.call(overrides, entry.id);

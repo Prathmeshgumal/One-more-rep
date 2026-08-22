@@ -88,4 +88,18 @@ describe('muscle filters', () => {
     const all = MUSCLE_FILTERS.flatMap(f => f.values);
     expect(new Set(all).size).toBe(all.length);
   });
+
+  it('never repeats the primary muscle under secondary muscles', () => {
+    const offenders = seedExerciseData
+      .filter(e => e.secondaryMuscles.includes(e.primaryMuscle))
+      .map(e => e.name);
+    expect(offenders).toEqual([]);
+  });
+
+  it('never repeats a muscle within the secondary list', () => {
+    const offenders = seedExerciseData
+      .filter(e => new Set(e.secondaryMuscles).size !== e.secondaryMuscles.length)
+      .map(e => e.name);
+    expect(offenders).toEqual([]);
+  });
 });

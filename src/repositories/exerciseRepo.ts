@@ -40,7 +40,17 @@ function hydrate(row: ExerciseRow): Exercise {
     // A malformed muscle list is not worth failing a screen over; it renders
     // as "no secondary muscles" and the row is otherwise intact.
   }
-  return {...row, secondaryMuscles: parsed};
+
+  // Secondary means "as well as the primary". Upstream disagrees for nine
+  // exercises, which rendered as "Quadriceps · Quadriceps" on the library
+  // screen. The seed transform strips this too, but doing it here as well is
+  // what fixes libraries that were seeded before that change — the alternative
+  // would be a migration to rewrite rows for a display detail.
+  const secondaryMuscles = [...new Set(parsed)].filter(
+    m => m !== row.primaryMuscle,
+  );
+
+  return {...row, secondaryMuscles};
 }
 
 /**
