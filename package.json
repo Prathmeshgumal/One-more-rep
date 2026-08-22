@@ -7,7 +7,7 @@
     "start": "react-native start",
     "test": "jest",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src __tests__ scripts",
+    "lint": "eslint --ext .js,.jsx,.ts,.tsx,.mjs src __tests__ scripts",
     "android:release": "set NoDefaultCurrentDirectoryInExePath=&& react-native run-android --mode release",
     "android:fast": "set NoDefaultCurrentDirectoryInExePath=&& react-native run-android --no-packager",
     "fonts": "python scripts/build-fonts.py",
