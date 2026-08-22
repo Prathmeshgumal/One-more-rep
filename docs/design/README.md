@@ -1,6 +1,8 @@
 # Screen designs
 
-Eighteen screens for the workout tracker, designed and approved before implementation (D11 in the [design spec](../superpowers/specs/2026-08-22-workout-tracker-design.md)).
+**Status: approved.** Ledger is the chosen direction (D13). Twenty screens, both themes, designed and approved before implementation (D11) — see the [design spec](../superpowers/specs/2026-08-22-workout-tracker-design.md).
+
+Every phase builds its screens to this direction as it goes. There is no styling pass at the end.
 
 - **Interactive prototype:** `screens.html` — open it in a browser. Steppers, set completion, toggles, and the theme switch are live.
 - **Images:** `screens/*.png` (light) and `screens/dark/*.png` (dark), rendered at 2× — 390 × 844 logical, 780 × 1690 actual.
@@ -24,6 +26,8 @@ Deliberately avoided: the near-black + acid-lime + rounded-cards look shared by 
 | `skip` | `#8A93A0` | `#6C7683` | Skipped |
 
 Falling short of a target is data, not failure. The app never uses red for it.
+
+These token names are the contract. Components reference `paper`, `ink`, `plate`, `gain`, `short`, `skip` — never literal hex — so both themes stay in step and a palette change is one file.
 
 **Type:** `Archivo` across two widths — expanded for the large numerals, normal for UI. `IBM Plex Mono` for ledger columns, where tabular figures make weights actually align. The mono is functional, not decorative.
 
@@ -74,6 +78,18 @@ Setting up five training days means adding roughly twenty-five exercises, so two
 - **07 copies a day.** Configure Push once, copy it to Thursday and Sunday. Days that already hold exercises are outlined in ochre and warn that copying overwrites them.
 
 Copying forks a new plan version rather than editing the current one, so history keeps the targets it was performed at (§32, §39).
+
+## Explorations (not built)
+
+`explorations/` holds the directions considered and rejected, kept as a record of why Ledger won rather than as live design:
+
+| Set | Contents | Outcome |
+|---|---|---|
+| `directions.html` | Ledger, Iron, Clinic, Almanac, Terminal, Pop | Rejected — one component skeleton with six palettes swapped over it. Too similar to be a real choice. |
+| `directions2.html` | Scoreboard, Blueprint, Zine, Enamel, Docket, Bauhaus | Concept-led rebuild; each carries an idea from the gym rather than a palette. Not selected. |
+| `ledger-bauhaus.html` | Ledger structure, Bauhaus visual language | A hybrid built on request — overprint and mono columns kept, primary colours and fill-in set circles added. Not selected. |
+
+Nothing in `explorations/` is a build target. `screens.html` is.
 
 ## Regenerating the images
 

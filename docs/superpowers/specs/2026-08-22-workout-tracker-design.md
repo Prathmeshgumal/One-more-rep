@@ -33,8 +33,9 @@ These were settled during brainstorming and are not open for re-litigation durin
 | D8 | **Reactivity is TanStack Query with invalidation on write.** op-sqlite native reactive queries are an optional later optimization. | Retires R2 outright. Repositories are the single mutation funnel, so invalidation is one call per write site. |
 | D9 | **A web dashboard is planned**, following a 2–3 month validation period and a Play Store release. | Makes the Postgres port a committed deliverable rather than hypothetical, which is the primary reason Drizzle is the right ORM (see section 3). |
 | D10 | **Phases are vertical slices.** Each ships schema, domain logic, repository, and UI together and is independently testable end-to-end on a device. | Domain functions are built in the phase whose UI consumes them, never bulk-built in advance. Phase 0 is the only non-user-testable phase. |
-| D11 | **Screen designs are produced and approved before implementation planning**, and committed to `docs/design/` as images. | The implementation plan references approved screens rather than inventing UI during coding. |
+| D11 | **Screen designs are produced and approved before implementation planning**, and committed to `docs/design/` as images. | Satisfied: 20 screens in both themes live in `docs/design/`. The implementation plan references approved screens rather than inventing UI during coding. |
 | D12 | **The exercise library is seeded from `free-exercise-db`**, transformed into the §29 schema at build time and bundled in the APK. | Licence verified as **the Unlicense** (public domain — no attribution, no share-alike, commercial use permitted), so it is safe for a Play Store release. Images are excluded from the MVP. |
+| D13 | **The visual direction is Ledger** — the training-ledger identity in `docs/design/screens.html`, already applied across all 20 screens in both themes. | Chosen over five alternative directions and a Ledger x Bauhaus hybrid (`docs/design/explorations/`). Its tokens are the app's design system: components are built against the token names in `docs/design/README.md`, not against literal hex values. |
 
 Throughout this document, **"the MVP" means Phases 0 through 5** in section 11. Numbered phases always refer to that table, never to release milestones.
 
@@ -342,8 +343,6 @@ React Native Testing Library covers the workout screen's critical paths: complet
 
 ## 11. Phases
 
-| Phase | Contents | Gate |
-|---|---|---|
 > **Vertical slice rule (D10).** Every phase from 1 onward ships its own schema, domain logic, repository, **and UI together**, so the user can test that phase end-to-end on a device before the next begins. Domain functions are built in the phase whose UI consumes them — never bulk-built in a layer beforehand. Phase 0 is the sole exception, since a navigation shell has nothing to demonstrate yet.
 
 | Phase | Contents | Gate — testable by the user |
@@ -353,7 +352,9 @@ React Native Testing Library covers the workout screen's critical paths: complet
 | **2 — Weekly Plan** | Plan tables, copy-on-write versioning, `planRepo`, week overview, day config, rest-day toggle, add/reorder exercises, target editor. | **End-to-end:** build a full week from empty, rename days, mark rest days, reorder exercises, edit targets — and confirm an edit forks a new version. |
 | **3 — Today & Workout** | Session tables, comparison + aggregation domain, `sessionRepo`, Today screen, workout execution, skip, unplanned work, live progress, resume, finish summary. | **End-to-end:** start today's workout, record every set, skip one, add an unplanned exercise and an extra set, force-kill the app and resume, finish and read the summary. |
 | **4 — History** | `dayResolver` + adherence domain, `historyRepo`, timeline, day detail, calendar, exercise history, volume, weekly adherence strip. | **End-to-end:** browse past workouts, open a day's detail, view one exercise's progression — then edit the plan and confirm history is unchanged. |
-| **5 — Polish** | Empty states (§40), visual design pass (§34, §42), on-device performance. | Set recorded in under a second on device; every empty state reachable. |
+| **5 — Polish** | Empty states (§40), on-device performance, accessibility pass. | Set recorded in under a second on device; every empty state reachable. |
+
+Because the visual direction is settled up front (D13), each phase builds its screens to the approved design as it goes — there is no deferred styling pass. Phase 5 is empty states, performance, and accessibility only.
 
 Exercise Library precedes Plan because you cannot add an exercise that does not exist. Plan precedes Workout because a routine must exist before it can be executed. History comes last because it only reads what earlier phases write. Each phase therefore depends only on phases before it, and leaves the app in a shippable, demonstrable state.
 

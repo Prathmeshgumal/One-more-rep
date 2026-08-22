@@ -1,0 +1,416 @@
+<title>Ledger Bauhaus</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap">
+
+<style>
+/* ===================== deck chrome ===================== */
+:root{
+  --ground:#E7EAEC; --panel:#FBFCFC; --dink:#12161A; --dmuted:#5D676F;
+  --dfaint:#8A939A; --drule:#CBD2D7; --drulesoft:#DDE2E6; --dmark:#005BBB;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#0D1013; --panel:#15191D; --dink:#E6EAED; --dmuted:#939CA4;
+    --dfaint:#6C757D; --drule:#272D33; --drulesoft:#1F252A; --dmark:#5B87FF;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0D1013; --panel:#15191D; --dink:#E6EAED; --dmuted:#939CA4;
+  --dfaint:#6C757D; --drule:#272D33; --drulesoft:#1F252A; --dmark:#5B87FF;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--dink);font-family:'Space Grotesk',system-ui,sans-serif;font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4,p{margin:0}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+:focus-visible{outline:2px solid var(--dmark);outline-offset:2px}
+.wrap{max-width:1320px;margin:0 auto;padding:54px 24px 90px}
+.eyebrow{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--dfaint);margin-bottom:15px}
+h1{font-weight:700;font-size:clamp(34px,6vw,54px);line-height:1;letter-spacing:-.035em;margin-bottom:18px;text-wrap:balance}
+.lede{max-width:66ch;color:var(--dmuted);font-size:17px}
+.lede strong{color:var(--dink);font-weight:600}
+.tbtn{border:1px solid var(--drule);border-radius:999px;padding:9px 17px;font-size:13px;font-weight:600;color:var(--dmuted);background:var(--panel);margin-top:22px}
+.tbtn:hover{border-color:var(--dmark);color:var(--dmark)}
+
+.mix{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));border:1px solid var(--drulesoft);margin:34px 0 10px}
+.mix > div{padding:18px 20px;border-right:1px solid var(--drulesoft)}
+.mix > div:last-child{border-right:0}
+.mix h4{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--dfaint);margin-bottom:9px;font-weight:500}
+.mix p{font-size:14.5px;color:var(--dmuted);line-height:1.55}
+.mix p b{color:var(--dink);font-weight:600}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{width:26px;height:26px;border:1px solid rgba(128,128,128,.3)}
+
+.sect{margin:56px 0 20px;padding-top:26px;border-top:1px solid var(--drule);display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.sect h2{font-size:22px;font-weight:700;letter-spacing:-.025em}
+.sect .m{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--dfaint);letter-spacing:.08em;text-transform:uppercase}
+.rack{display:flex;gap:26px;flex-wrap:wrap}
+figure{margin:0;display:flex;flex-direction:column;gap:11px;width:340px}
+figcaption{display:flex;flex-direction:column;gap:5px}
+.ct{font-size:14px;font-weight:600;letter-spacing:-.01em}
+.cm{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--dfaint);letter-spacing:.06em}
+.cn{font-size:13px;color:var(--dmuted);line-height:1.45;max-width:42ch}
+.live{display:inline-flex;align-items:center;gap:5px;font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:#005BBB}
+.live::before{content:"";width:6px;height:6px;background:#005BBB;display:block}
+
+/* ============================================================
+   THE APP — Ledger bones, Bauhaus voice
+   ============================================================ */
+.ph{
+  --paper:#F4F1E8; --surface:#FFFFFF; --surface2:#EDE9DE;
+  --ink:#141414; --ink2:#4A463E; --muted:#75705F; --faint:#A8A292;
+  --rule:#141414; --hair:#D8D2C2;
+  --red:#E03C31; --blue:#005BBB; --yellow:#F5C518;
+  --on:#F4F1E8;
+  --up:#005BBB; --upsoft:#D9E6F6;
+  --dn:#B8860B; --dnsoft:#FBF0CE;
+  width:340px;height:736px;overflow:hidden;position:relative;display:flex;flex-direction:column;
+  background:var(--paper);color:var(--ink);border:2.5px solid var(--ink);
+  font-family:'Space Grotesk',sans-serif;
+}
+.ph[data-t="dark"]{
+  --paper:#111110; --surface:#1A1A18; --surface2:#232320;
+  --ink:#F0EDE4; --ink2:#C4BFB2; --muted:#8E897B; --faint:#635F55;
+  --rule:#F0EDE4; --hair:#2E2E2A;
+  --red:#FF5347; --blue:#5B92E8; --yellow:#F5C518;
+  --on:#111110;
+  --up:#5B92E8; --upsoft:#12233A;
+  --dn:#D9A62B; --dnsoft:#2B2410;
+}
+.sb{height:36px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 16px;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;border-bottom:2.5px solid var(--rule)}
+.sb .r{display:flex;gap:4px;align-items:center}
+.sb .r i{width:4px;height:4px;background:currentColor;opacity:.55;display:block}
+.sb .b{width:19px;height:10px;border:1.4px solid currentColor;opacity:.55}
+.app{flex:1;overflow:hidden;display:flex;flex-direction:column}
+.scroll{flex:1;overflow:hidden}
+
+/* colour block header — Bauhaus */
+.blk{background:var(--blue);color:#F4F1E8;padding:13px 15px;border-bottom:2.5px solid var(--rule)}
+.blk.r{background:var(--red)}
+.blk.y{background:var(--yellow);color:#141414}
+.blk.k{background:var(--ink);color:var(--paper)}
+.blk .k{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;opacity:.85}
+.blk h3{font-size:27px;font-weight:700;line-height:.98;letter-spacing:-.035em;margin-top:5px}
+.blk .s{font-family:'IBM Plex Mono',monospace;font-size:10.5px;margin-top:5px;opacity:.85;letter-spacing:.04em}
+
+.pad{padding:0 15px}
+.pad14{padding:14px 15px}
+
+/* geometric glyph per exercise — Bauhaus */
+.gl{width:22px;height:22px;flex:none;background:var(--ink)}
+.gl.c{border-radius:99px;background:var(--red)}
+.gl.s{background:var(--blue)}
+.gl.t{background:var(--yellow);clip-path:polygon(50% 0,100% 100%,0 100%)}
+.gl.h{background:var(--ink);clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%)}
+
+/* exercise row — Ledger discipline, Bauhaus rules */
+.it{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1.5px solid var(--hair)}
+.it:first-of-type{border-top:2.5px solid var(--rule)}
+.nm{font-size:15px;font-weight:600;letter-spacing:-.02em;line-height:1.15}
+/* the overprint signature, carried over from Ledger */
+.pr{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.05em;color:var(--faint);text-transform:uppercase;margin-top:3px}
+.pr b{font-weight:600;color:var(--muted)}
+
+/* sets as fill-in circles — Bauhaus */
+.dots{display:flex;gap:5px;flex:none}
+.dot{width:15px;height:15px;border-radius:99px;border:2px solid var(--ink);background:none}
+.dot.f{background:var(--ink)}
+.dot.u{background:var(--up);border-color:var(--up)}
+.dot.d{background:var(--dn);border-color:var(--dn)}
+.dot.k{background:none;border-style:dashed;border-color:var(--faint)}
+
+/* set rows — Ledger's overprint made Bauhaus */
+.sr{border:2.5px solid var(--rule);margin-bottom:9px;background:var(--surface)}
+.srh{display:flex;align-items:center;justify-content:space-between;padding:7px 11px;border-bottom:1.5px solid var(--hair);background:var(--surface2)}
+.srl{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase}
+.srb{display:flex;align-items:center;gap:8px;padding:11px}
+.fl{flex:1;text-align:center}
+.fn{font-size:34px;font-weight:700;line-height:1;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+.fu{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-top:4px}
+.xx{font-size:15px;color:var(--faint);padding-bottom:13px}
+.stp{display:flex;gap:5px;justify-content:center;margin-top:9px}
+.stp button{width:40px;height:32px;border:2px solid var(--rule);background:var(--paper);font-size:16px;font-weight:700;line-height:1}
+.stp button:hover{background:var(--yellow)}
+.ck{width:50px;height:50px;background:var(--red);color:#F4F1E8;display:grid;place-items:center;flex:none;border:2.5px solid var(--rule)}
+.ck svg{width:22px;height:22px}
+.sr.done .srb{padding:9px 11px}
+.sr.done .fn{font-size:21px}
+
+/* result chips — semantic, never the brand accent */
+.ch{display:inline-flex;align-items:center;font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:3px 8px;border:1.5px solid var(--rule)}
+.ch.even{background:none;color:var(--ink2)}
+.ch.up{background:var(--up);color:#F4F1E8;border-color:var(--up)}
+.ch.dn{background:var(--dn);color:#141414;border-color:var(--dn)}
+.ch.sk{background:none;color:var(--faint);border-style:dashed;border-color:var(--faint)}
+
+.btn{display:flex;align-items:center;justify-content:center;width:100%;height:54px;background:var(--red);color:#F4F1E8;
+     font-size:17px;font-weight:600;letter-spacing:-.015em;border:2.5px solid var(--rule)}
+.btn.sec{background:var(--paper);color:var(--ink)}
+.btn.sm{height:42px;font-size:14px}
+.btn.gh{background:none;border-style:dashed;border-color:var(--faint);color:var(--muted);height:40px;font-size:13px}
+
+/* ledger table — Ledger's, with Bauhaus rules */
+.lg{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:11.5px}
+.lg th{text-align:left;font-weight:700;font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);padding:0 0 7px;border-bottom:2.5px solid var(--rule)}
+.lg td{padding:8px 0;border-bottom:1.5px solid var(--hair);font-variant-numeric:tabular-nums}
+.lg td.t{color:var(--faint)}
+.lg td.a{color:var(--ink);font-weight:700}
+.lg td:first-child{color:var(--muted)}
+.lg .r{text-align:right}
+.lg tr:last-child td{border-bottom:none}
+
+.lbl{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;font-weight:600}
+.pg{height:8px;background:var(--surface2);border:2px solid var(--rule);overflow:hidden}
+.pg i{display:block;height:100%;background:var(--blue)}
+.big{font-size:60px;font-weight:700;line-height:.86;letter-spacing:-.05em;font-variant-numeric:tabular-nums}
+
+.dt{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1.5px solid var(--hair)}
+.dt:first-of-type{border-top:2.5px solid var(--rule)}
+.dt .ab{width:34px;flex:none;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.dt.rest .nm{color:var(--muted)}
+.dt.un .nm{color:var(--faint)}
+
+.nav{flex:none;height:60px;display:grid;grid-template-columns:repeat(5,1fr);border-top:2.5px solid var(--rule);background:var(--surface)}
+.ni{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:9px;font-weight:600;color:var(--faint)}
+.ni svg{width:18px;height:18px}
+.ni.on{color:var(--red)}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="wrap">
+  <div class="eyebrow">Mixed direction · Ledger × Bauhaus</div>
+  <h1>Ledger Bauhaus</h1>
+  <p class="lede">Ledger's <strong>bones</strong> — the overprint signature, tabular figures, the plan-versus-performance discipline — carrying Bauhaus's <strong>voice</strong>: primary red, blue and yellow, 2.5px black rules, zero radius, a geometric glyph per exercise, and sets drawn as circles you fill in. The structure is the one already applied across all twenty screens; only the language changed.</p>
+  <button class="tbtn" id="tb">Dark page</button>
+
+  <div class="mix">
+    <div><h4>From Ledger</h4><p><b>Printed target, ink actual.</b> Mono columns that align. Achieved stays neutral — hitting your number is the baseline, not a celebration.</p></div>
+    <div><h4>From Bauhaus</h4><p><b>Sets are circles you fill in.</b> Primary blocks instead of cards, a shape per exercise, heavy rules, nothing rounded.</p></div>
+    <div><h4>Palette</h4><div class="chips"><i class="chip" style="background:#F4F1E8"></i><i class="chip" style="background:#E03C31"></i><i class="chip" style="background:#005BBB"></i><i class="chip" style="background:#F5C518"></i><i class="chip" style="background:#141414"></i></div><p style="margin-top:9px">Red acts, blue exceeds, amber falls short.</p></div>
+    <div><h4>Type</h4><p><b>Space Grotesk</b> 600/700 for everything spoken · <b>IBM Plex Mono</b> for everything counted</p></div>
+  </div>
+
+  <div class="sect"><h2>Today &amp; workout</h2><span class="m">§12 · §13 · §18 · §19</span></div>
+  <div class="rack" id="r1"></div>
+
+  <div class="sect"><h2>Plan &amp; history</h2><span class="m">§5 · §16 · §22</span></div>
+  <div class="rack" id="r2"></div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var NAV = [
+    ["Today","M4 5h16v15H4zM4 10h16M9 3v4M15 3v4"],
+    ["Plan","M5 4h14v16H5zM9 9h6M9 13h6M9 17h3"],
+    ["History","M4 12a8 8 0 1 0 2.5-5.8M4 4v4h4M12 8v4l3 2"],
+    ["Exercises","M3 10v4M7 7v10M17 7v10M21 10v4M7 12h10"],
+    ["Settings","M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6M4 12h2M18 12h2M12 4v2M12 18v2"]
+  ];
+  function ph(body, active, id){
+    var nav = '<div class="nav">' + NAV.map(function(n,i){
+      return '<div class="ni'+(i===active?" on":"")+'">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="'+n[1]+'"/></svg>' +
+        '<span>'+n[0]+'</span></div>';
+    }).join("") + '</div>';
+    return '<div class="ph"'+(id?' id="'+id+'"':'')+'>' +
+      '<div class="sb"><span>9:41</span><span class="r"><i></i><i></i><i></i><span class="b"></span></span></div>' +
+      '<div class="app"><div class="scroll">'+body+'</div>'+nav+'</div></div>';
+  }
+  function fig(body, active, title, meta, note, id){
+    return '<figure>' + ph(body, active, id) +
+      '<figcaption><span class="ct">'+title+'</span><span class="cm">'+meta+'</span><span class="cn">'+note+'</span></figcaption></figure>';
+  }
+
+  var TICK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>';
+  var GLYPH = ["c","s","t","h","c"];
+  var EX = [["Machine Chest Press","30.0","10"],["Incline Dumbbell Press","15.0","10"],
+            ["Cable Fly","10.0","12"],["Lateral Raise","7.5","15"],["Tricep Pushdown","25.0","12"]];
+
+  /* ---------- today ---------- */
+  var today =
+    '<div class="blk"><div class="k">Monday 22 August</div><h3>Push Day</h3><div class="s">5 exercises · 15 sets</div></div>' +
+    '<div class="pad" style="padding-top:2px">' +
+    EX.map(function(e,i){
+      return '<div class="it"><span class="gl '+GLYPH[i]+'"></span><div style="flex:1">' +
+        '<div class="nm">'+e[0]+'</div><div class="pr">target <b>3</b> × <b>'+e[2]+'</b> · <b>'+e[1]+'</b> kg</div></div>' +
+        '<div class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div></div>';
+    }).join("") +
+    '<div style="padding:15px 0"><button class="btn">Start workout</button>' +
+    '<div class="pr" style="text-align:center;margin-top:11px">last push day <b>15 aug</b> · all <b>15</b> sets</div></div></div>';
+
+  /* ---------- workout (live) ---------- */
+  var workout =
+    '<div class="blk r"><div class="k">Push Day · exercise 1 of 5</div><h3 style="font-size:23px">Machine Chest Press</h3></div>' +
+    '<div class="pad14">' +
+      '<div style="display:flex;align-items:center;gap:9px;margin-bottom:13px">' +
+        '<div class="dots" id="setDots"><span class="dot f"></span><span class="dot u"></span><span class="dot"></span></div>' +
+        '<div class="pg" style="flex:1"><i id="pgFill" style="width:40%"></i></div>' +
+        '<span class="pr" style="margin:0"><b id="setN">6</b>/15</span>' +
+      '</div>' +
+      '<div class="pr" style="margin-bottom:12px">last time <b>30.0</b>×<b>10</b> · <b>30.0</b>×<b>10</b> · <b>30.0</b>×<b>8</b></div>' +
+
+      '<div class="sr done"><div class="srh"><span class="srl">Set 1</span><span class="pr" style="margin:0">target <b>10</b> × <b>30.0</b></span></div>' +
+        '<div class="srb"><div class="fl"><div class="fn">30.0</div><div class="fu">kg</div></div>' +
+        '<div class="xx" style="padding-bottom:7px">×</div>' +
+        '<div class="fl"><div class="fn">10</div><div class="fu">reps</div></div><span class="ch even">Even</span></div></div>' +
+
+      '<div class="sr done"><div class="srh"><span class="srl">Set 2</span><span class="pr" style="margin:0">target <b>10</b> × <b>30.0</b></span></div>' +
+        '<div class="srb"><div class="fl"><div class="fn">30.0</div><div class="fu">kg</div></div>' +
+        '<div class="xx" style="padding-bottom:7px">×</div>' +
+        '<div class="fl"><div class="fn">12</div><div class="fu">reps</div></div><span class="ch up">+2 reps</span></div></div>' +
+
+      '<div class="sr" id="active" style="border-color:var(--red)">' +
+        '<div class="srh" style="background:var(--red);color:#F4F1E8;border-bottom-color:var(--red)">' +
+        '<span class="srl">Set 3</span><span class="pr" style="margin:0;color:rgba(244,241,232,.85)">target <b style="color:#F4F1E8">10</b> × <b style="color:#F4F1E8">30.0</b></span></div>' +
+        '<div class="srb">' +
+          '<div class="fl"><div class="fn" data-n="30.0">30.0</div><div class="fu">kg</div>' +
+            '<div class="stp"><button data-s="-2.5">−</button><button data-s="2.5">+</button></div></div>' +
+          '<div class="xx">×</div>' +
+          '<div class="fl"><div class="fn" data-n="10">10</div><div class="fu">reps</div>' +
+            '<div class="stp"><button data-s="-1">−</button><button data-s="1">+</button></div></div>' +
+          '<button class="ck" id="done" aria-label="Record set">'+TICK+'</button>' +
+        '</div></div>' +
+
+      '<div style="display:flex;gap:8px;margin-top:11px">' +
+        '<button class="btn gh" style="flex:1">Add set</button><button class="btn gh" style="flex:1">Skip set</button></div>' +
+      '<button class="btn sec sm" style="margin-top:8px">Next — Incline Dumbbell Press</button>' +
+    '</div>';
+
+  /* ---------- workout complete ---------- */
+  var complete =
+    '<div class="blk k"><div class="k">Monday 22 August</div><h3>Push Day done</h3></div>' +
+    '<div class="pad14">' +
+      '<div style="display:flex;align-items:flex-end;gap:11px;margin-bottom:11px">' +
+        '<div class="big">93</div><div class="pr" style="margin:0;padding-bottom:9px">% of<br>plan</div></div>' +
+      '<div class="pg" style="margin-bottom:16px"><i style="width:93%"></i></div>' +
+      '<div class="lbl">Against target</div>' +
+      '<div class="it" style="border-top-width:2.5px"><span class="ch even">Even</span><div style="flex:1"></div><div class="fn" style="font-size:20px">12</div></div>' +
+      '<div class="it"><span class="ch up">Above</span><div style="flex:1"></div><div class="fn" style="font-size:20px">2</div></div>' +
+      '<div class="it"><span class="ch dn">Below</span><div style="flex:1"></div><div class="fn" style="font-size:20px">1</div></div>' +
+      '<div class="blk y" style="margin:15px -15px 0;border-top:2.5px solid var(--rule);border-bottom:none;display:flex;justify-content:space-between;align-items:baseline">' +
+        '<div class="k">Total volume</div><div class="fn" style="font-size:28px">4,280 kg</div></div>' +
+    '</div>';
+
+  /* ---------- week overview ---------- */
+  var week =
+    '<div class="blk"><div class="k">Active plan</div><h3>Your week</h3><div class="s">5 workout days · 15 exercises</div></div>' +
+    '<div class="pad" style="padding-top:2px">' +
+    [["Mon","Push Day","5 exercises · 15 sets",0],["Tue","Pull Day","4 exercises · 12 sets",0],
+     ["Wed","Rest day","",1],["Thu","Leg Day","5 exercises · 16 sets",0],
+     ["Fri","Upper Body","4 exercises · 12 sets",0],["Sat","Rest day","",1],["Sun","Not set up","",2]]
+    .map(function(d){
+      var cls = d[3]===1 ? " rest" : (d[3]===2 ? " un" : "");
+      var mark = d[3]===0 ? '<span class="gl s" style="width:14px;height:14px"></span>' :
+                 (d[3]===1 ? '<span style="width:14px;height:2.5px;background:var(--faint);display:block"></span>' :
+                             '<span class="dot k" style="width:14px;height:14px"></span>');
+      return '<div class="dt'+cls+'"><span class="ab">'+d[0]+'</span><div style="flex:1">' +
+             '<div class="nm">'+d[1]+'</div>' + (d[2] ? '<div class="pr">'+d[2]+'</div>' : '') + '</div>' + mark + '</div>';
+    }).join("") +
+    '</div>';
+
+  /* ---------- history day detail ---------- */
+  function tbl(rows){
+    return '<table class="lg" style="margin-bottom:17px"><thead><tr><th>Set</th><th>Target</th><th>Actual</th><th class="r">Result</th></tr></thead><tbody>' +
+      rows.map(function(r){
+        return '<tr><td>'+r[0]+'</td><td class="t">'+r[1]+'</td><td class="a">'+r[2]+'</td>' +
+               '<td class="r" style="color:'+r[4]+'">'+r[3]+'</td></tr>';
+      }).join("") + '</tbody></table>';
+  }
+  var detail =
+    '<div class="blk k"><div class="k">Friday 21 August</div><h3 style="font-size:24px">Push Day</h3><div class="s">48 min · 4,280 kg volume</div></div>' +
+    '<div class="pad14">' +
+      '<div style="display:flex;align-items:center;gap:9px;margin-bottom:9px"><span class="gl c"></span><div class="lbl" style="margin:0">Machine Chest Press</div></div>' +
+      tbl([["1","10 × 30.0","10 × 30.0","even","var(--ink2)"],
+           ["2","10 × 30.0","12 × 30.0","+2 reps","var(--up)"],
+           ["3","10 × 30.0","8 × 32.5","−40 vol","var(--dn)"]]) +
+      '<div style="display:flex;align-items:center;gap:9px;margin-bottom:9px"><span class="gl s"></span><div class="lbl" style="margin:0">Incline Dumbbell Press</div></div>' +
+      tbl([["1","10 × 15.0","10 × 15.0","even","var(--ink2)"],
+           ["2","10 × 15.0","10 × 15.0","even","var(--ink2)"],
+           ["3","10 × 15.0","—","skipped","var(--faint)"]]) +
+      '<div style="display:flex;align-items:center;gap:9px;margin-bottom:9px"><span class="gl t"></span><div class="lbl" style="margin:0">Cable Fly · added on the day</div></div>' +
+      tbl([["1","—","12 × 10.0","unplanned","var(--muted)"],
+           ["2","—","12 × 10.0","unplanned","var(--muted)"]]) +
+    '</div>';
+
+  document.getElementById("r1").innerHTML =
+    fig(today, 0, "Today — workout day", "§12",
+        "Every target is printed type; nothing is in ink yet because nothing has happened. Three hollow circles per exercise say how much is left before you read a word.") +
+    fig(workout, 0, "Workout — recording a set", "§13 · §18 · §35 · §36 <span class=\"live\">interactive</span>",
+        "The one to get right. Target sits printed in the red header, your numbers are written large beneath it, and the circles fill as you go. Try the steppers, then the tick.", "liveCard") +
+    fig(complete, 0, "Workout — complete", "§19",
+        "93% counts planned sets only, so bonus work can never push it past 100. Amber marks the one set that fell short — attention, not failure.");
+
+  document.getElementById("r2").innerHTML =
+    fig(week, 1, "Plan — week overview", "§5 · §6",
+        "A square for a training day, a bar for rest, a dashed circle for a day not set up yet. The week's rhythm reads as shapes down the left edge.") +
+    fig(detail, 2, "History — day detail", "§16 · §21",
+        "Where the overprint pays off literally: greyed target column, bold actual column. Each exercise keeps the glyph it had on the day you did it.");
+
+  /* ---------- interactions ---------- */
+  document.addEventListener("click", function(e){
+    var b = e.target.closest("[data-s]");
+    if(!b) return;
+    var el = b.closest(".fl").querySelector("[data-n]");
+    var step = parseFloat(b.getAttribute("data-s"));
+    var v = parseFloat(el.getAttribute("data-n")) + step;
+    if(v < 0) v = 0;
+    el.setAttribute("data-n", v);
+    el.textContent = Math.abs(step) < 1 ? v.toFixed(1) : String(v);
+  });
+
+  var done = document.getElementById("done");
+  if(done){
+    done.addEventListener("click", function(){
+      var row = document.getElementById("active");
+      var nums = row.querySelectorAll("[data-n]");
+      var kg = parseFloat(nums[0].getAttribute("data-n"));
+      var reps = parseFloat(nums[1].getAttribute("data-n"));
+      var tKg = 30, tReps = 10, cls = "even", txt = "Even";
+
+      if(kg === tKg && reps > tReps){ cls="up"; txt="+"+(reps-tReps)+" reps"; }
+      else if(kg === tKg && reps < tReps){ cls="dn"; txt=(tReps-reps)+" reps short"; }
+      else if(reps === tReps && kg > tKg){ cls="up"; txt="+"+(kg-tKg).toFixed(1)+" kg"; }
+      else if(reps === tReps && kg < tKg){ cls="dn"; txt=(tKg-kg).toFixed(1)+" kg below"; }
+      else if(kg !== tKg || reps !== tReps){
+        var v = kg*reps, t = tKg*tReps;
+        if(v > t){ cls="up"; txt="+"+Math.round(v-t)+" kg vol"; }
+        else if(v < t){ cls="dn"; txt="−"+Math.round(t-v)+" kg vol"; }
+      }
+
+      row.classList.add("done");
+      row.style.borderColor = "";
+      var h = row.querySelector(".srh");
+      h.style.background = ""; h.style.color = ""; h.style.borderBottomColor = "";
+      h.querySelectorAll("b").forEach(function(x){ x.style.color = ""; });
+      h.querySelector(".pr").style.color = "";
+      row.querySelectorAll(".stp").forEach(function(s){ s.remove(); });
+      row.querySelector(".xx").style.paddingBottom = "7px";
+
+      var chip = document.createElement("span");
+      chip.className = "ch " + cls;
+      chip.textContent = txt;
+      done.replaceWith(chip);
+
+      var d3 = document.querySelectorAll("#setDots .dot")[2];
+      d3.className = "dot " + (cls === "up" ? "u" : cls === "dn" ? "d" : "f");
+
+      var n = Math.min(parseInt(document.getElementById("setN").textContent,10) + 1, 15);
+      document.getElementById("setN").textContent = n;
+      document.getElementById("pgFill").style.width = Math.round(n/15*100) + "%";
+    });
+  }
+
+  /* deck theme toggle also flips the phones */
+  var tb = document.getElementById("tb");
+  tb.addEventListener("click", function(){
+    var dark = document.documentElement.getAttribute("data-theme") === "dark";
+    var next = dark ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", next);
+    document.querySelectorAll(".ph").forEach(function(p){ p.setAttribute("data-t", next); });
+    tb.textContent = dark ? "Dark page" : "Light page";
+  });
+})();
+</script>
