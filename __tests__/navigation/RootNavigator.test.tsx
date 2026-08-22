@@ -50,7 +50,7 @@ describe('RootNavigator', () => {
     const tabs: ReadonlyArray<readonly [string, RegExp]> = [
       ['Plan', /weekly routine/i],
       ['History', /past workouts/i],
-      ['Exercises', /exercise library appears/i],
+      ['Exercises', /create your own/i],
       ['Settings', /weight unit/i],
     ];
     for (const [tab, marker] of tabs) {

@@ -5,3 +5,10 @@ export type RootTabParamList = {
   Exercises: undefined;
   Settings: undefined;
 };
+
+export type ExercisesStackParamList = {
+  ExerciseList: undefined;
+  ExerciseDetail: {id: string};
+  /** No id means "create a new one". */
+  ExerciseEditor: {id?: string};
+};

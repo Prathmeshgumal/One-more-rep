@@ -3,7 +3,7 @@ import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {TodayScreen} from '@/features/today/TodayScreen';
 import {PlanScreen} from '@/features/plan/PlanScreen';
 import {HistoryScreen} from '@/features/history/HistoryScreen';
-import {ExercisesScreen} from '@/features/exercises/ExercisesScreen';
+import {ExercisesStack} from './ExercisesStack';
 import {SettingsScreen} from '@/features/settings/SettingsScreen';
 import {useTheme, font} from '@/theme';
 import type {RootTabParamList} from './types';
@@ -36,7 +36,7 @@ export function RootNavigator() {
       <Tab.Screen name="Today" component={TodayScreen} />
       <Tab.Screen name="Plan" component={PlanScreen} />
       <Tab.Screen name="History" component={HistoryScreen} />
-      <Tab.Screen name="Exercises" component={ExercisesScreen} />
+      <Tab.Screen name="Exercises" component={ExercisesStack} />
       <Tab.Screen name="Settings" component={SettingsScreen} />
     </Tab.Navigator>
   );
