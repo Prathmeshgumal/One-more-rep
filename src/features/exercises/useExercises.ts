@@ -27,6 +27,12 @@ export function useExerciseListQuery(query: ExerciseQuery) {
     // while you type. Holding the previous results until the next arrive is
     // both calmer and honest — they were true a keystroke ago.
     placeholderData: keepPreviousData,
+    // The library only changes when this app changes it, and every mutation
+    // invalidates `exerciseKeys.all` (D8) — so a cached list cannot go stale
+    // behind our back. Without this, clearing a search or tapping back to All
+    // re-reads all 876 rows for data already in hand, which measured ~110ms of
+    // dropped frames on device for no new information.
+    staleTime: Infinity,
   });
 }
 

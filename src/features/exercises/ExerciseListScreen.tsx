@@ -11,6 +11,7 @@ import {useTheme, space, radius} from '@/theme';
 import type {Exercise} from '@/repositories/exerciseRepo';
 import type {ExercisesStackParamList} from '@/navigation/types';
 import {MUSCLE_FILTERS} from './muscles';
+import {useDebounced} from './useDebounced';
 import {useExerciseListQuery} from './useExercises';
 
 /** "Chest · Shoulders — Cable", matching the design's exmeta line. */
@@ -30,11 +31,14 @@ export function ExerciseListScreen() {
   const [search, setSearch] = useState('');
   const [group, setGroup] = useState('All');
 
+  // The field updates on every keystroke; the query waits until typing stops.
+  const settledSearch = useDebounced(search, 250);
+
   const selected =
     MUSCLE_FILTERS.find(f => f.label === group) ?? MUSCLE_FILTERS[0]!;
 
   const {data, isPending} = useExerciseListQuery({
-    search: search || undefined,
+    search: settledSearch || undefined,
     muscles: selected.values.length ? selected.values : undefined,
   });
 
