@@ -1,0 +1,92 @@
+[
+  {
+    "n": "01",
+    "title": "First run — no plan yet",
+    "file": "01-first-run-no-plan-yet.png"
+  },
+  {
+    "n": "02",
+    "title": "Plan — week overview",
+    "file": "02-plan-week-overview.png"
+  },
+  {
+    "n": "03",
+    "title": "Plan — day setup",
+    "file": "03-plan-day-setup.png"
+  },
+  {
+    "n": "04",
+    "title": "Plan — exercise picker",
+    "file": "04-plan-exercise-picker.png"
+  },
+  {
+    "n": "05",
+    "title": "Plan — target editor",
+    "file": "05-plan-target-editor.png"
+  },
+  {
+    "n": "06",
+    "title": "Today — workout day",
+    "file": "06-today-workout-day.png"
+  },
+  {
+    "n": "07",
+    "title": "Today — rest day",
+    "file": "07-today-rest-day.png"
+  },
+  {
+    "n": "08",
+    "title": "Today — resume",
+    "file": "08-today-resume.png"
+  },
+  {
+    "n": "09",
+    "title": "Workout — recording a set",
+    "file": "09-workout-recording-a-set.png"
+  },
+  {
+    "n": "10",
+    "title": "Workout — exercise summary",
+    "file": "10-workout-exercise-summary.png"
+  },
+  {
+    "n": "11",
+    "title": "Workout — complete",
+    "file": "11-workout-complete.png"
+  },
+  {
+    "n": "12",
+    "title": "History — timeline",
+    "file": "12-history-timeline.png"
+  },
+  {
+    "n": "13",
+    "title": "History — calendar",
+    "file": "13-history-calendar.png"
+  },
+  {
+    "n": "14",
+    "title": "History — day detail",
+    "file": "14-history-day-detail.png"
+  },
+  {
+    "n": "15",
+    "title": "Exercise history",
+    "file": "15-exercise-history.png"
+  },
+  {
+    "n": "16",
+    "title": "Exercise library",
+    "file": "16-exercise-library.png"
+  },
+  {
+    "n": "17",
+    "title": "Exercise — create custom",
+    "file": "17-exercise-create-custom.png"
+  },
+  {
+    "n": "18",
+    "title": "Settings",
+    "file": "18-settings.png"
+  }
+]

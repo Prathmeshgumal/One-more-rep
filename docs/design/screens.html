@@ -1,0 +1,1119 @@
+<title>Training Ledger</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62.5..125,400..800&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<style>
+:root{
+  --paper:#EDEFF2;
+  --board:#E4E7EC;
+  --surface:#FFFFFF;
+  --surface-2:#F5F7F9;
+  --ink:#12161B;
+  --ink-2:#3D4650;
+  --muted:#6B7684;
+  --faint:#98A2AE;
+  --rule:#D3D9E0;
+  --rule-soft:#E6EAEF;
+  --plate:#1B4FD8;
+  --plate-ink:#FFFFFF;
+  --plate-soft:#E7EDFC;
+  --gain:#17724A;
+  --gain-soft:#E1F1E9;
+  --short:#A56A12;
+  --short-soft:#F7EFDD;
+  --skip:#8A93A0;
+  --skip-soft:#EDEFF2;
+  --shadow:0 1px 2px rgba(18,22,27,.06), 0 8px 24px rgba(18,22,27,.06);
+  --shadow-phone:0 2px 6px rgba(18,22,27,.10), 0 24px 60px rgba(18,22,27,.16);
+  --r:14px;
+  --r-lg:20px;
+  --sans:'Archivo','Helvetica Neue',Arial,sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#0C0F13;
+    --board:#080A0D;
+    --surface:#161B21;
+    --surface-2:#1D242C;
+    --ink:#E8ECF1;
+    --ink-2:#B7C0CB;
+    --muted:#8590A0;
+    --faint:#6A7482;
+    --rule:#2A323C;
+    --rule-soft:#212831;
+    --plate:#5B87FF;
+    --plate-ink:#08122B;
+    --plate-soft:#16233F;
+    --gain:#35B57C;
+    --gain-soft:#10281F;
+    --short:#D69B3C;
+    --short-soft:#2A2114;
+    --skip:#6C7683;
+    --skip-soft:#1D242C;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.4);
+    --shadow-phone:0 2px 6px rgba(0,0,0,.5), 0 24px 60px rgba(0,0,0,.6);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0C0F13;
+  --board:#080A0D;
+  --surface:#161B21;
+  --surface-2:#1D242C;
+  --ink:#E8ECF1;
+  --ink-2:#B7C0CB;
+  --muted:#8590A0;
+  --faint:#6A7482;
+  --rule:#2A323C;
+  --rule-soft:#212831;
+  --plate:#5B87FF;
+  --plate-ink:#08122B;
+  --plate-soft:#16233F;
+  --gain:#35B57C;
+  --gain-soft:#10281F;
+  --short:#D69B3C;
+  --short-soft:#2A2114;
+  --skip:#6C7683;
+  --skip-soft:#1D242C;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.4);
+  --shadow-phone:0 2px 6px rgba(0,0,0,.5), 0 24px 60px rgba(0,0,0,.6);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:var(--board);
+  color:var(--ink);
+  font-family:var(--sans);
+  font-size:15px;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,h4,p{margin:0}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+:focus-visible{outline:2px solid var(--plate);outline-offset:2px;border-radius:4px}
+
+/* ---------- board chrome ---------- */
+.board{max-width:1740px;margin:0 auto;padding:56px 32px 96px}
+.masthead{
+  display:grid;grid-template-columns:minmax(0,1fr) auto;gap:32px;align-items:end;
+  padding-bottom:28px;border-bottom:1px solid var(--rule);margin-bottom:12px;
+}
+.eyebrow{
+  font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--muted);
+}
+.masthead h1{
+  font-size:clamp(34px,5vw,54px);line-height:1.02;font-weight:800;
+  font-variation-settings:'wdth' 112;letter-spacing:-.02em;margin-top:10px;text-wrap:balance;
+}
+.masthead p{max-width:60ch;color:var(--ink-2);margin-top:14px;font-size:16px}
+.controls{display:flex;gap:10px;align-items:center}
+.btn-ghost{
+  border:1px solid var(--rule);border-radius:999px;padding:9px 16px;
+  font-size:13px;font-weight:600;color:var(--ink-2);background:var(--surface);
+}
+.btn-ghost:hover{border-color:var(--plate);color:var(--plate)}
+
+.tokens{display:flex;flex-wrap:wrap;gap:8px;margin:22px 0 44px}
+.token{
+  display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--rule-soft);
+  border-radius:999px;padding:6px 14px 6px 6px;font-family:var(--mono);font-size:11px;color:var(--muted);
+}
+.swatch{width:20px;height:20px;border-radius:999px;border:1px solid rgba(0,0,0,.10)}
+
+.group{margin:0 0 20px}
+.group-head{display:flex;align-items:baseline;gap:14px;margin:44px 0 22px;padding-top:26px;border-top:1px solid var(--rule)}
+.group-head h2{font-size:20px;font-weight:700;font-variation-settings:'wdth' 108;letter-spacing:-.01em}
+.group-head .meta{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+
+.rack{display:flex;flex-wrap:wrap;gap:34px}
+figure.device{margin:0;display:flex;flex-direction:column;gap:14px;width:390px}
+figcaption{display:flex;flex-direction:column;gap:5px}
+.cap-title{font-size:14px;font-weight:700;letter-spacing:-.005em}
+.cap-meta{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.06em}
+.cap-note{font-size:13px;color:var(--ink-2);line-height:1.45;max-width:44ch}
+.live{
+  display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10px;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--plate);
+}
+.live::before{content:"";width:6px;height:6px;border-radius:999px;background:var(--plate)}
+
+/* ---------- phone ---------- */
+.phone{
+  width:390px;height:844px;border-radius:38px;background:var(--paper);
+  box-shadow:var(--shadow-phone);overflow:hidden;position:relative;
+  display:flex;flex-direction:column;border:1px solid var(--rule);
+}
+.statusbar{
+  height:44px;flex:none;display:flex;align-items:center;justify-content:space-between;
+  padding:0 26px;font-size:13px;font-weight:600;color:var(--ink);
+}
+.statusbar .dots{display:flex;gap:4px;align-items:center}
+.statusbar .dots i{width:5px;height:5px;border-radius:999px;background:var(--ink);opacity:.55;display:block}
+.statusbar .batt{width:22px;height:11px;border:1.4px solid var(--ink);border-radius:3px;opacity:.55;position:relative}
+.statusbar .batt::after{content:"";position:absolute;inset:2px;right:7px;background:var(--ink);border-radius:1px}
+
+.app{flex:1;overflow:auto;padding:0 20px 20px;scrollbar-width:none}
+.app::-webkit-scrollbar{display:none}
+.app.flush{padding-left:0;padding-right:0}
+
+.appbar{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:6px 0 18px}
+.appbar .kicker{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.appbar h2{font-size:27px;font-weight:800;font-variation-settings:'wdth' 110;letter-spacing:-.02em;margin-top:4px;line-height:1.1}
+.appbar .sub{font-size:13px;color:var(--muted);margin-top:5px}
+.iconbtn{width:38px;height:38px;border-radius:999px;border:1px solid var(--rule);display:grid;place-items:center;flex:none;background:var(--surface)}
+
+.stack{display:flex;flex-direction:column;gap:10px}
+.stack-lg{display:flex;flex-direction:column;gap:16px}
+
+.card{background:var(--surface);border:1px solid var(--rule-soft);border-radius:var(--r);padding:15px 16px}
+.card.tap{cursor:pointer}
+.card.tap:hover{border-color:var(--plate)}
+
+/* printed / ink — the overprint signature */
+.printed{
+  font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--faint);
+  text-transform:uppercase;
+}
+.printed b{font-weight:600;color:var(--muted)}
+.ink-num{
+  font-variation-settings:'wdth' 120;font-weight:700;letter-spacing:-.02em;
+  font-variant-numeric:tabular-nums;color:var(--ink);
+}
+
+.setrow{border:1px solid var(--rule-soft);border-radius:var(--r);background:var(--surface);overflow:hidden}
+.setrow + .setrow{margin-top:8px}
+.setrow-head{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:9px 14px;background:var(--surface-2);border-bottom:1px dashed var(--rule);
+}
+.setlabel{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-2)}
+.setrow-body{display:flex;align-items:center;gap:8px;padding:14px}
+.field{flex:1;text-align:center}
+.fieldnum{font-size:38px;line-height:1;font-variation-settings:'wdth' 120;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.03em}
+.fieldunit{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-top:5px}
+.times{font-size:17px;color:var(--faint);padding-bottom:16px}
+.stepper{display:flex;gap:6px;justify-content:center;margin-top:10px}
+.stepper button{
+  width:44px;height:36px;border-radius:9px;border:1px solid var(--rule);background:var(--surface-2);
+  font-size:17px;font-weight:600;color:var(--ink-2);line-height:1;
+}
+.stepper button:hover{border-color:var(--plate);color:var(--plate)}
+.check{
+  width:56px;height:56px;border-radius:16px;background:var(--plate);color:var(--plate-ink);
+  display:grid;place-items:center;flex:none;box-shadow:0 2px 10px rgba(27,79,216,.28);
+}
+.check svg{width:24px;height:24px}
+
+.setrow.done{background:var(--surface)}
+.setrow.done .setrow-body{padding:11px 14px}
+.setrow.done .fieldnum{font-size:24px}
+.setrow.pending{opacity:.55}
+.setrow.pending .fieldnum{color:var(--faint)}
+
+.chip{
+  display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:3px 9px;
+  font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+}
+.chip.achieved{background:var(--plate-soft);color:var(--plate)}
+.chip.exceeded{background:var(--gain-soft);color:var(--gain)}
+.chip.below{background:var(--short-soft);color:var(--short)}
+.chip.skipped{background:var(--skip-soft);color:var(--skip)}
+.chip.rest{background:var(--surface-2);color:var(--muted)}
+
+.btn{
+  display:flex;align-items:center;justify-content:center;gap:9px;width:100%;
+  height:56px;border-radius:16px;background:var(--plate);color:var(--plate-ink);
+  font-size:16px;font-weight:700;letter-spacing:-.01em;box-shadow:0 2px 12px rgba(27,79,216,.26);
+}
+.btn.sec{background:var(--surface);color:var(--ink);border:1px solid var(--rule);box-shadow:none}
+.btn.sm{height:44px;font-size:14px;border-radius:12px}
+.btn.ghost{background:none;border:1px dashed var(--rule);color:var(--muted);box-shadow:none;font-weight:600}
+.btn.ghost:hover{border-color:var(--plate);color:var(--plate)}
+
+.rowline{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.exname{font-size:15px;font-weight:700;letter-spacing:-.01em}
+.exmeta{font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:3px;letter-spacing:.04em}
+
+.progress{height:5px;border-radius:999px;background:var(--rule-soft);overflow:hidden}
+.progress i{display:block;height:100%;background:var(--plate);border-radius:999px}
+.progress.gain i{background:var(--gain)}
+
+.daytile{
+  display:flex;align-items:center;gap:14px;background:var(--surface);border:1px solid var(--rule-soft);
+  border-radius:var(--r);padding:13px 15px;cursor:pointer;
+}
+.daytile:hover{border-color:var(--plate)}
+.daytile .dayabbr{
+  width:44px;flex:none;font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--muted);
+}
+.daytile.restday{background:repeating-linear-gradient(135deg,var(--surface),var(--surface) 7px,var(--surface-2) 7px,var(--surface-2) 14px)}
+.daytile.unset{border-style:dashed;background:none}
+
+.tabbar{
+  flex:none;height:76px;border-top:1px solid var(--rule);background:var(--surface);
+  display:grid;grid-template-columns:repeat(5,1fr);padding-bottom:14px;
+}
+.tab{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;color:var(--faint)}
+.tab svg{width:21px;height:21px}
+.tab span{font-size:10px;font-weight:600;letter-spacing:.01em}
+.tab.on{color:var(--plate)}
+
+/* ledger table */
+.ledger{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12px}
+.ledger th{
+  text-align:left;font-weight:600;font-size:10px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--muted);padding:0 0 8px;border-bottom:1px solid var(--rule);
+}
+.ledger td{padding:9px 0;border-bottom:1px dashed var(--rule-soft);font-variant-numeric:tabular-nums}
+.ledger td.t{color:var(--faint)}
+.ledger td.a{color:var(--ink);font-weight:600}
+.ledger tr:last-child td{border-bottom:none}
+.ledger .r{text-align:right}
+
+/* calendar */
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+.cal .dow{
+  text-align:center;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--muted);padding-bottom:6px;
+}
+.cell{
+  aspect-ratio:1;border-radius:11px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:4px;font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;background:var(--surface);
+  border:1px solid var(--rule-soft);color:var(--ink-2);
+}
+.cell.pad{background:none;border:none;color:var(--faint);opacity:.4}
+.cell i{width:6px;height:6px;border-radius:999px;display:block}
+.cell.done{background:var(--plate);border-color:var(--plate);color:var(--plate-ink)}
+.cell.part{border-color:var(--short);color:var(--short)}
+.cell.miss{background:var(--short-soft);border-color:var(--short-soft);color:var(--short)}
+.cell.rest{color:var(--faint)}
+.cell.future{background:none;border-style:dashed;color:var(--faint);opacity:.55}
+.cell.today{outline:2px solid var(--plate);outline-offset:1px}
+.legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:14px}
+.legend span{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);font-family:var(--mono)}
+.legend i{width:10px;height:10px;border-radius:3px;display:block;border:1px solid var(--rule)}
+
+.field-lbl{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:7px}
+.input{
+  width:100%;background:var(--surface);border:1px solid var(--rule);border-radius:12px;
+  padding:13px 14px;font-size:16px;font-weight:600;color:var(--ink);
+}
+.input.mono{font-family:var(--mono);font-weight:500}
+.search{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--rule);border-radius:13px;padding:12px 14px}
+.search input{border:none;background:none;outline:none;font:inherit;font-size:15px;color:var(--ink);width:100%}
+.search svg{width:17px;height:17px;color:var(--muted);flex:none}
+
+.chips{display:flex;gap:7px;flex-wrap:wrap}
+.fchip{border:1px solid var(--rule);border-radius:999px;padding:6px 13px;font-size:12px;font-weight:600;color:var(--ink-2);background:var(--surface)}
+.fchip.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+
+.toggle{width:48px;height:28px;border-radius:999px;background:var(--rule);position:relative;flex:none;transition:background .18s}
+.toggle::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:999px;background:var(--surface);box-shadow:0 1px 3px rgba(0,0,0,.2);transition:transform .18s}
+.toggle.on{background:var(--plate)}
+.toggle.on::after{transform:translateX(20px)}
+
+.bignum{font-size:56px;line-height:1;font-variation-settings:'wdth' 122;font-weight:800;letter-spacing:-.035em;font-variant-numeric:tabular-nums}
+.statgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat{background:var(--surface);border:1px solid var(--rule-soft);border-radius:var(--r);padding:14px}
+.stat .k{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.stat .v{font-size:25px;font-weight:700;font-variation-settings:'wdth' 116;margin-top:6px;font-variant-numeric:tabular-nums}
+
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;height:100%;gap:14px;padding:0 20px}
+.empty h3{font-size:26px;font-weight:800;font-variation-settings:'wdth' 112;letter-spacing:-.02em}
+.empty p{color:var(--muted);font-size:15px;max-width:30ch}
+.ghostweek{display:flex;flex-direction:column;gap:6px;width:100%;margin-bottom:8px}
+.ghostweek div{height:34px;border-radius:9px;border:1px dashed var(--rule)}
+
+.banner{background:var(--plate-soft);border:1px solid transparent;border-radius:var(--r);padding:14px 15px}
+.banner .k{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--plate);font-weight:600}
+
+.divider{height:1px;background:var(--rule-soft);margin:4px 0}
+.hint{font-size:12px;color:var(--muted);line-height:1.45}
+.srow{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 0;border-bottom:1px solid var(--rule-soft)}
+.srow:last-child{border-bottom:none}
+.srow .lbl{font-size:15px;font-weight:600}
+.srow .val{font-family:var(--mono);font-size:13px;color:var(--muted)}
+.seg{display:flex;border:1px solid var(--rule);border-radius:10px;overflow:hidden}
+.seg button{padding:7px 15px;font-size:13px;font-weight:600;color:var(--muted);font-family:var(--mono)}
+.seg button.on{background:var(--ink);color:var(--paper)}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="board">
+
+  <header class="masthead">
+    <div>
+      <div class="eyebrow">Screen designs · pre-implementation</div>
+      <h1>Training Ledger</h1>
+      <p>Eighteen screens for the workout tracker, drawn before any code. The design treats the app as what it actually is — a training log, not a fitness dashboard. Targets render as if <em>pre-printed on the form</em>; what you actually lifted is written over them in ink. That one idea carries Today, Workout, History, and Exercise History.</p>
+    </div>
+    <div class="controls">
+      <button class="btn-ghost" id="themeBtn">Dark theme</button>
+    </div>
+  </header>
+
+  <div class="tokens">
+    <span class="token"><i class="swatch" style="background:#EDEFF2"></i>paper</span>
+    <span class="token"><i class="swatch" style="background:#12161B"></i>ink</span>
+    <span class="token"><i class="swatch" style="background:#1B4FD8"></i>plate · primary</span>
+    <span class="token"><i class="swatch" style="background:#17724A"></i>gain · exceeded</span>
+    <span class="token"><i class="swatch" style="background:#A56A12"></i>short · below</span>
+    <span class="token"><i class="swatch" style="background:#8A93A0"></i>skip</span>
+    <span class="token" style="font-family:var(--sans);font-weight:700">Archivo — display &amp; UI</span>
+    <span class="token">IBM Plex Mono — ledger columns</span>
+  </div>
+
+  <!-- ============ GROUP: FIRST RUN + PLAN ============ -->
+  <div class="group-head">
+    <h2>Plan</h2>
+    <span class="meta">Phase 2 · §4–§11</span>
+  </div>
+
+  <div class="rack">
+
+    <!-- 01 empty -->
+    <figure class="device">
+      <div class="phone" data-tab="plan">
+        <div class="app">
+          <div class="empty">
+            <div class="ghostweek">
+              <div></div><div></div><div></div><div></div><div></div><div></div><div></div>
+            </div>
+            <h3>Your week is empty</h3>
+            <p>Set up a weekly routine, then track what you actually lift against it.</p>
+            <div style="width:100%;margin-top:6px"><button class="btn">Create plan</button></div>
+          </div>
+        </div>
+      </div>
+      <figcaption>
+        <span class="cap-title">First run — no plan yet</span>
+        <span class="cap-meta">§4 · §40</span>
+        <span class="cap-note">The seven ghost rows show what's about to exist, so the empty state previews the shape of the thing rather than just naming it.</span>
+      </figcaption>
+    </figure>
+
+    <!-- 02 week overview -->
+    <figure class="device">
+      <div class="phone" data-tab="plan">
+        <div class="app">
+          <div class="appbar">
+            <div>
+              <div class="kicker">Active plan</div>
+              <h2>Your week</h2>
+              <div class="sub">5 workout days · 15 exercises</div>
+            </div>
+            <button class="iconbtn" aria-label="Plan history">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>
+            </button>
+          </div>
+          <div class="stack">
+            <div class="daytile"><span class="dayabbr">Mon</span><div style="flex:1"><div class="exname">Push Day</div><div class="exmeta">5 exercises · 15 sets</div></div><span class="chip achieved">Today</span></div>
+            <div class="daytile"><span class="dayabbr">Tue</span><div style="flex:1"><div class="exname">Pull Day</div><div class="exmeta">4 exercises · 12 sets</div></div></div>
+            <div class="daytile restday"><span class="dayabbr">Wed</span><div style="flex:1"><div class="exname" style="color:var(--muted)">Rest day</div></div></div>
+            <div class="daytile"><span class="dayabbr">Thu</span><div style="flex:1"><div class="exname">Leg Day</div><div class="exmeta">5 exercises · 16 sets</div></div></div>
+            <div class="daytile"><span class="dayabbr">Fri</span><div style="flex:1"><div class="exname">Upper Body</div><div class="exmeta">4 exercises · 12 sets</div></div></div>
+            <div class="daytile restday"><span class="dayabbr">Sat</span><div style="flex:1"><div class="exname" style="color:var(--muted)">Rest day</div></div></div>
+            <div class="daytile unset"><span class="dayabbr">Sun</span><div style="flex:1"><div class="exname" style="color:var(--faint)">Not set up</div></div><span style="color:var(--faint);font-size:20px">+</span></div>
+          </div>
+        </div>
+      </div>
+      <figcaption>
+        <span class="cap-title">Plan — week overview</span>
+        <span class="cap-meta">§5 · §6</span>
+        <span class="cap-note">Rest days carry a diagonal hatch so the week's rhythm reads without labels. An unconfigured day stays dashed and empty rather than pretending to be a rest day.</span>
+      </figcaption>
+    </figure>
+
+    <!-- 03 day config -->
+    <figure class="device">
+      <div class="phone" data-tab="plan">
+        <div class="app">
+          <div class="appbar">
+            <div>
+              <div class="kicker">Monday</div>
+              <h2>Push Day</h2>
+              <div class="sub">Tap the name to rename this day</div>
+            </div>
+          </div>
+          <div class="field-lbl">Exercises · drag to reorder</div>
+          <div class="stack">
+            <div class="card"><div class="rowline"><div style="display:flex;gap:11px;align-items:center"><svg width="14" height="14" viewBox="0 0 16 16" stroke="currentColor" stroke-width="1.6" style="color:var(--faint)"><path d="M2 5h12M2 11h12"/></svg><div><div class="exname">Machine Chest Press</div><div class="exmeta">3 × 10 · 30.0 kg</div></div></div></div></div>
+            <div class="card"><div class="rowline"><div style="display:flex;gap:11px;align-items:center"><svg width="14" height="14" viewBox="0 0 16 16" stroke="currentColor" stroke-width="1.6" style="color:var(--faint)"><path d="M2 5h12M2 11h12"/></svg><div><div class="exname">Incline Dumbbell Press</div><div class="exmeta">3 × 10 · 15.0 kg</div></div></div></div></div>
+            <div class="card"><div class="rowline"><div style="display:flex;gap:11px;align-items:center"><svg width="14" height="14" viewBox="0 0 16 16" stroke="currentColor" stroke-width="1.6" style="color:var(--faint)"><path d="M2 5h12M2 11h12"/></svg><div><div class="exname">Cable Fly</div><div class="exmeta">3 × 12 · 10.0 kg</div></div></div></div></div>
+            <div class="card"><div class="rowline"><div style="display:flex;gap:11px;align-items:center"><svg width="14" height="14" viewBox="0 0 16 16" stroke="currentColor" stroke-width="1.6" style="color:var(--faint)"><path d="M2 5h12M2 11h12"/></svg><div><div class="exname">Lateral Raise</div><div class="exmeta">3 × 15 · 7.5 kg</div></div></div></div></div>
+            <div class="card"><div class="rowline"><div style="display:flex;gap:11px;align-items:center"><svg width="14" height="14" viewBox="0 0 16 16" stroke="currentColor" stroke-width="1.6" style="color:var(--faint)"><path d="M2 5h12M2 11h12"/></svg><div><div class="exname">Tricep Pushdown</div><div class="exmeta">3 × 12 · 25.0 kg</div></div></div></div></div>
+            <button class="btn ghost sm" style="margin-top:4px">Add exercise</button>
+          </div>
+          <div class="divider" style="margin:22px 0 14px"></div>
+          <button style="font-size:13px;color:var(--muted);text-decoration:underline;text-underline-offset:3px">Make Monday a rest day instead</button>
+        </div>
+      </div>
+      <figcaption>
+        <span class="cap-title">Plan — day setup</span>
+        <span class="cap-meta">§5 · §6 · §8 · §10</span>
+        <span class="cap-note">Exercises are the whole point of this screen, so they start at the top. Turning the day into a rest day is a quiet action at the bottom — a decision you make once during planning, not something you need in your face every time.</span>
+      </figcaption>
+    </figure>
+
+    <!-- 04 add exercise -->
+    <figure class="device">
+      <div class="phone" data-tab="plan">
+        <div class="app">
+          <div class="appbar"><div><div class="kicker">Add to Push Day</div><h2>Pick an exercise</h2></div></div>
+          <div class="search" style="margin-bottom:14px">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="9" r="6"/><path d="M13.5 13.5 17 17"/></svg>
+            <input value="chest" readonly>
+          </div>
+          <div class="chips" style="margin-bottom:16px">
+            <span class="fchip on">All</span><span class="fchip">Machine</span><span class="fchip">Barbell</span><span class="fchip">Dumbbell</span><span class="fchip">Cable</span>
+          </div>
+          <div class="stack">
+            <div class="card tap"><div class="exname">Machine Chest Press</div><div class="exmeta">Chest · Triceps, Front delts — Machine</div></div>
+            <div class="card tap"><div class="exname">Dumbbell Bench Press</div><div class="exmeta">Chest · Triceps — Dumbbell</div></div>
+            <div class="card tap"><div class="exname">Incline Dumbbell Press</div><div class="exmeta">Chest · Front delts — Dumbbell</div></div>
+            <div class="card tap"><div class="exname">Cable Fly</div><div class="exmeta">Chest — Cable</div></div>
+            <div class="card tap"><div class="rowline"><div><div class="exname">Push-up</div><div class="exmeta">Chest · Triceps — Bodyweight</div></div><span class="chip skipped">No weight</span></div></div>
+            <button class="btn ghost sm" style="margin-top:4px">Create custom exercise</button>
+          </div>
+        </div>
+      </div>
+      <figcaption>
+        <span class="cap-title">Plan — exercise picker</span>
+        <span class="cap-meta">§7 · §29</span>
+        <span class="cap-note">Bodyweight movements are flagged at the point of choosing, because that decides whether weight and volume apply later.</span>
+      </figcaption>
+    </figure>
+
+    <!-- 05 target editor -->
+    <figure class="device">
+      <div class="phone" data-tab="plan">
+        <div class="app">
+          <div class="appbar"><div><div class="kicker">Target</div><h2>Machine Chest Press</h2></div></div>
+          <div class="card" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+            <div><div class="exname">Same target every set</div><div class="exmeta">Turn off to set each set apart</div></div>
+            <div class="toggle" data-toggle></div>
+          </div>
+          <div class="field-lbl">Per-set targets</div>
+          <table class="ledger" style="margin-bottom:18px">
+            <thead><tr><th>Set</th><th>Reps</th><th>Weight</th><th></th></tr></thead>
+            <tbody>
+              <tr><td>1</td><td class="a">12</td><td class="a">20.0 kg</td><td class="r" style="color:var(--faint)">edit</td></tr>
+              <tr><td>2</td><td class="a">10</td><td class="a">25.0 kg</td><td class="r" style="color:var(--faint)">edit</td></tr>
+              <tr><td>3</td><td class="a">8</td><td class="a">30.0 kg</td><td class="r" style="color:var(--faint)">edit</td></tr>
+            </tbody>
+          </table>
+          <div class="field-lbl">Set 3</div>
+          <div class="setrow">
+            <div class="setrow-body" style="padding-bottom:16px">
+              <div class="field">
+                <div class="fieldnum" data-num="30.0">30.0</div><div class="fieldunit">kg</div>
+                <div class="stepper"><button data-step="-2.5">−</button><button data-step="2.5">+</button></div>
+              </div>
+              <div class="times">×</div>
+              <div class="field">
+                <div class="fieldnum" data-num="8">8</div><div class="fieldunit">reps</div>
+                <div class="stepper"><button data-step="-1">−</button><button data-step="1">+</button></div>
+              </div>
+            </div>
+          </div>
+          <div class="hint" style="margin:14px 0 16px">Leave weight empty for bodyweight movements — volume is skipped instead of logged as zero.</div>
+          <button class="btn">Save target</button>
+        </div>
+      </div>
+      <figcaption>
+        <span class="cap-title">Plan — target editor</span>
+        <span class="cap-meta">§9 <span class="live">steppers are live</span></span>
+        <span class="cap-note">Per-set targets are the underlying model, so a ramping 20/25/30 needs no migration later. Most days you leave the toggle on and never see this table.</span>
+      </figcaption>
+    </figure>
+  </div>
+
+  <!-- ============ GROUP: TODAY + WORKOUT ============ -->
+  <div class="group-head">
+    <h2>Today &amp; workout</h2>
+    <span class="meta">Phase 3 · §12–§21 · §33–§36</span>
+  </div>
+
+  <div class="rack">
+
+    <!-- 06 today workout -->
+    <figure class="device">
+      <div class="phone" data-tab="today">
+        <div class="app">
+          <div class="appbar">
+            <div><div class="kicker">Monday 22 August</div><h2>Push Day</h2><div class="sub">5 exercises · 15 sets</div></div>
+          </div>
+          <div class="stack" style="margin-bottom:18px">
+            <div class="card"><div class="rowline"><div><div class="exname">Machine Chest Press</div><div class="printed" style="margin-top:5px">target <b>3</b> × <b>10</b> · <b>30.0</b> kg</div></div></div></div>
+            <div class="card"><div class="rowline"><div><div class="exname">Incline Dumbbell Press</div><div class="printed" style="margin-top:5px">target <b>3</b> × <b>10</b> · <b>15.0</b> kg</div></div></div></div>
+            <div class="card"><div class="rowline"><div><div class="exname">Cable Fly</div><div class="printed" style="margin-top:5px">target <b>3</b> × <b>12</b> · <b>10.0</b> kg</div></div></div></div>
+            <div class="card"><div class="rowline"><div><div class="exname">Lateral Raise</div><div class="printed" style="margin-top:5px">target <b>3</b> × <b>15</b> · <b>7.5</b> kg</div></div></div></div>
+            <div class="card"><div class="rowline"><div><div class="exname">Tricep Pushdown</div><div class="printed" style="margin-top:5px">target <b>3</b> × <b>12</b> · <b>25.0</b> kg</div></div></div></div>
+          </div>
+          <button class="btn">Start workout</button>
+          <div class="hint" style="text-align:center;margin-top:12px">Last Push Day — 15 August · all 15 sets</div>
+        </div>
+      </div>
+      <figcaption>
+        <span class="cap-title">Today — workout day</span>
+        <span class="cap-meta">§12</span>
+        <span class="cap-note">Every target on this screen is printed type. Nothing is written in ink yet, because nothing has happened yet — the screen states its own status through the type treatment.</span>
+      </figcaption>
+    </figure>
+
+    <!-- 07 rest day -->
+    <figure class="device">
+      <div class="phone" data-tab="today">
+        <div class="app">
+          <div class="empty">
+            <div class="chip rest" style="font-size:11px">Wednesday 24 August</div>
+            <h3 style="font-size:38px">Rest day</h3>
+            <p>Nothing planned. Recovery counts as training.</p>
+            <div class="card" style="width:100%;margin-top:14px;text-align:left">
+              <div class="kicker" style="font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)">Tomorrow</div>
+              <div class="exname" style="margin-top:6px">Leg Day</div>
+              <div class="printed" style="margin-top:5px">5 exercises · <b>16</b> sets</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <figcaption>
+        <span class="cap-title">Today — rest day</span>
+        <span class="cap-meta">§6 · §33</span>
+        <span class="cap-note">The one screen with no card stack and no primary button. Tomorrow's workout is the only forward-looking element, so a rest day still tells you what's coming.</span>
+      </figcaption>
+    </figure>
+
+    <!-- 08 in progress -->
+    <figure class="device">
+      <div class="phone" data-tab="today">
+        <div class="app">
+          <div class="appbar"><div><div class="kicker">Monday 22 August</div><h2>Push Day</h2></div></div>
+          <div class="banner" style="margin-bottom:18px">
+            <div class="k">In progress</div>
+            <div style="display:flex;align-items:baseline;gap:9px;margin:8px 0 11px">
+              <span class="bignum" style="font-size:40px;color:var(--plate)">6</span>
+              <span class="printed">of <b>15</b> sets recorded</span>
+            </div>
+            <div class="progress"><i style="width:40%"></i></div>
+          </div>
+          <button class="btn" style="margin-bottom:10px">Continue workout</button>
+          <button class="btn sec">Finish here</button>
+          <div class="divider" style="margin:20px 0"></div>
+          <div class="field-lbl">Where you stopped</div>
+          <div class="stack">
+            <div class="card"><div class="rowline"><div><div class="exname">Incline Dumbbell Press</div><div class="printed" style="margin-top:5px">set <b>3</b> of <b>3</b></div></div><span class="chip achieved">Next</span></div></div>
+            <div class="card" style="opacity:.6"><div class="exname">Cable Fly</div><div class="printed" style="margin-top:5px">target <b>3</b> × <b>12</b> · <b>10.0</b> kg</div></div>
+          </div>
+        </div>
+      </div>
+      <figcaption>
+        <span class="cap-title">Today — resume</span>
+        <span class="cap-meta">§20</span>
+        <span class="cap-note">Appears after the app is killed mid-session. "Finish here" exists so an abandoned workout can be closed honestly rather than left open forever.</span>
+      </figcaption>
+    </figure>
+
+    <!-- 09 THE signature screen -->
+    <figure class="device">
+      <div class="phone" data-tab="today" id="liveWorkout">
+        <div class="app">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0 12px">
+            <div><div class="kicker" style="font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)">Push Day</div>
+            <div style="font-family:var(--mono);font-size:12px;color:var(--ink-2);margin-top:4px"><span id="setCount">6</span> / 15 sets · 2 of 5 exercises</div></div>
+            <button class="iconbtn" aria-label="Close workout"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+          </div>
+          <div class="progress" style="margin-bottom:20px"><i id="progFill" style="width:40%"></i></div>
+
+          <h2 style="font-size:25px;font-weight:800;font-variation-settings:'wdth' 110;letter-spacing:-.02em;line-height:1.1">Machine Chest Press</h2>
+          <div class="printed" style="margin:9px 0 18px">last time <b>30.0</b>×<b>10</b> · <b>30.0</b>×<b>10</b> · <b>30.0</b>×<b>8</b></div>
+
+          <div class="setrow done">
+            <div class="setrow-head"><span class="setlabel">Set 1</span><span class="printed">target <b>10</b> × <b>30.0</b></span></div>
+            <div class="setrow-body">
+              <div class="field"><div class="fieldnum">30.0</div><div class="fieldunit">kg</div></div>
+              <div class="times" style="padding-bottom:8px">×</div>
+              <div class="field"><div class="fieldnum">10</div><div class="fieldunit">reps</div></div>
+              <span class="chip achieved">Achieved</span>
+            </div>
+          </div>
+
+          <div class="setrow done">
+            <div class="setrow-head"><span class="setlabel">Set 2</span><span class="printed">target <b>10</b> × <b>30.0</b></span></div>
+            <div class="setrow-body">
+              <div class="field"><div class="fieldnum">30.0</div><div class="fieldunit">kg</div></div>
+              <div class="times" style="padding-bottom:8px">×</div>
+              <div class="field"><div class="fieldnum">12</div><div class="fieldunit">reps</div></div>
+              <span class="chip exceeded">+2 reps</span>
+            </div>
+          </div>
+
+          <div class="setrow" id="activeSet" style="border-color:var(--plate);box-shadow:0 0 0 3px var(--plate-soft)">
+            <div class="setrow-head" style="background:var(--plate-soft);border-bottom-color:var(--plate)">
+              <span class="setlabel" style="color:var(--plate)">Set 3</span>
+              <span class="printed">target <b>10</b> × <b>30.0</b></span>
+            </div>
+            <div class="setrow-body">
+              <div class="field">
+                <div class="fieldnum" data-num="30.0">30.0</div><div class="fieldunit">kg</div>
+                <div class="stepper"><button data-step="-2.5">−</button><button data-step="2.5">+</button></div>
+              </div>
+              <div class="times">×</div>
+              <div class="field">
+                <div class="fieldnum" data-num="10">10</div><div class="fieldunit">reps</div>
+                <div class="stepper"><button data-step="-1">−</button><button data-step="1">+</button></div>
+              </div>
+              <button class="check" id="completeSet" aria-label="Complete set">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 13l4 4L19 7"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:9px;margin-top:14px">
+            <button class="btn ghost sm" style="flex:1">Add set</button>
+            <button class="btn ghost sm" style="flex:1">Skip set</button>
+          </div>
+          <button class="btn sec sm" style="margin-top:9px">Next — Incline Dumbbell Press</button>
+          <button class="btn ghost sm" style="margin-top:9px;border-style:solid;border-color:transparent;color:var(--short)">Skip this exercise</button>
+        </div>
+      </div>
+      <figcaption>
+        <span class="cap-title">Workout — recording a set</span>
+        <span class="cap-meta">§13 · §14 · §18 · §35 · §36 <span class="live">fully interactive</span></span>
+        <span class="cap-note">The signature screen. Target sits printed in the header strip; your actual numbers are written large beneath it. Inputs arrive pre-filled with the target, so an on-plan set costs exactly one tap. Try the steppers, then the check.</span>
+      </figcaption>
+    </figure>
+
+    <!-- 10 exercise summary -->
+    <figure class="device">
+      <div class="phone" data-tab="today">
+        <div class="app">
+          <div style="padding:6px 0 20px"><div class="progress"><i style="width:60%"></i></div></div>
+          <div class="chip exceeded" style="margin-bottom:12px">Exercise complete</div>
+          <h2 style="font-size:25px;font-weight:800;font-variation-settings:'wdth' 110;letter-spacing:-.02em">Machine Chest Press</h2>
+          <div class="printed" style="margin:8px 0 20px">3 of <b>3</b> sets recorded</div>
+          <table class="ledger" style="margin-bottom:20px">
+            <thead><tr><th>Set</th><th>Target</th><th>Actual</th><th class="r">Result</th></tr></thead>
+            <tbody>
+              <tr><td>1</td><td class="t">10 × 30.0</td><td class="a">10 × 30.0</td><td class="r" style="color:var(--plate)">even</td></tr>
+              <tr><td>2</td><td class="t">10 × 30.0</td><td class="a">12 × 30.0</td><td class="r" style="color:var(--gain)">+2 reps</td></tr>
+              <tr><td>3</td><td class="t">10 × 30.0</td><td class="a">8 × 32.5</td><td class="r" style="color:var(--short)">−40 kg vol</td></tr>
+            </tbody>
+          </table>
+          <div class="statgrid" style="margin-bottom:20px">
+            <div class="stat"><div class="k">Volume</div><div class="v">860 kg</div></div>
+            <div class="stat"><div class="k">vs target</div><div class="v" style="color:var(--short)">−40</div></div>
+          </div>
+          <button class="btn">Next — Incline Dumbbell Press</button>
+        </div>
+      </div>
+      <figcaption>
+        <span class="cap-title">Workout — exercise summary</span>
+        <span class="cap-meta">§17 · §26</span>
+        <span class="cap-note">Set 3 went heavier but shorter. Volume decides the call, so the label is honest without being punitive — ochre, never red.</span>
+      </figcaption>
+    </figure>
+
+    <!-- 11 workout complete -->
+    <figure class="device">
+      <div class="phone" data-tab="today">
+        <div class="app">
+          <div style="padding-top:20px">
+            <div class="kicker" style="font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)">Monday 22 August</div>
+            <h2 style="font-size:33px;font-weight:800;font-variation-settings:'wdth' 112;letter-spacing:-.025em;margin-top:6px">Push Day done</h2>
+          </div>
+          <div style="display:flex;align-items:baseline;gap:10px;margin:26px 0 10px">
+            <span class="bignum">93</span><span class="printed" style="font-size:13px">% of plan</span>
+          </div>
+          <div class="progress gain" style="margin-bottom:24px"><i style="width:93%"></i></div>
+          <div class="statgrid" style="margin-bottom:12px">
+            <div class="stat"><div class="k">Exercises</div><div class="v">5 / 5</div></div>
+            <div class="stat"><div class="k">Sets</div><div class="v">15 / 15</div></div>
+          </div>
+          <div class="card" style="margin-bottom:20px">
+            <div class="field-lbl">Against target</div>
+            <div style="display:flex;flex-direction:column;gap:9px">
+              <div class="rowline"><span class="chip achieved">Achieved</span><span class="ink-num">12</span></div>
+              <div class="rowline"><span class="chip exceeded">Exceeded</span><span class="ink-num">2</span></div>
+              <div class="rowline"><span class="chip below">Below</span><span class="ink-num">1</span></div>
+            </div>
+            <div class="divider" style="margin:13px 0"></div>
+            <div class="rowline"><span class="printed">total volume</span><span class="ink-num">4,280 kg</span></div>
+          </div>
+          <button class="btn">Save workout</button>
+        </div>
+      </div>
+      <figcaption>
+        <span class="cap-title">Workout — complete</span>
+        <span class="cap-meta">§19</span>
+        <span class="cap-note">93% is the largest number in the app, and it counts planned sets only — bonus work can never push it past 100.</span>
+      </figcaption>
+    </figure>
+  </div>
+
+  <!-- ============ GROUP: HISTORY ============ -->
+  <div class="group-head">
+    <h2>History</h2>
+    <span class="meta">Phase 4 · §16 · §22–§27</span>
+  </div>
+
+  <div class="rack">
+
+    <!-- 12 timeline -->
+    <figure class="device">
+      <div class="phone" data-tab="history">
+        <div class="app">
+          <div class="appbar"><div><div class="kicker">This week</div><h2>History</h2></div></div>
+          <div class="card" style="margin-bottom:18px">
+            <div class="rowline" style="margin-bottom:11px"><span class="field-lbl" style="margin:0">Adherence</span><span class="ink-num" style="font-size:19px">80%</span></div>
+            <div class="progress" style="margin-bottom:10px"><i style="width:80%"></i></div>
+            <div class="rowline"><span class="printed">4 of <b>5</b> workouts</span><span class="printed">42 of <b>45</b> sets</span></div>
+          </div>
+          <div class="stack">
+            <div class="card tap"><div class="rowline"><div><div class="printed">Fri 21 August</div><div class="exname" style="margin-top:5px">Push Day</div><div class="exmeta">5 exercises · 14 of 15 sets</div></div><span class="chip below">1 skipped</span></div></div>
+            <div class="card restday" style="background:repeating-linear-gradient(135deg,var(--surface),var(--surface) 7px,var(--surface-2) 7px,var(--surface-2) 14px)"><div class="printed">Thu 20 August</div><div class="exname" style="margin-top:5px;color:var(--muted)">Rest day</div></div>
+            <div class="card tap"><div class="rowline"><div><div class="printed">Wed 19 August</div><div class="exname" style="margin-top:5px">Pull Day</div><div class="exmeta">4 exercises · 12 of 12 sets</div></div><span class="chip achieved">Complete</span></div></div>
+            <div class="card" style="border-style:dashed"><div class="rowline"><div><div class="printed">Tue 18 August</div><div class="exname" style="margin-top:5px;color:var(--short)">Leg Day</div><div class="exmeta">Nothing recorded</div></div><span class="chip below">Missed</span></div></div>
+            <div class="card tap"><div class="rowline"><div><div class="printed">Mon 17 August</div><div class="exname" style="margin-top:5px">Push Day</div><div class="exmeta">5 exercises · 15 of 15 sets</div></div><span class="chip exceeded">102% vol</span></div></div>
+          </div>
+        </div>
+      </div>
+      <figcaption>
+        <span class="cap-title">History — timeline</span>
+        <span class="cap-meta">§22 · §27</span>
+        <span class="cap-note">A day timeline, not a list of sessions: rest and missed days are generated from the plan version that was in force back then, so editing your routine today can't rewrite last week.</span>
+      </figcaption>
+    </figure>
+
+    <!-- 13 calendar -->
+    <figure class="device">
+      <div class="phone" data-tab="history">
+        <div class="app">
+          <div class="appbar"><div><div class="kicker">2026</div><h2>August</h2></div>
+            <button class="iconbtn" aria-label="Next month"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 5l7 7-7 7"/></svg></button>
+          </div>
+          <div class="cal" id="calGrid"></div>
+          <div class="legend">
+            <span><i style="background:#1B4FD8;border-color:#1B4FD8"></i>Completed</span>
+            <span><i style="border-color:#A56A12"></i>Partial</span>
+            <span><i style="background:#F7EFDD;border-color:#F7EFDD"></i>Missed</span>
+            <span><i style="background:transparent"></i>Rest</span>
+            <span><i style="background:transparent;border-style:dashed;opacity:.55"></i>To come</span>
+          </div>
+          <div class="divider" style="margin:20px 0"></div>
+          <div class="statgrid">
+            <div class="stat"><div class="k">Workouts</div><div class="v">17 / 21</div></div>
+            <div class="stat"><div class="k">Sets</div><div class="v">232</div></div>
+          </div>
+        </div>
+      </div>
+      <figcaption>
+        <span class="cap-title">History — calendar</span>
+        <span class="cap-meta">§23</span>
+        <span class="cap-note">One month of adherence at a glance. Filled cells are completed days; ochre marks the two you missed and the one you cut short.</span>
+      </figcaption>
+    </figure>
+
+    <!-- 14 day detail -->
+    <figure class="device">
+      <div class="phone" data-tab="history">
+        <div class="app">
+          <div class="appbar"><div><div class="kicker">Friday 21 August</div><h2>Push Day</h2><div class="sub">48 min · 4,280 kg total volume</div></div></div>
+          <div class="field-lbl">Machine Chest Press</div>
+          <table class="ledger" style="margin-bottom:22px">
+            <thead><tr><th>Set</th><th>Target</th><th>Actual</th><th class="r">Result</th></tr></thead>
+            <tbody>
+              <tr><td>1</td><td class="t">10 × 30.0</td><td class="a">10 × 30.0</td><td class="r" style="color:var(--plate)">even</td></tr>
+              <tr><td>2</td><td class="t">10 × 30.0</td><td class="a">12 × 30.0</td><td class="r" style="color:var(--gain)">+2 reps</td></tr>
+              <tr><td>3</td><td class="t">10 × 30.0</td><td class="a">8 × 32.5</td><td class="r" style="color:var(--short)">−40 vol</td></tr>
+            </tbody>
+          </table>
+          <div class="field-lbl">Incline Dumbbell Press</div>
+          <table class="ledger" style="margin-bottom:22px">
+            <thead><tr><th>Set</th><th>Target</th><th>Actual</th><th class="r">Result</th></tr></thead>
+            <tbody>
+              <tr><td>1</td><td class="t">10 × 15.0</td><td class="a">10 × 15.0</td><td class="r" style="color:var(--plate)">even</td></tr>
+              <tr><td>2</td><td class="t">10 × 15.0</td><td class="a">10 × 15.0</td><td class="r" style="color:var(--plate)">even</td></tr>
+              <tr><td>3</td><td class="t">10 × 15.0</td><td class="a" style="color:var(--skip)">—</td><td class="r" style="color:var(--skip)">skipped</td></tr>
+            </tbody>
+          </table>
+          <div class="field-lbl">Cable Fly <span style="color:var(--plate)">· added on the day</span></div>
+          <table class="ledger">
+            <thead><tr><th>Set</th><th>Target</th><th>Actual</th><th class="r">Result</th></tr></thead>
+            <tbody>
+              <tr><td>1</td><td class="t">—</td><td class="a">12 × 10.0</td><td class="r" style="color:var(--muted)">unplanned</td></tr>
+              <tr><td>2</td><td class="t">—</td><td class="a">12 × 10.0</td><td class="r" style="color:var(--muted)">unplanned</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <figcaption>
+        <span class="cap-title">History — day detail</span>
+        <span class="cap-meta">§16 · §21</span>
+        <span class="cap-note">Where the ledger idea pays off literally: printed target column, ink actual column. A skipped set shows an em-dash, and unplanned work has no target to compare against — so it's labelled, not scored.</span>
+      </figcaption>
+    </figure>
+
+    <!-- 15 exercise history -->
+    <figure class="device">
+      <div class="phone" data-tab="history">
+        <div class="app">
+          <div class="appbar"><div><div class="kicker">Exercise history</div><h2>Machine Chest Press</h2></div></div>
+          <div class="card" style="margin-bottom:18px">
+            <div class="field-lbl">Working weight</div>
+            <div style="display:flex;align-items:center;gap:9px;font-family:var(--mono);font-size:14px;flex-wrap:wrap">
+              <span style="color:var(--faint)">25.0</span><span style="color:var(--faint)">→</span>
+              <span style="color:var(--faint)">27.5</span><span style="color:var(--faint)">→</span>
+              <span style="color:var(--ink-2)">30.0</span><span style="color:var(--faint)">→</span>
+              <span class="ink-num" style="font-size:19px;color:var(--gain)">32.5</span>
+            </div>
+          </div>
+          <div class="statgrid" style="margin-bottom:20px">
+            <div class="stat"><div class="k">Best set</div><div class="v">32.5 × 10</div></div>
+            <div class="stat"><div class="k">Best volume</div><div class="v">920 kg</div></div>
+          </div>
+          <div class="field-lbl">Sessions</div>
+          <div class="stack">
+            <div class="card"><div class="rowline" style="margin-bottom:9px"><span class="printed">22 August</span><span class="chip exceeded">860 kg</span></div>
+              <div style="font-family:var(--mono);font-size:12px;color:var(--ink-2);font-variant-numeric:tabular-nums">30.0×10 · 30.0×10 · 32.5×8</div></div>
+            <div class="card"><div class="rowline" style="margin-bottom:9px"><span class="printed">15 August</span><span class="chip achieved">840 kg</span></div>
+              <div style="font-family:var(--mono);font-size:12px;color:var(--ink-2);font-variant-numeric:tabular-nums">30.0×10 · 30.0×9 · 30.0×8</div></div>
+            <div class="card"><div class="rowline" style="margin-bottom:9px"><span class="printed">8 August</span><span class="chip achieved">750 kg</span></div>
+              <div style="font-family:var(--mono);font-size:12px;color:var(--ink-2);font-variant-numeric:tabular-nums">25.0×10 · 25.0×10 · 25.0×10</div></div>
+          </div>
+          <div class="hint" style="margin-top:16px">Progression charts arrive after validation — the data is already being recorded for them.</div>
+        </div>
+      </div>
+      <figcaption>
+        <span class="cap-title">Exercise history</span>
+        <span class="cap-meta">§24 · §26</span>
+        <span class="cap-note">The working-weight run reads as a sentence — greyed past, ink present. No chart library needed to make progression obvious.</span>
+      </figcaption>
+    </figure>
+  </div>
+
+  <!-- ============ GROUP: LIBRARY + SETTINGS ============ -->
+  <div class="group-head">
+    <h2>Library &amp; settings</h2>
+    <span class="meta">Phase 1 · §29 · §30</span>
+  </div>
+
+  <div class="rack">
+
+    <!-- 16 library -->
+    <figure class="device">
+      <div class="phone" data-tab="exercises">
+        <div class="app">
+          <div class="appbar"><div><div class="kicker">128 exercises</div><h2>Exercises</h2></div>
+            <button class="iconbtn" aria-label="Create exercise"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 5v14M5 12h14"/></svg></button>
+          </div>
+          <div class="search" style="margin-bottom:14px">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="9" r="6"/><path d="M13.5 13.5 17 17"/></svg>
+            <input value="" placeholder="Search exercises" readonly>
+          </div>
+          <div class="chips" style="margin-bottom:16px">
+            <span class="fchip on">All</span><span class="fchip">Chest</span><span class="fchip">Back</span><span class="fchip">Legs</span><span class="fchip">Shoulders</span><span class="fchip">Arms</span>
+          </div>
+          <div class="stack">
+            <div class="card tap"><div class="exname">Bicep Curl</div><div class="exmeta">Biceps — Dumbbell</div></div>
+            <div class="card tap"><div class="exname">Cable Row</div><div class="exmeta">Back · Biceps — Cable</div></div>
+            <div class="card tap"><div class="rowline"><div><div class="exname">Cable Fly (wide grip)</div><div class="exmeta">Chest — Cable</div></div><span class="chip achieved">Custom</span></div></div>
+            <div class="card tap"><div class="exname">Calf Raise</div><div class="exmeta">Calves — Machine</div></div>
+            <div class="card tap"><div class="exname">Hack Squat</div><div class="exmeta">Quads · Glutes — Machine</div></div>
+            <div class="card tap"><div class="exname">Lat Pulldown</div><div class="exmeta">Back · Biceps — Cable</div></div>
+            <div class="card tap"><div class="exname">Lateral Raise</div><div class="exmeta">Side delts — Dumbbell</div></div>
+            <div class="card tap"><div class="exname">Leg Press</div><div class="exmeta">Quads · Glutes — Machine</div></div>
+          </div>
+        </div>
+      </div>
+      <figcaption>
+        <span class="cap-title">Exercise library</span>
+        <span class="cap-meta">§29 · §30</span>
+        <span class="cap-note">Phase 1 ships exactly this screen plus the editor beside it — searchable, seeded, and testable end to end before any plan exists.</span>
+      </figcaption>
+    </figure>
+
+    <!-- 17 custom exercise -->
+    <figure class="device">
+      <div class="phone" data-tab="exercises">
+        <div class="app">
+          <div class="appbar"><div><div class="kicker">Custom</div><h2>New exercise</h2></div></div>
+          <div class="stack-lg">
+            <div><div class="field-lbl">Name</div><div class="input">Cable Fly (wide grip)</div></div>
+            <div><div class="field-lbl">Primary muscle</div><div class="input">Chest</div></div>
+            <div><div class="field-lbl">Also works</div><div class="chips"><span class="fchip on">Front delts</span><span class="fchip">Triceps</span><span class="fchip">Biceps</span><span class="fchip">Core</span></div></div>
+            <div><div class="field-lbl">Equipment</div><div class="chips"><span class="fchip">Machine</span><span class="fchip">Barbell</span><span class="fchip">Dumbbell</span><span class="fchip on">Cable</span><span class="fchip">Bodyweight</span></div></div>
+            <div class="card" style="display:flex;align-items:center;justify-content:space-between">
+              <div><div class="exname">Track weight</div><div class="exmeta">Off for bodyweight movements</div></div>
+              <div class="toggle on" data-toggle></div>
+            </div>
+            <div><div class="field-lbl">Notes</div><div class="input mono" style="font-size:14px;color:var(--muted)">Hands slightly above shoulder height.</div></div>
+            <button class="btn">Save exercise</button>
+          </div>
+        </div>
+      </div>
+      <figcaption>
+        <span class="cap-title">Exercise — create custom</span>
+        <span class="cap-meta">§30 <span class="live">toggle is live</span></span>
+        <span class="cap-note">"Track weight" is the one field with downstream consequences — it decides whether this movement ever contributes volume.</span>
+      </figcaption>
+    </figure>
+
+    <!-- 18 settings -->
+    <figure class="device">
+      <div class="phone" data-tab="settings">
+        <div class="app">
+          <div class="appbar"><div><h2>Settings</h2></div></div>
+          <div class="card" style="margin-bottom:16px">
+            <div class="srow"><span class="lbl">Units</span><div class="seg"><button class="on">kg</button><button>lb</button></div></div>
+            <div class="srow"><span class="lbl">Weight step</span><span class="val">2.5 kg</span></div>
+            <div class="srow"><span class="lbl">Week starts</span><span class="val">Monday</span></div>
+          </div>
+          <div class="card" style="margin-bottom:16px">
+            <div class="srow"><div><span class="lbl">Rest timer</span><div class="exmeta">Not yet available</div></div><div class="toggle" style="opacity:.4"></div></div>
+            <div class="srow"><div><span class="lbl">Backup &amp; sync</span><div class="exmeta">Arrives after validation</div></div><span class="val">Off</span></div>
+          </div>
+          <div class="card">
+            <div class="srow"><span class="lbl">Export data</span><span class="val">JSON</span></div>
+            <div class="srow"><span class="lbl">Version</span><span class="val">0.1.0</span></div>
+          </div>
+          <div class="hint" style="margin-top:18px">All data lives on this device. Nothing is uploaded anywhere.</div>
+        </div>
+      </div>
+      <figcaption>
+        <span class="cap-title">Settings</span>
+        <span class="cap-meta">§38 · D2</span>
+        <span class="cap-note">Unbuilt features are shown as unavailable rather than hidden, so the roadmap is legible from inside the app. The closing line states the privacy position plainly.</span>
+      </figcaption>
+    </figure>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------- status bars + tab bars ---------- */
+  var TABS = [
+    {id:"today",    label:"Today",     d:"M4 5h16v15H4zM4 10h16M9 3v4M15 3v4"},
+    {id:"plan",     label:"Plan",      d:"M5 4h14v16H5zM9 9h6M9 13h6M9 17h3"},
+    {id:"history",  label:"History",   d:"M4 12a8 8 0 1 0 2.5-5.8M4 4v4h4M12 8v4l3 2"},
+    {id:"exercises",label:"Exercises", d:"M3 10v4M7 7v10M17 7v10M21 10v4M7 12h10"},
+    {id:"settings", label:"Settings",  d:"M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6M4 12h2M18 12h2M12 4v2M12 18v2"}
+  ];
+
+  document.querySelectorAll(".phone").forEach(function(phone){
+    var active = phone.getAttribute("data-tab");
+
+    var sb = document.createElement("div");
+    sb.className = "statusbar";
+    sb.innerHTML = '<span>9:41</span><span class="dots"><i></i><i></i><i></i><span class="batt"></span></span>';
+    phone.insertBefore(sb, phone.firstChild);
+
+    if(!active) return;
+    var nav = document.createElement("nav");
+    nav.className = "tabbar";
+    nav.innerHTML = TABS.map(function(t){
+      return '<button class="tab'+(t.id===active?" on":"")+'" type="button">' +
+             '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="'+t.d+'"/></svg>' +
+             '<span>'+t.label+'</span></button>';
+    }).join("");
+    phone.appendChild(nav);
+  });
+
+  /* ---------- steppers ---------- */
+  document.addEventListener("click", function(e){
+    var btn = e.target.closest("[data-step]");
+    if(!btn) return;
+    var field = btn.closest(".field");
+    var el = field && field.querySelector("[data-num]");
+    if(!el) return;
+    var step = parseFloat(btn.getAttribute("data-step"));
+    var val  = parseFloat(el.getAttribute("data-num")) + step;
+    if(val < 0) val = 0;
+    var decimals = Math.abs(step) < 1 ? 1 : (String(step).indexOf(".") > -1 ? 1 : 0);
+    el.setAttribute("data-num", val);
+    el.textContent = val.toFixed(decimals);
+  });
+
+  /* ---------- toggles ---------- */
+  document.addEventListener("click", function(e){
+    var t = e.target.closest("[data-toggle]");
+    if(t) t.classList.toggle("on");
+  });
+
+  /* ---------- live workout: complete the set ---------- */
+  var completeBtn = document.getElementById("completeSet");
+  if(completeBtn){
+    completeBtn.addEventListener("click", function(){
+      var row   = document.getElementById("activeSet");
+      var nums  = row.querySelectorAll("[data-num]");
+      var kg    = parseFloat(nums[0].getAttribute("data-num"));
+      var reps  = parseFloat(nums[1].getAttribute("data-num"));
+      var tKg = 30, tReps = 10;
+
+      var cls = "achieved", txt = "Achieved";
+      if(kg === tKg && reps > tReps){ cls="exceeded"; txt="+"+(reps-tReps)+" reps"; }
+      else if(kg === tKg && reps < tReps){ cls="below"; txt=(tReps-reps)+" reps short"; }
+      else if(reps === tReps && kg > tKg){ cls="exceeded"; txt="+"+(kg-tKg).toFixed(1)+" kg"; }
+      else if(reps === tReps && kg < tKg){ cls="below"; txt=(tKg-kg).toFixed(1)+" kg below"; }
+      else if(kg !== tKg || reps !== tReps){
+        var vol = kg*reps, tVol = tKg*tReps;
+        if(vol > tVol){ cls="exceeded"; txt="+"+Math.round(vol-tVol)+" kg vol"; }
+        else if(vol < tVol){ cls="below"; txt="−"+Math.round(tVol-vol)+" kg vol"; }
+      }
+
+      row.classList.add("done");
+      row.style.borderColor = "";
+      row.style.boxShadow = "";
+      var head = row.querySelector(".setrow-head");
+      head.style.background = "";
+      head.style.borderBottomColor = "";
+      row.querySelector(".setlabel").style.color = "";
+      row.querySelectorAll(".stepper").forEach(function(s){ s.remove(); });
+      row.querySelector(".times").style.paddingBottom = "8px";
+
+      var chip = document.createElement("span");
+      chip.className = "chip " + cls;
+      chip.textContent = txt;
+      completeBtn.replaceWith(chip);
+
+      var count = document.getElementById("setCount");
+      var n = Math.min(parseInt(count.textContent,10) + 1, 15);
+      count.textContent = n;
+      document.getElementById("progFill").style.width = Math.round(n/15*100) + "%";
+    });
+  }
+
+  /* ---------- calendar ---------- */
+  var grid = document.getElementById("calGrid");
+  if(grid){
+    var dows = ["M","T","W","T","F","S","S"];
+    var html = dows.map(function(d){ return '<div class="dow">'+d+'</div>'; }).join("");
+    // August 2026 starts on a Saturday
+    var status = {
+      3:"done",4:"done",5:"rest",6:"done",7:"done",8:"rest",9:"rest",
+      10:"done",11:"done",12:"rest",13:"done",14:"miss",15:"rest",16:"rest",
+      17:"done",18:"miss",19:"done",20:"rest",21:"part",22:"done"
+    };
+    for(var p=0;p<5;p++) html += '<div class="cell pad">'+(27+p)+'</div>';
+    for(var d=1; d<=31; d++){
+      var s = d > 22 ? "future" : (status[d] || "rest");
+      var isToday = d === 22;
+      html += '<div class="cell '+s+(isToday?" today":"")+'">'+d+'</div>';
+    }
+    grid.innerHTML = html;
+  }
+
+  /* ---------- theme ---------- */
+  var btn = document.getElementById("themeBtn");
+  btn.addEventListener("click", function(){
+    var dark = document.documentElement.getAttribute("data-theme") === "dark";
+    document.documentElement.setAttribute("data-theme", dark ? "light" : "dark");
+    btn.textContent = dark ? "Dark theme" : "Light theme";
+  });
+})();
+</script>
