@@ -11,3 +11,9 @@ jest.mock('@op-engineering/op-sqlite', () => ({
     throw new Error('op-sqlite is unavailable under Jest. Use createTestDb().');
   },
 }));
+
+// The library ships its own mock; a hand-rolled one misses the contexts that
+// React Navigation's tab bar consumes.
+jest.mock('react-native-safe-area-context', () =>
+  require('react-native-safe-area-context/jest/mock').default,
+);
