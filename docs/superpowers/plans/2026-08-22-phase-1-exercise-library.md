@@ -25,6 +25,13 @@ Carried forward from Phase 0's hard-won findings — do not regress these:
 - **`src/db/client.ts` adapts the op-sqlite connection for drizzle.** drizzle-orm 0.45.2's driver is broken on every read path against op-sqlite v18. Do not remove the adapter, and do not upgrade either package without re-running the Phase 0 device gate.
 - **Metro needs `unstable_enablePackageExports: true`.** Without it drizzle's ESM internal imports do not resolve.
 - **React Native Testing Library 14's `render` is async.** Always `await render(...)`.
+- **So is `fireEvent`.** `fireEvent.press` and `fireEvent.changeText` return promises in
+  RNTL 14. Un-awaited, the state update has not flushed by the next assertion, and a screen
+  appears to ignore everything typed into it. Always `await fireEvent.…`.
+- **Wait for what should be present, not for what should be gone.** A list that is still
+  loading also has no matching row in it, so `waitFor(() => expect(queryByText(x)).toBeNull())`
+  passes on the loading state and the next assertion races the data. Assert the positive
+  condition in the same `waitFor`.
 - **QueryClients in tests need `gcTime: 0` and an explicit `clear()` in teardown**, or the run hangs.
 - **Every `createTestDb()` must be closed** in teardown.
 - **Wait for a control to be *live*, not merely present, before firing an event.** Screens
