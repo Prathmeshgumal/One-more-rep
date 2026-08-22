@@ -1,5 +1,13 @@
 * text=auto eol=lf
+
+# Windows batch files break unless they keep CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Never touch these
 *.png binary
 *.jpg binary
-*.keystore binary
+*.ttf binary
 *.jar binary
+*.keystore binary
+*.jks binary

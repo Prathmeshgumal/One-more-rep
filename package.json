@@ -3,11 +3,12 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "android": "react-native run-android",
+    "android": "set NoDefaultCurrentDirectoryInExePath=&& react-native run-android",
     "start": "react-native start",
     "test": "jest",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src __tests__ scripts"
+    "lint": "eslint src __tests__ scripts",
+    "android:release": "set NoDefaultCurrentDirectoryInExePath=&& react-native run-android --mode release"
   },
   "dependencies": {
     "react": "19.2.3",
