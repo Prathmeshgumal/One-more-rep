@@ -6,8 +6,20 @@
     "noImplicitOverride": true,
     "noFallthroughCasesInSwitch": true,
     "forceConsistentCasingInFileNames": true,
-    "paths": { "@/*": ["./src/*"] }
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ]
+    },
+    "resolveJsonModule": true
   },
-  "include": ["src", "__tests__", "scripts", "drizzle.config.ts"],
-  "exclude": ["node_modules"]
+  "include": [
+    "src",
+    "__tests__",
+    "scripts",
+    "drizzle.config.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }

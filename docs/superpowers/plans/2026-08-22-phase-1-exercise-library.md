@@ -297,7 +297,7 @@ Expected: roughly 800 entries written.
 D12 rests on free-exercise-db being public domain. Verify rather than assume:
 
 ```bash
-curl -s https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/LICENSE | head -5
+curl -s https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/LICENSE.md | head -5
 ```
 
 Expected: the Unlicense. **If it is anything else, stop and raise it** — a Play Store release makes this a real question, not a formality.

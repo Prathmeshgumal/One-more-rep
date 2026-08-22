@@ -50,3 +50,6 @@ ehthumbs.db
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Upstream exercise data. The committed artefact is src/db/seed/exercises.json
+.exercise-source/
