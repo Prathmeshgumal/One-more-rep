@@ -15,10 +15,12 @@
   },
   "dependencies": {
     "@op-engineering/op-sqlite": "^18.1.4",
+    "@tanstack/react-query": "^5.101.4",
     "drizzle-orm": "^0.45.2",
     "react": "19.2.3",
     "react-native": "0.87.0",
-    "react-native-safe-area-context": "^5.5.2"
+    "react-native-safe-area-context": "^5.5.2",
+    "zustand": "^5.0.15"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
@@ -32,6 +34,7 @@
     "@react-native/jest-preset": "0.87.0",
     "@react-native/metro-config": "0.87.0",
     "@react-native/typescript-config": "0.87.0",
+    "@testing-library/react-native": "^14.0.1",
     "@types/better-sqlite3": "^9.6.0",
     "@types/jest": "^29.5.13",
     "@types/react": "^19.2.0",

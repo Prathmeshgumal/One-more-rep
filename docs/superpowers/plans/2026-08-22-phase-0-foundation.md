@@ -31,6 +31,10 @@ Every task's requirements implicitly include this section.
 - **Package name:** `com.onemorerep`. **Display name:** `One More Rep`.
 - **Versions:** React Native 0.87.0, React 19.2.3, TypeScript ^6.0.3, JDK 17, Node 24. Do not downgrade.
 - **Android SDK:** `ANDROID_HOME=C:\Android\Sdk`, platforms 36.1/37.0, build-tools 36.0.0/37.0.0.
+- **React Native Testing Library 14 made `render` async.** Always `await render(...)`, and read
+  queries off the awaited result rather than the global `screen`.
+- **`global.IS_REACT_ACT_ENVIRONMENT = true`** must be set in `jest.setup.js`; React 19 ignores
+  state updates inside `act()` without it.
 - **Commit after every task.** Conventional Commits (`feat:`, `test:`, `chore:`, `fix:`).
 
 ---
