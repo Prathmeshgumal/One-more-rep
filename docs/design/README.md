@@ -33,24 +33,47 @@ Falling short of a target is data, not failure. The app never uses red for it.
 |---|---|---|---|
 | 01 | First run — no plan yet | §4, §40 | 2 |
 | 02 | Plan — week overview | §5, §6 | 2 |
-| 03 | Plan — day setup | §5, §6, §8, §10 | 2 |
-| 04 | Plan — exercise picker | §7, §29 | 2 |
-| 05 | Plan — target editor | §9 | 2 |
-| 06 | Today — workout day | §12 | 3 |
-| 07 | Today — rest day | §6, §33 | 3 |
-| 08 | Today — resume | §20 | 3 |
-| 09 | **Workout — recording a set** | §13, §14, §18, §35, §36 | 3 |
-| 10 | Workout — exercise summary | §17, §26 | 3 |
-| 11 | Workout — complete | §19 | 3 |
-| 12 | History — timeline | §22, §27 | 4 |
-| 13 | History — calendar | §23 | 4 |
-| 14 | History — day detail | §16, §21 | 4 |
-| 15 | Exercise history | §24, §26 | 4 |
-| 16 | Exercise library | §29, §30 | 1 |
-| 17 | Exercise — create custom | §30 | 1 |
-| 18 | Settings | §38, D2 | 5 |
+| 03 | Plan — new day, nothing set up | §5, §6, §40 | 2 |
+| 04 | Plan — day setup | §5, §6, §8, §10 | 2 |
+| 05 | Plan — exercise picker (multi-select) | §7, §29 | 2 |
+| 06 | Plan — target editor | §9 | 2 |
+| 07 | Plan — copy a day | §31, §32 | 2 |
+| 08 | Today — workout day | §12 | 3 |
+| 09 | Today — rest day | §6, §33 | 3 |
+| 10 | Today — resume | §20 | 3 |
+| 11 | **Workout — recording a set** | §13, §14, §18, §35, §36 | 3 |
+| 12 | Workout — exercise summary | §17, §26 | 3 |
+| 13 | Workout — complete | §19 | 3 |
+| 14 | History — timeline | §22, §27 | 4 |
+| 15 | History — calendar | §23 | 4 |
+| 16 | History — day detail | §16, §21 | 4 |
+| 17 | Exercise history | §24, §26 | 4 |
+| 18 | Exercise library | §29, §30 | 1 |
+| 19 | Exercise — create custom | §30 | 1 |
+| 20 | Settings | §38, D2 | 5 |
 
-Screen 09 is the one to get right. Everything else is navigation around it.
+Screen 11 is the one to get right. Everything else is navigation around it.
+
+## Plan setup flow
+
+Screens 02 → 03 → 05 → 06 → 04 are one journey:
+
+1. **02** — tap an unconfigured day on the week overview
+2. **03** — the day opens empty. Name it, or declare it a rest day. Rest day is a full-width button *here only*, because the day is still undecided
+3. **05** — select several exercises at once; each lands on a 3 × 10 default so the day is immediately valid
+4. **06** — tune the real targets
+5. **04** — back on day setup, now populated. Rest day has demoted to a quiet line at the bottom, since the decision is made
+
+The rule: **rest day is prominent while a day is undecided, quiet once it has exercises.**
+
+### Planning a whole week
+
+Setting up five training days means adding roughly twenty-five exercises, so two screens exist specifically to stop that being miserable:
+
+- **05 is multi-select.** Check off everything for the day in one pass rather than one round trip per exercise.
+- **07 copies a day.** Configure Push once, copy it to Thursday and Sunday. Days that already hold exercises are outlined in ochre and warn that copying overwrites them.
+
+Copying forks a new plan version rather than editing the current one, so history keeps the targets it was performed at (§32, §39).
 
 ## Regenerating the images
 

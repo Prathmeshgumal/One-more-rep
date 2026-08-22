@@ -309,6 +309,13 @@ figcaption{display:flex;flex-direction:column;gap:5px}
 .fchip{border:1px solid var(--rule);border-radius:999px;padding:6px 13px;font-size:12px;font-weight:600;color:var(--ink-2);background:var(--surface)}
 .fchip.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
 
+.pick{width:26px;height:26px;border-radius:999px;border:1.8px solid var(--rule);flex:none;display:grid;place-items:center;color:transparent;background:var(--surface)}
+.pick.on{background:var(--plate);border-color:var(--plate);color:var(--plate-ink)}
+.pick svg{width:14px;height:14px}
+.selbar{position:sticky;bottom:0;background:var(--paper);padding:14px 0 2px;margin-top:10px}
+.selbar::before{content:"";position:absolute;left:0;right:0;bottom:100%;height:36px;background:linear-gradient(to top,var(--paper) 30%,transparent);pointer-events:none}
+.warn{font-family:var(--mono);font-size:10px;letter-spacing:.06em;color:var(--short);margin-top:4px}
+
 .toggle{width:48px;height:28px;border-radius:999px;background:var(--rule);position:relative;flex:none;transition:background .18s}
 .toggle::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:999px;background:var(--surface);box-shadow:0 1px 3px rgba(0,0,0,.2);transition:transform .18s}
 .toggle.on{background:var(--plate)}
@@ -427,7 +434,40 @@ figcaption{display:flex;flex-direction:column;gap:5px}
       </figcaption>
     </figure>
 
-    <!-- 03 day config -->
+    <!-- 03 NEW day — the empty first-open state -->
+    <figure class="device">
+      <div class="phone" data-tab="plan">
+        <div class="app">
+          <div class="appbar">
+            <div>
+              <div class="kicker">Monday</div>
+              <h2>Set up Monday</h2>
+              <div class="sub">Give it a name, then add exercises</div>
+            </div>
+          </div>
+          <div style="margin-bottom:20px">
+            <div class="field-lbl">Day name · optional</div>
+            <div class="input" style="color:var(--faint);font-weight:500">Push Day, Chest + Triceps…</div>
+          </div>
+          <div class="field-lbl">Exercises</div>
+          <div class="card" style="border-style:dashed;background:none;text-align:center;padding:30px 18px;margin-bottom:14px">
+            <div class="exname" style="color:var(--muted)">Nothing here yet</div>
+            <div class="hint" style="margin-top:6px">Add the exercises you plan to do on Mondays, with the sets, reps and weight you're aiming for.</div>
+          </div>
+          <button class="btn">Add exercise</button>
+          <div class="divider" style="margin:24px 0 16px"></div>
+          <div class="hint" style="text-align:center;margin-bottom:12px">Not training on Mondays?</div>
+          <button class="btn sec">Make Monday a rest day</button>
+        </div>
+      </div>
+      <figcaption>
+        <span class="cap-title">Plan — new day, nothing set up</span>
+        <span class="cap-meta">§5 · §6 · §40</span>
+        <span class="cap-note">What you see after tapping an unconfigured day on the week overview. Rest day sits as a full second button <em>here only</em> — while the day is still undecided, both answers deserve equal weight. Once the day has exercises it demotes to the quiet line in the next screen.</span>
+      </figcaption>
+    </figure>
+
+    <!-- 04 day config -->
     <figure class="device">
       <div class="phone" data-tab="plan">
         <div class="app">
@@ -462,7 +502,7 @@ figcaption{display:flex;flex-direction:column;gap:5px}
     <figure class="device">
       <div class="phone" data-tab="plan">
         <div class="app">
-          <div class="appbar"><div><div class="kicker">Add to Push Day</div><h2>Pick an exercise</h2></div></div>
+          <div class="appbar"><div><div class="kicker">Add to Push Day</div><h2>Pick exercises</h2><div class="sub"><span id="pickCount">3</span> selected</div></div></div>
           <div class="search" style="margin-bottom:14px">
             <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="9" r="6"/><path d="M13.5 13.5 17 17"/></svg>
             <input value="chest" readonly>
@@ -470,20 +510,24 @@ figcaption{display:flex;flex-direction:column;gap:5px}
           <div class="chips" style="margin-bottom:16px">
             <span class="fchip on">All</span><span class="fchip">Machine</span><span class="fchip">Barbell</span><span class="fchip">Dumbbell</span><span class="fchip">Cable</span>
           </div>
-          <div class="stack">
-            <div class="card tap"><div class="exname">Machine Chest Press</div><div class="exmeta">Chest · Triceps, Front delts — Machine</div></div>
-            <div class="card tap"><div class="exname">Dumbbell Bench Press</div><div class="exmeta">Chest · Triceps — Dumbbell</div></div>
-            <div class="card tap"><div class="exname">Incline Dumbbell Press</div><div class="exmeta">Chest · Front delts — Dumbbell</div></div>
-            <div class="card tap"><div class="exname">Cable Fly</div><div class="exmeta">Chest — Cable</div></div>
-            <div class="card tap"><div class="rowline"><div><div class="exname">Push-up</div><div class="exmeta">Chest · Triceps — Bodyweight</div></div><span class="chip skipped">No weight</span></div></div>
+          <div class="stack" id="pickList">
+            <div class="card tap"><div class="rowline"><div><div class="exname">Machine Chest Press</div><div class="exmeta">Chest · Triceps, Front delts — Machine</div></div><span class="pick on" data-pick><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span></div></div>
+            <div class="card tap"><div class="rowline"><div><div class="exname">Dumbbell Bench Press</div><div class="exmeta">Chest · Triceps — Dumbbell</div></div><span class="pick" data-pick><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span></div></div>
+            <div class="card tap"><div class="rowline"><div><div class="exname">Incline Dumbbell Press</div><div class="exmeta">Chest · Front delts — Dumbbell</div></div><span class="pick on" data-pick><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span></div></div>
+            <div class="card tap"><div class="rowline"><div><div class="exname">Cable Fly</div><div class="exmeta">Chest — Cable</div></div><span class="pick on" data-pick><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span></div></div>
+            <div class="card tap"><div class="rowline"><div><div class="exname">Push-up</div><div class="exmeta">Chest · Triceps — Bodyweight</div><span class="chip skipped" style="margin-top:6px">No weight</span></div><span class="pick" data-pick><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span></div></div>
             <button class="btn ghost sm" style="margin-top:4px">Create custom exercise</button>
+          </div>
+          <div class="selbar">
+            <button class="btn">Add <span id="pickCount2">3</span> exercises</button>
+            <div class="hint" style="text-align:center;margin-top:9px">Added at 3 × 10 — set the real targets next</div>
           </div>
         </div>
       </div>
       <figcaption>
         <span class="cap-title">Plan — exercise picker</span>
-        <span class="cap-meta">§7 · §29</span>
-        <span class="cap-note">Bodyweight movements are flagged at the point of choosing, because that decides whether weight and volume apply later.</span>
+        <span class="cap-meta">§7 · §29 <span class="live">selection is live</span></span>
+        <span class="cap-note">Multi-select, because building a week means adding twenty-five exercises, not one. Everything lands on a 3 × 10 default so the day is immediately valid, then you tune. Bodyweight is flagged at the point of choosing, since that decides whether volume ever applies.</span>
       </figcaption>
     </figure>
 
@@ -527,6 +571,33 @@ figcaption{display:flex;flex-direction:column;gap:5px}
         <span class="cap-title">Plan — target editor</span>
         <span class="cap-meta">§9 <span class="live">steppers are live</span></span>
         <span class="cap-note">Per-set targets are the underlying model, so a ramping 20/25/30 needs no migration later. Most days you leave the toggle on and never see this table.</span>
+      </figcaption>
+    </figure>
+
+    <!-- 07 duplicate day -->
+    <figure class="device">
+      <div class="phone" data-tab="plan">
+        <div class="app">
+          <div class="appbar"><div><div class="kicker">Copy from Monday</div><h2>Push Day</h2><div class="sub">5 exercises · 15 sets · targets included</div></div></div>
+          <div class="field-lbl">Copy to</div>
+          <div class="stack">
+            <div class="card tap"><div class="rowline"><div><div class="exname">Tuesday</div><div class="exmeta">Pull Day · 4 exercises</div></div><span class="pick" data-pick><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span></div></div>
+            <div class="card tap"><div class="rowline"><div><div class="exname">Wednesday</div><div class="exmeta">Rest day</div></div><span class="pick" data-pick><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span></div></div>
+            <div class="card tap" style="border-color:var(--short)"><div class="rowline"><div><div class="exname">Thursday</div><div class="exmeta">Leg Day · 5 exercises</div><div class="warn">Replaces what's there now</div></div><span class="pick on" data-pick><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span></div></div>
+            <div class="card tap"><div class="rowline"><div><div class="exname">Friday</div><div class="exmeta">Upper Body · 4 exercises</div></div><span class="pick" data-pick><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span></div></div>
+            <div class="card tap"><div class="rowline"><div><div class="exname">Saturday</div><div class="exmeta">Rest day</div></div><span class="pick" data-pick><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span></div></div>
+            <div class="card tap"><div class="rowline"><div><div class="exname">Sunday</div><div class="exmeta" style="color:var(--faint)">Not set up</div></div><span class="pick on" data-pick><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span></div></div>
+          </div>
+          <div class="selbar">
+            <button class="btn" data-copybtn>Copy to 2 days</button>
+            <div class="hint" style="text-align:center;margin-top:9px">Only changes your plan from here on. Past workouts keep the targets they were done at.</div>
+          </div>
+        </div>
+      </div>
+      <figcaption>
+        <span class="cap-title">Plan — copy a day</span>
+        <span class="cap-meta">§31 · §32 <span class="live">selection is live</span></span>
+        <span class="cap-note">The lever that makes week-at-once planning bearable: configure Push once, copy it to Thursday and Sunday. Days that already hold exercises are outlined in ochre and say so — copying overwrites, and that should never be a surprise. History is untouched, because copying forks a new plan version rather than editing the old one.</span>
       </figcaption>
     </figure>
   </div>
@@ -1043,6 +1114,27 @@ figcaption{display:flex;flex-direction:column;gap:5px}
   document.addEventListener("click", function(e){
     var t = e.target.closest("[data-toggle]");
     if(t) t.classList.toggle("on");
+  });
+
+  /* ---------- multi-select: picker + copy day ---------- */
+  document.addEventListener("click", function(e){
+    var p = e.target.closest("[data-pick]");
+    if(!p) return;
+    p.classList.toggle("on");
+
+    var app = p.closest(".app");
+    var n = app.querySelectorAll(".pick.on").length;
+
+    ["#pickCount", "#pickCount2"].forEach(function(sel){
+      var el = app.querySelector(sel);
+      if(el) el.textContent = n;
+    });
+
+    var copyBtn = app.querySelector("[data-copybtn]");
+    if(copyBtn) copyBtn.textContent = "Copy to " + n + " day" + (n === 1 ? "" : "s");
+
+    var addBtn = app.querySelector(".selbar .btn");
+    if(addBtn && !copyBtn) addBtn.style.opacity = n ? "1" : ".45";
   });
 
   /* ---------- live workout: complete the set ---------- */

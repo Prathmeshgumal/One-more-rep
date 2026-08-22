@@ -34,6 +34,7 @@ These were settled during brainstorming and are not open for re-litigation durin
 | D9 | **A web dashboard is planned**, following a 2–3 month validation period and a Play Store release. | Makes the Postgres port a committed deliverable rather than hypothetical, which is the primary reason Drizzle is the right ORM (see section 3). |
 | D10 | **Phases are vertical slices.** Each ships schema, domain logic, repository, and UI together and is independently testable end-to-end on a device. | Domain functions are built in the phase whose UI consumes them, never bulk-built in advance. Phase 0 is the only non-user-testable phase. |
 | D11 | **Screen designs are produced and approved before implementation planning**, and committed to `docs/design/` as images. | The implementation plan references approved screens rather than inventing UI during coding. |
+| D12 | **The exercise library is seeded from `free-exercise-db`**, transformed into the §29 schema at build time and bundled in the APK. | Licence verified as **the Unlicense** (public domain — no attribution, no share-alike, commercial use permitted), so it is safe for a Play Store release. Images are excluded from the MVP. |
 
 Throughout this document, **"the MVP" means Phases 0 through 5** in section 11. Numbered phases always refer to that table, never to release milestones.
 
@@ -87,7 +88,13 @@ All tables carry `id` (UUID text primary key), `created_at`, and `updated_at`. T
 | is_custom | boolean | Custom exercises behave identically to built-ins (§30) |
 | deleted_at | int? | **Soft delete only** — an exercise referenced by history must never be hard-deleted |
 
-Seeded at first launch from a bundled JSON library of common gym exercises.
+Seeded at first launch from a bundled JSON library (D12), transformed from [free-exercise-db](https://github.com/yuhonas/free-exercise-db) — ~800 exercises, released under the Unlicense.
+
+**Field mapping.** `name` → `name`; `primaryMuscles[0]` → `primary_muscle` with any remainder spilled into `secondary_muscles`; `secondaryMuscles` → `secondary_muscles`; `equipment` → `equipment` (may be null); `category` → `exercise_type`; `instructions[]` joined → `instructions`. Their `force`, `level`, and `mechanic` fields are dropped — additive later if wanted. Images are **not** bundled in the MVP; including ~1,600 photos would dominate APK size and §41 places images out of scope.
+
+**`weight_applicable` does not exist upstream and must be derived.** The mechanical rule is `equipment == "body only"` or `category` in (stretching, cardio) ⇒ false, everything else true — but the output requires a human review pass before it ships. An error here is silent and permanent: a bodyweight movement wrongly marked weight-bearing logs zero-kilogram volume into history forever.
+
+The transform runs as a checked-in script producing `src/db/seed/exercises.json`; the generated file is committed so builds are reproducible and offline.
 
 ### 4.2 The plan (versioned)
 
@@ -342,7 +349,7 @@ React Native Testing Library covers the workout screen's critical paths: complet
 | Phase | Contents | Gate — testable by the user |
 |---|---|---|
 | **0 — Foundation** *(not user-testable)* | RN CLI init, TypeScript strict, op-sqlite + Drizzle wiring, TS-constant migration runner (D7), TanStack Query (D8), five-tab navigation shell, Jest harness. | Fresh install applies migrations; tabs navigate; a screen round-trips a row; tests green. |
-| **1 — Exercise Library** | `exercises` schema + bundled seed, `exerciseRepo`, library browse and search UI, custom exercise create/edit. | **End-to-end:** open Exercises, search the library, create a custom exercise, see it listed and searchable. |
+| **1 — Exercise Library** | `exercises` schema, free-exercise-db transform script + `weight_applicable` derivation and review pass (D12), `exerciseRepo`, library browse and search UI, custom exercise create/edit. | **End-to-end:** open Exercises, search the library, filter by equipment, create a custom exercise, see it listed and searchable. |
 | **2 — Weekly Plan** | Plan tables, copy-on-write versioning, `planRepo`, week overview, day config, rest-day toggle, add/reorder exercises, target editor. | **End-to-end:** build a full week from empty, rename days, mark rest days, reorder exercises, edit targets — and confirm an edit forks a new version. |
 | **3 — Today & Workout** | Session tables, comparison + aggregation domain, `sessionRepo`, Today screen, workout execution, skip, unplanned work, live progress, resume, finish summary. | **End-to-end:** start today's workout, record every set, skip one, add an unplanned exercise and an extra set, force-kill the app and resume, finish and read the summary. |
 | **4 — History** | `dayResolver` + adherence domain, `historyRepo`, timeline, day detail, calendar, exercise history, volume, weekly adherence strip. | **End-to-end:** browse past workouts, open a day's detail, view one exercise's progression — then edit the plan and confirm history is unchanged. |

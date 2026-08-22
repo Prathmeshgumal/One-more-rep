@@ -11,82 +11,92 @@
   },
   {
     "n": "03",
-    "title": "Plan — day setup",
-    "file": "03-plan-day-setup.png"
+    "title": "Plan — new day, nothing set up",
+    "file": "03-plan-new-day-nothing-set-up.png"
   },
   {
     "n": "04",
-    "title": "Plan — exercise picker",
-    "file": "04-plan-exercise-picker.png"
+    "title": "Plan — day setup",
+    "file": "04-plan-day-setup.png"
   },
   {
     "n": "05",
-    "title": "Plan — target editor",
-    "file": "05-plan-target-editor.png"
+    "title": "Plan — exercise picker",
+    "file": "05-plan-exercise-picker.png"
   },
   {
     "n": "06",
-    "title": "Today — workout day",
-    "file": "06-today-workout-day.png"
+    "title": "Plan — target editor",
+    "file": "06-plan-target-editor.png"
   },
   {
     "n": "07",
-    "title": "Today — rest day",
-    "file": "07-today-rest-day.png"
+    "title": "Plan — copy a day",
+    "file": "07-plan-copy-a-day.png"
   },
   {
     "n": "08",
-    "title": "Today — resume",
-    "file": "08-today-resume.png"
+    "title": "Today — workout day",
+    "file": "08-today-workout-day.png"
   },
   {
     "n": "09",
-    "title": "Workout — recording a set",
-    "file": "09-workout-recording-a-set.png"
+    "title": "Today — rest day",
+    "file": "09-today-rest-day.png"
   },
   {
     "n": "10",
-    "title": "Workout — exercise summary",
-    "file": "10-workout-exercise-summary.png"
+    "title": "Today — resume",
+    "file": "10-today-resume.png"
   },
   {
     "n": "11",
-    "title": "Workout — complete",
-    "file": "11-workout-complete.png"
+    "title": "Workout — recording a set",
+    "file": "11-workout-recording-a-set.png"
   },
   {
     "n": "12",
-    "title": "History — timeline",
-    "file": "12-history-timeline.png"
+    "title": "Workout — exercise summary",
+    "file": "12-workout-exercise-summary.png"
   },
   {
     "n": "13",
-    "title": "History — calendar",
-    "file": "13-history-calendar.png"
+    "title": "Workout — complete",
+    "file": "13-workout-complete.png"
   },
   {
     "n": "14",
-    "title": "History — day detail",
-    "file": "14-history-day-detail.png"
+    "title": "History — timeline",
+    "file": "14-history-timeline.png"
   },
   {
     "n": "15",
-    "title": "Exercise history",
-    "file": "15-exercise-history.png"
+    "title": "History — calendar",
+    "file": "15-history-calendar.png"
   },
   {
     "n": "16",
-    "title": "Exercise library",
-    "file": "16-exercise-library.png"
+    "title": "History — day detail",
+    "file": "16-history-day-detail.png"
   },
   {
     "n": "17",
-    "title": "Exercise — create custom",
-    "file": "17-exercise-create-custom.png"
+    "title": "Exercise history",
+    "file": "17-exercise-history.png"
   },
   {
     "n": "18",
+    "title": "Exercise library",
+    "file": "18-exercise-library.png"
+  },
+  {
+    "n": "19",
+    "title": "Exercise — create custom",
+    "file": "19-exercise-create-custom.png"
+  },
+  {
+    "n": "20",
     "title": "Settings",
-    "file": "18-settings.png"
+    "file": "20-settings.png"
   }
 ]
