@@ -1,5 +1,5 @@
 import React, {useState} from 'react';
-import {FlatList, StyleSheet, View} from 'react-native';
+import {FlatList, Pressable, StyleSheet, View} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
@@ -7,7 +7,7 @@ import {AppText} from '@/ui/Text';
 import {Card} from '@/ui/Card';
 import {Chip} from '@/ui/Chip';
 import {SearchField} from '@/ui/SearchField';
-import {useTheme, space} from '@/theme';
+import {useTheme, space, radius} from '@/theme';
 import type {Exercise} from '@/repositories/exerciseRepo';
 import type {ExercisesStackParamList} from '@/navigation/types';
 import {MUSCLE_FILTERS} from './muscles';
@@ -46,6 +46,16 @@ export function ExerciseListScreen() {
           : `${data.length} exercise${data.length === 1 ? '' : 's'}`}
       </AppText>
       <AppText variant="h1">Exercises</AppText>
+
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Create exercise"
+        onPress={() => navigation.navigate('ExerciseEditor', {})}
+        style={[styles.create, {borderColor: colors.rule}]}>
+        <AppText variant="bodyStrong" color="plate">
+          New exercise
+        </AppText>
+      </Pressable>
 
       <SearchField
         value={search}
@@ -116,6 +126,12 @@ const styles = StyleSheet.create({
     gap: space.md,
   },
   header: {gap: space.md, marginBottom: space.xs},
+  create: {
+    borderWidth: 1,
+    borderRadius: radius.md,
+    paddingVertical: space.md,
+    alignItems: 'center',
+  },
   chips: {flexDirection: 'row', flexWrap: 'wrap', gap: space.sm},
   row: {flexDirection: 'row', alignItems: 'center', gap: space.md},
   grow: {flex: 1, gap: 2},

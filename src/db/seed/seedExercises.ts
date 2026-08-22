@@ -1,7 +1,7 @@
 import {sql} from 'drizzle-orm';
 import {exercises} from '@/db/schema';
 import type {AppDatabase} from '@/db/types';
-import {seedExerciseData, type SeedExercise} from './index';
+import {loadSeedExercises, type SeedExercise} from './index';
 
 /**
  * Inserts in batches rather than one statement per row: ~800 individual
@@ -18,7 +18,7 @@ const BATCH_SIZE = 100;
  */
 export async function seedExercises(
   db: AppDatabase,
-  data: readonly SeedExercise[] = seedExerciseData,
+  data?: readonly SeedExercise[],
 ): Promise<{inserted: number}> {
   const existing = await db.all<{n: number}>(
     sql`SELECT COUNT(*) AS n FROM exercises WHERE is_custom = 0`,
@@ -27,8 +27,11 @@ export async function seedExercises(
     return {inserted: 0};
   }
 
+  // Loaded only now, past the point of no return: on every launch after the
+  // first this function has already returned, and the 776 KB of seed data is
+  // never touched.
   const now = Date.now();
-  const rows = data.map(e => ({
+  const rows = (data ?? loadSeedExercises()).map(e => ({
     id: e.id,
     name: e.name,
     primaryMuscle: e.primaryMuscle,

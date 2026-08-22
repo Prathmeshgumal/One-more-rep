@@ -1,12 +1,12 @@
 import React from 'react';
-import {render, fireEvent, waitFor} from '@testing-library/react-native';
-import {NavigationContainer} from '@react-navigation/native';
-import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
-import {runMigrations} from '@/db/migrate';
-import {ThemeProvider} from '@/theme';
-import {DatabaseContextTestProvider} from '@/providers/DatabaseGate';
-import {RootNavigator} from '@/navigation/RootNavigator';
-import {createTestDb} from '../helpers/testDb';
+import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { runMigrations } from '@/db/migrate';
+import { ThemeProvider } from '@/theme';
+import { DatabaseContextTestProvider } from '@/providers/DatabaseGate';
+import { RootNavigator } from '@/navigation/RootNavigator';
+import { createTestDb } from '../helpers/testDb';
 
 describe('RootNavigator', () => {
   let ctx: ReturnType<typeof createTestDb>;
@@ -29,7 +29,7 @@ describe('RootNavigator', () => {
     ctx = createTestDb();
     await runMigrations(ctx.db);
     client = new QueryClient({
-      defaultOptions: {queries: {retry: false, gcTime: 0}},
+      defaultOptions: { queries: { retry: false, gcTime: 0 } },
     });
   });
 
@@ -54,7 +54,9 @@ describe('RootNavigator', () => {
       ['Settings', /weight unit/i],
     ];
     for (const [tab, marker] of tabs) {
-      fireEvent.press(view.getByRole('button', {name: new RegExp(tab)}));
+      await fireEvent.press(
+        view.getByRole('button', { name: new RegExp(tab) }),
+      );
       await waitFor(() => {
         expect(view.getAllByText(marker).length).toBeGreaterThan(0);
       });

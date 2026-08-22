@@ -1,10 +1,10 @@
 import React from 'react';
-import {render, fireEvent} from '@testing-library/react-native';
-import {ThemeProvider} from '@/theme';
-import {SearchField} from '@/ui/SearchField';
-import {Chip} from '@/ui/Chip';
-import {Card} from '@/ui/Card';
-import {AppText} from '@/ui/Text';
+import { render, fireEvent } from '@testing-library/react-native';
+import { ThemeProvider } from '@/theme';
+import { SearchField } from '@/ui/SearchField';
+import { Chip } from '@/ui/Chip';
+import { Card } from '@/ui/Card';
+import { AppText } from '@/ui/Text';
 
 const wrap = (ui: React.ReactElement) =>
   render(<ThemeProvider>{ui}</ThemeProvider>);
@@ -19,7 +19,10 @@ describe('SearchField', () => {
         placeholder="Search exercises"
       />,
     );
-    fireEvent.changeText(view.getByPlaceholderText('Search exercises'), 'squat');
+    await fireEvent.changeText(
+      view.getByPlaceholderText('Search exercises'),
+      'squat',
+    );
     expect(onChangeText).toHaveBeenCalledWith('squat');
   });
 
@@ -31,7 +34,7 @@ describe('SearchField', () => {
     const filled = await wrap(
       <SearchField value="squat" onChangeText={onChangeText} />,
     );
-    fireEvent.press(filled.getByLabelText('Clear search'));
+    await fireEvent.press(filled.getByLabelText('Clear search'));
     expect(onChangeText).toHaveBeenCalledWith('');
   });
 });
@@ -47,7 +50,7 @@ describe('Chip', () => {
   it('fires onPress', async () => {
     const onPress = jest.fn();
     const view = await wrap(<Chip label="Back" onPress={onPress} />);
-    fireEvent.press(view.getByLabelText('Back'));
+    await fireEvent.press(view.getByLabelText('Back'));
     expect(onPress).toHaveBeenCalled();
   });
 });

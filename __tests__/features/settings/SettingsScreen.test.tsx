@@ -1,12 +1,12 @@
 import React from 'react';
-import {render, fireEvent, waitFor} from '@testing-library/react-native';
-import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
-import {runMigrations} from '@/db/migrate';
-import {getSettings} from '@/repositories/settingsRepo';
-import {ThemeProvider} from '@/theme';
-import {SettingsScreen} from '@/features/settings/SettingsScreen';
-import {DatabaseContextTestProvider} from '@/providers/DatabaseGate';
-import {createTestDb} from '../../helpers/testDb';
+import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { runMigrations } from '@/db/migrate';
+import { getSettings } from '@/repositories/settingsRepo';
+import { ThemeProvider } from '@/theme';
+import { SettingsScreen } from '@/features/settings/SettingsScreen';
+import { DatabaseContextTestProvider } from '@/providers/DatabaseGate';
+import { createTestDb } from '../../helpers/testDb';
 
 describe('SettingsScreen', () => {
   let ctx: ReturnType<typeof createTestDb>;
@@ -28,7 +28,7 @@ describe('SettingsScreen', () => {
     await runMigrations(ctx.db);
     // gcTime 0 so no collection timer outlives the test and hangs the run.
     client = new QueryClient({
-      defaultOptions: {queries: {retry: false, gcTime: 0}},
+      defaultOptions: { queries: { retry: false, gcTime: 0 } },
     });
   });
 
@@ -58,7 +58,7 @@ describe('SettingsScreen', () => {
       ).toBe(true);
     });
 
-    fireEvent.press(view.getByLabelText('Pounds'));
+    await fireEvent.press(view.getByLabelText('Pounds'));
 
     // Wait on the UI, not on the database. The screen only shows Pounds
     // selected once the write has landed and its invalidation has refetched,

@@ -1,9 +1,13 @@
+import {readFileSync} from 'node:fs';
 import {sql} from 'drizzle-orm';
 import {runMigrations} from '@/db/migrate';
 import {seedExercises} from '@/db/seed/seedExercises';
-import {seedExerciseData} from '@/db/seed';
+import * as seedModule from '@/db/seed';
+import {loadSeedExercises} from '@/db/seed';
 import {listExercises, createCustomExercise} from '@/repositories/exerciseRepo';
 import {createTestDb} from '../helpers/testDb';
+
+const seedExerciseData = loadSeedExercises();
 
 describe('seedExercises', () => {
   let ctx: ReturnType<typeof createTestDb>;
@@ -63,5 +67,29 @@ describe('seedExercises', () => {
       sql`SELECT COUNT(*) AS n FROM exercises`,
     );
     expect(rows[0]?.n).toBe(0);
+  });
+
+  // The seed data is 776 KB, three quarters of it instruction text. It must be
+  // read once in the app's lifetime, not on every cold start — so the count
+  // check has to come first, and nothing may pull the JSON in statically.
+  it('never reads the seed data on a database that is already seeded', async () => {
+    await seedExercises(ctx.db);
+    const load = jest.spyOn(seedModule, 'loadSeedExercises');
+    try {
+      expect((await seedExercises(ctx.db)).inserted).toBe(0);
+      expect(load).not.toHaveBeenCalled();
+    } finally {
+      load.mockRestore();
+    }
+  });
+
+  it('reaches the seed data only through the on-demand loader', () => {
+    const sources = [
+      readFileSync('src/db/seed/index.ts', 'utf8'),
+      readFileSync('src/db/seed/seedExercises.ts', 'utf8'),
+    ];
+    for (const source of sources) {
+      expect(source).not.toMatch(/^import .*exercises\.json/m);
+    }
   });
 });

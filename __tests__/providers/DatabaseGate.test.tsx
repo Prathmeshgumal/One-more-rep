@@ -1,9 +1,9 @@
 import React from 'react';
-import {Text} from 'react-native';
-import {render, waitFor} from '@testing-library/react-native';
-import {ThemeProvider} from '@/theme';
-import {DatabaseGate} from '@/providers/DatabaseGate';
-import {createTestDb} from '../helpers/testDb';
+import { Text } from 'react-native';
+import { render, waitFor } from '@testing-library/react-native';
+import { ThemeProvider } from '@/theme';
+import { DatabaseGate } from '@/providers/DatabaseGate';
+import { createTestDb } from '../helpers/testDb';
 
 // React Native Testing Library 14 made render async.
 const wrap = (ui: React.ReactElement) =>
@@ -17,7 +17,7 @@ describe('DatabaseGate', () => {
   });
 
   it('renders children once migrations succeed', async () => {
-    const {db, close} = createTestDb();
+    const { db, close } = createTestDb();
     open.push(close);
     const view = await wrap(
       <DatabaseGate getDb={() => db}>
@@ -32,7 +32,8 @@ describe('DatabaseGate', () => {
       <DatabaseGate
         getDb={() => {
           throw new Error('disk is full');
-        }}>
+        }}
+      >
         <Text>ready</Text>
       </DatabaseGate>,
     );

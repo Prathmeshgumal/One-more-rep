@@ -1,5 +1,7 @@
-import {seedExerciseData} from '@/db/seed';
+import {loadSeedExercises} from '@/db/seed';
 import {MUSCLE_FILTERS} from '@/features/exercises/muscles';
+
+const seedExerciseData = loadSeedExercises();
 
 describe('bundled exercise seed', () => {
   it('carries a substantial library', () => {
