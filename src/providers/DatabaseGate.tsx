@@ -2,6 +2,7 @@ import React, {createContext, useContext, useEffect, useState} from 'react';
 import {ActivityIndicator, ScrollView, StyleSheet, Text, View} from 'react-native';
 import {getDatabase} from '@/db/client';
 import {runMigrations} from '@/db/migrate';
+import {seedExercises} from '@/db/seed/seedExercises';
 import type {AppDatabase} from '@/db/types';
 import {useTheme, type as typeScale, space, radius} from '@/theme';
 
@@ -21,8 +22,12 @@ type Status =
   | {phase: 'failed'; reason: string};
 
 /**
- * Runs migrations before anything else renders. A failure shows a blocking
- * screen rather than a crash loop (spec section 10).
+ * Runs migrations and seeds the exercise library before anything else renders.
+ * A failure shows a blocking screen rather than a crash loop (spec section 10).
+ *
+ * Seeding lives here rather than behind the library screen so a half-populated
+ * library can never be browsed: either the whole library is in, or the gate
+ * says so.
  */
 export function DatabaseGate({
   children,
@@ -40,6 +45,7 @@ export function DatabaseGate({
       try {
         const db = getDb();
         await runMigrations(db);
+        await seedExercises(db);
         if (!cancelled) {
           setStatus({phase: 'ready', db});
         }
