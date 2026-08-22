@@ -1,0 +1,457 @@
+<title>Six Directions</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wdth,wght@62.5..125,400..800&family=Barlow:wght@400;500;600;700&family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=DM+Sans:wght@400;500;700&family=Fraunces:opsz,wght@9..144,400..900&family=IBM+Plex+Mono:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&family=Karla:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;800&display=swap">
+
+<style>
+/* ============ board chrome (theme-aware) ============ */
+:root{
+  --bg:#E8EAEE; --bg2:#FFFFFF; --fg:#12161B; --fg2:#4A535E; --line:#D3D9E0;
+  --hl:#1B4FD8;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0A0C0F; --bg2:#14181D; --fg:#E8ECF1; --fg2:#98A2AE; --line:#272E37; --hl:#5B87FF;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0A0C0F; --bg2:#14181D; --fg:#E8ECF1; --fg2:#98A2AE; --line:#272E37; --hl:#5B87FF;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:'Archivo',system-ui,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+h1,h2,h3,p{margin:0}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+:focus-visible{outline:2px solid var(--hl);outline-offset:2px}
+
+.board{max-width:1900px;margin:0 auto;padding:56px 30px 90px}
+.top{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:30px;align-items:end;padding-bottom:26px;border-bottom:1px solid var(--line)}
+.top .eb{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--fg2)}
+.top h1{font-size:clamp(32px,4.6vw,50px);font-weight:800;font-variation-settings:'wdth' 112;letter-spacing:-.022em;margin-top:9px;line-height:1.03}
+.top p{max-width:66ch;color:var(--fg2);margin-top:12px;font-size:15px}
+.tbtn{border:1px solid var(--line);border-radius:999px;padding:9px 16px;font-size:13px;font-weight:600;color:var(--fg2);background:var(--bg2)}
+.tbtn:hover{border-color:var(--hl);color:var(--hl)}
+
+.dir{padding:44px 0 10px;border-bottom:1px solid var(--line)}
+.dirhead{display:flex;flex-wrap:wrap;gap:22px;align-items:flex-start;justify-content:space-between;margin-bottom:26px}
+.dirname{display:flex;align-items:baseline;gap:13px}
+.dirnum{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--fg2);letter-spacing:.1em}
+.dirname h2{font-size:27px;font-weight:800;font-variation-settings:'wdth' 110;letter-spacing:-.02em}
+.dirdesc{max-width:56ch;color:var(--fg2);font-size:14px;margin-top:8px;line-height:1.5}
+.specs{display:flex;flex-wrap:wrap;gap:7px;align-items:center}
+.sp{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.05em;border:1px solid var(--line);border-radius:999px;padding:5px 11px;color:var(--fg2);background:var(--bg2);white-space:nowrap}
+.sw{display:flex;gap:0;border-radius:999px;overflow:hidden;border:1px solid var(--line)}
+.sw i{width:26px;height:26px;display:block}
+.rack{display:flex;gap:26px;flex-wrap:wrap}
+
+/* ============ phone shell ============ */
+.ph{width:352px;height:762px;border-radius:36px;overflow:hidden;position:relative;display:flex;flex-direction:column;
+    box-shadow:0 2px 6px rgba(0,0,0,.12), 0 22px 54px rgba(0,0,0,.17);background:var(--p-paper);color:var(--p-ink);font-family:var(--p-body)}
+.sb{height:40px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 22px;font-size:12px;font-weight:600;opacity:.85}
+.sb .dd{display:flex;gap:4px;align-items:center}
+.sb .dd i{width:4px;height:4px;border-radius:99px;background:currentColor;opacity:.6;display:block}
+.sb .bt{width:20px;height:10px;border:1.3px solid currentColor;border-radius:2px;opacity:.55}
+.scr{flex:1;overflow:hidden;padding:0 var(--p-pad) 14px}
+.tb{flex:none;height:64px;display:grid;grid-template-columns:repeat(5,1fr);border-top:1px solid var(--p-rule);background:var(--p-surface);padding-bottom:8px}
+.tbi{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--p-faint);font-size:9.5px;font-weight:600}
+.tbi svg{width:19px;height:19px}
+.tbi.on{color:var(--p-accent)}
+
+/* ============ shared component skeleton (tokens do the talking) ============ */
+.bar{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:4px 0 14px}
+.kick{font-family:var(--p-meta);font-size:10.5px;letter-spacing:var(--p-track);text-transform:var(--p-case);color:var(--p-muted)}
+.h{font-family:var(--p-disp);font-size:var(--p-h);font-weight:var(--p-hw);letter-spacing:var(--p-hls);line-height:1.08;margin-top:5px;color:var(--p-ink);text-transform:var(--p-hcase)}
+.sub{font-size:12.5px;color:var(--p-muted);margin-top:4px}
+.stk{display:flex;flex-direction:column;gap:var(--p-gap)}
+.cd{background:var(--p-surface);border:var(--p-bd);border-radius:var(--p-r);padding:var(--p-cpad)}
+.ex{font-family:var(--p-disp);font-size:var(--p-ex);font-weight:var(--p-exw);letter-spacing:var(--p-exls);color:var(--p-ink);text-transform:var(--p-hcase)}
+.mt{font-family:var(--p-meta);font-size:11px;color:var(--p-muted);margin-top:3px;letter-spacing:.03em}
+.pr{font-family:var(--p-meta);font-size:10.5px;letter-spacing:var(--p-track);color:var(--p-faint);text-transform:var(--p-case)}
+.pr b{font-weight:600;color:var(--p-muted)}
+.btn{display:flex;align-items:center;justify-content:center;width:100%;height:var(--p-bh);border-radius:var(--p-br);background:var(--p-accent);color:var(--p-on);
+     font-family:var(--p-disp);font-size:var(--p-bs);font-weight:var(--p-bw);letter-spacing:var(--p-bls);text-transform:var(--p-bcase)}
+.btn.sec{background:var(--p-surface);color:var(--p-ink);border:var(--p-bd)}
+.btn.gh{background:none;border:1px dashed var(--p-rule);color:var(--p-muted);font-size:12.5px;height:38px}
+.rw{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.ch{display:inline-flex;align-items:center;font-family:var(--p-meta);font-size:9.5px;font-weight:600;letter-spacing:var(--p-track);text-transform:uppercase;border-radius:var(--p-chr);padding:3px 8px}
+.ch.ok{background:var(--p-surface2);color:var(--p-ink2);box-shadow:inset 0 0 0 1px var(--p-rule)}
+.ch.up{background:var(--p-gainsoft);color:var(--p-gain)}
+.ch.dn{background:var(--p-shortsoft);color:var(--p-short)}
+.ch.sk{background:var(--p-rule);color:var(--p-faint)}
+.pg{height:var(--p-pgh);border-radius:99px;background:var(--p-rule);overflow:hidden}
+.pg i{display:block;height:100%;background:var(--p-accent);border-radius:99px}
+.lbl{font-family:var(--p-meta);font-size:9.5px;letter-spacing:var(--p-track);text-transform:uppercase;color:var(--p-muted);margin-bottom:7px}
+.dv{height:1px;background:var(--p-rule);margin:3px 0}
+
+/* set rows */
+.sr{border:var(--p-bd);border-radius:var(--p-r);background:var(--p-surface);overflow:hidden}
+.sr+.sr{margin-top:7px}
+.srh{display:flex;align-items:center;justify-content:space-between;padding:7px 12px;background:var(--p-surface2);border-bottom:var(--p-dash)}
+.srl{font-family:var(--p-meta);font-size:10px;font-weight:600;letter-spacing:var(--p-track);text-transform:uppercase;color:var(--p-ink2)}
+.srb{display:flex;align-items:center;gap:7px;padding:11px 12px}
+.fl{flex:1;text-align:center}
+.fn{font-family:var(--p-num);font-size:var(--p-fn);font-weight:var(--p-nw);letter-spacing:var(--p-nls);line-height:1;font-variant-numeric:tabular-nums;color:var(--p-ink);font-variation-settings:var(--p-nvar)}
+.fu{font-family:var(--p-meta);font-size:9px;letter-spacing:var(--p-track);text-transform:uppercase;color:var(--p-muted);margin-top:4px}
+.xx{font-size:14px;color:var(--p-faint);padding-bottom:12px}
+.st{display:flex;gap:5px;justify-content:center;margin-top:8px}
+.st button{width:38px;height:31px;border-radius:calc(var(--p-r) * .5);border:var(--p-bd);background:var(--p-surface2);font-size:15px;font-weight:600;color:var(--p-ink2);line-height:1}
+.ck{width:48px;height:48px;border-radius:var(--p-ckr);background:var(--p-accent);color:var(--p-on);display:grid;place-items:center;flex:none}
+.ck svg{width:21px;height:21px}
+.sr.dn2 .srb{padding:9px 12px}
+.sr.dn2 .fn{font-size:calc(var(--p-fn) * .58)}
+
+/* ledger table */
+.lg{width:100%;border-collapse:collapse;font-family:var(--p-num);font-size:11.5px}
+.lg th{text-align:left;font-family:var(--p-meta);font-weight:600;font-size:9.5px;letter-spacing:var(--p-track);text-transform:uppercase;color:var(--p-muted);padding:0 0 7px;border-bottom:1px solid var(--p-rule)}
+.lg td{padding:8px 0;border-bottom:var(--p-dash);font-variant-numeric:tabular-nums}
+.lg td.t{color:var(--p-faint)}
+.lg td.a{color:var(--p-ink);font-weight:600}
+.lg td:first-child{color:var(--p-muted)}
+.lg .r{text-align:right}
+.lg tr:last-child td{border-bottom:none}
+
+/* day tiles */
+.dt{display:flex;align-items:center;gap:12px;background:var(--p-surface);border:var(--p-bd);border-radius:var(--p-r);padding:11px 13px}
+.dt .ab{width:38px;flex:none;font-family:var(--p-meta);font-size:10px;font-weight:600;letter-spacing:var(--p-track);text-transform:uppercase;color:var(--p-muted)}
+.dt.rest{background:var(--p-restbg)}
+.dt.un{border-style:dashed;background:none}
+
+/* ================================================================
+   DIRECTION 1 — LEDGER  (the current design, for comparison)
+   ================================================================ */
+[data-dir="ledger"]{
+  --p-paper:#EDEFF2; --p-surface:#FFFFFF; --p-surface2:#F5F7F9;
+  --p-ink:#12161B; --p-ink2:#3D4650; --p-muted:#6B7684; --p-faint:#98A2AE;
+  --p-rule:#E6EAEF; --p-accent:#1B4FD8; --p-on:#FFF; --p-accsoft:#E7EDFC;
+  --p-gain:#17724A; --p-gainsoft:#E1F1E9; --p-short:#A56A12; --p-shortsoft:#F7EFDD;
+  --p-restbg:repeating-linear-gradient(135deg,#FFF,#FFF 7px,#F5F7F9 7px,#F5F7F9 14px);
+  --p-disp:'Archivo',sans-serif; --p-body:'Archivo',sans-serif; --p-meta:'IBM Plex Mono',monospace; --p-num:'Archivo',sans-serif;
+  --p-r:13px; --p-bd:1px solid #E6EAEF; --p-dash:1px dashed #E6EAEF; --p-chr:99px; --p-ckr:14px;
+  --p-h:25px; --p-hw:800; --p-hls:-.02em; --p-hcase:none; --p-case:uppercase; --p-track:.14em;
+  --p-ex:14.5px; --p-exw:700; --p-exls:-.01em;
+  --p-fn:33px; --p-nw:700; --p-nls:-.03em; --p-nvar:'wdth' 120;
+  --p-bh:52px; --p-br:15px; --p-bs:15px; --p-bw:700; --p-bls:-.01em; --p-bcase:none;
+  --p-pad:18px; --p-cpad:13px 14px; --p-gap:9px; --p-pgh:5px;
+}
+
+/* ================================================================
+   DIRECTION 2 — IRON
+   ================================================================ */
+[data-dir="iron"]{
+  --p-paper:#141416; --p-surface:#1D1E21; --p-surface2:#26282C;
+  --p-ink:#F2F0ED; --p-ink2:#C4C0BA; --p-muted:#8A867F; --p-faint:#615E59;
+  --p-rule:#33353A; --p-accent:#E4551F; --p-on:#FFF; --p-accsoft:#3A1D11;
+  --p-gain:#8FBF3F; --p-gainsoft:#222A12; --p-short:#C98A2E; --p-shortsoft:#2E2413;
+  --p-restbg:repeating-linear-gradient(135deg,#1D1E21,#1D1E21 6px,#26282C 6px,#26282C 12px);
+  --p-disp:'Anton',sans-serif; --p-body:'Barlow',sans-serif; --p-meta:'Barlow',sans-serif; --p-num:'Anton',sans-serif;
+  --p-r:3px; --p-bd:1px solid #33353A; --p-dash:1px solid #26282C; --p-chr:2px; --p-ckr:3px;
+  --p-h:29px; --p-hw:400; --p-hls:.005em; --p-hcase:uppercase; --p-case:uppercase; --p-track:.18em;
+  --p-ex:17px; --p-exw:400; --p-exls:.01em;
+  --p-fn:40px; --p-nw:400; --p-nls:0; --p-nvar:normal;
+  --p-bh:54px; --p-br:3px; --p-bs:17px; --p-bw:400; --p-bls:.09em; --p-bcase:uppercase;
+  --p-pad:16px; --p-cpad:12px 13px; --p-gap:7px; --p-pgh:4px;
+}
+[data-dir="iron"] .ex,[data-dir="iron"] .h{text-transform:uppercase}
+[data-dir="iron"] .sub,[data-dir="iron"] .mt{font-family:'Barlow',sans-serif;font-weight:500}
+
+/* ================================================================
+   DIRECTION 3 — CLINIC
+   ================================================================ */
+[data-dir="clinic"]{
+  --p-paper:#F2F5F4; --p-surface:#FFFFFF; --p-surface2:#F5F9F8;
+  --p-ink:#0F2620; --p-ink2:#3A544C; --p-muted:#6E8880; --p-faint:#9DB3AC;
+  --p-rule:#E2EBE8; --p-accent:#0E9F73; --p-on:#FFF; --p-accsoft:#DFF4EC;
+  --p-gain:#0E9F73; --p-gainsoft:#DFF4EC; --p-short:#D08A2C; --p-shortsoft:#FBF0DE;
+  --p-restbg:#F5F9F8;
+  --p-disp:'Plus Jakarta Sans',sans-serif; --p-body:'Plus Jakarta Sans',sans-serif; --p-meta:'Plus Jakarta Sans',sans-serif; --p-num:'Plus Jakarta Sans',sans-serif;
+  --p-r:22px; --p-bd:1px solid #E2EBE8; --p-dash:1px solid #EFF5F3; --p-chr:99px; --p-ckr:22px;
+  --p-h:25px; --p-hw:800; --p-hls:-.03em; --p-hcase:none; --p-case:none; --p-track:.02em;
+  --p-ex:15px; --p-exw:700; --p-exls:-.02em;
+  --p-fn:34px; --p-nw:800; --p-nls:-.04em; --p-nvar:normal;
+  --p-bh:58px; --p-br:99px; --p-bs:15.5px; --p-bw:700; --p-bls:-.01em; --p-bcase:none;
+  --p-pad:19px; --p-cpad:16px 17px; --p-gap:11px; --p-pgh:8px;
+}
+[data-dir="clinic"] .lbl,[data-dir="clinic"] .kick{letter-spacing:.06em;text-transform:uppercase;font-weight:700;font-size:10px}
+[data-dir="clinic"] .st button{border-radius:99px;width:40px}
+
+/* ================================================================
+   DIRECTION 4 — ALMANAC
+   ================================================================ */
+[data-dir="almanac"]{
+  --p-paper:#F3F0E9; --p-surface:#FBFAF6; --p-surface2:#EFEBE1;
+  --p-ink:#1C1E1A; --p-ink2:#43473E; --p-muted:#736F63; --p-faint:#A39D8E;
+  --p-rule:#DDD8CB; --p-accent:#1F4B3A; --p-on:#FBFAF6; --p-accsoft:#E2EBE2;
+  --p-gain:#1F4B3A; --p-gainsoft:#E2EBE2; --p-short:#9A5B24; --p-shortsoft:#F2E6D6;
+  --p-restbg:repeating-linear-gradient(135deg,#FBFAF6,#FBFAF6 6px,#EFEBE1 6px,#EFEBE1 12px);
+  --p-disp:'Fraunces',serif; --p-body:'Karla',sans-serif; --p-meta:'Karla',sans-serif; --p-num:'Karla',sans-serif;
+  --p-r:0px; --p-bd:1px solid #DDD8CB; --p-dash:1px dashed #DDD8CB; --p-chr:0px; --p-ckr:0px;
+  --p-h:28px; --p-hw:600; --p-hls:-.015em; --p-hcase:none; --p-case:uppercase; --p-track:.15em;
+  --p-ex:16px; --p-exw:600; --p-exls:-.01em;
+  --p-fn:35px; --p-nw:700; --p-nls:-.02em; --p-nvar:normal;
+  --p-bh:50px; --p-br:0px; --p-bs:14px; --p-bw:700; --p-bls:.1em; --p-bcase:uppercase;
+  --p-pad:18px; --p-cpad:13px 14px; --p-gap:0px; --p-pgh:3px;
+}
+[data-dir="almanac"] .h{font-variation-settings:'opsz' 90,'SOFT' 0,'WONK' 1}
+[data-dir="almanac"] .ex{font-variation-settings:'opsz' 20,'WONK' 1}
+[data-dir="almanac"] .stk{gap:0}
+[data-dir="almanac"] .stk > .cd{border-bottom:none}
+[data-dir="almanac"] .stk > .cd:last-of-type{border-bottom:1px solid #DDD8CB}
+[data-dir="almanac"] .dt+.dt{border-top:none}
+[data-dir="almanac"] .sr+.sr{margin-top:-1px}
+
+/* ================================================================
+   DIRECTION 5 — TERMINAL
+   ================================================================ */
+[data-dir="terminal"]{
+  --p-paper:#080A09; --p-surface:#0E1211; --p-surface2:#151A19;
+  --p-ink:#D8E6DE; --p-ink2:#9DB3A8; --p-muted:#5F7A6F; --p-faint:#3F544B;
+  --p-rule:#1D2523; --p-accent:#3DDC84; --p-on:#04140B; --p-accsoft:#0D2618;
+  --p-gain:#3DDC84; --p-gainsoft:#0D2618; --p-short:#E0A33A; --p-shortsoft:#241B0C;
+  --p-restbg:#0E1211;
+  --p-disp:'JetBrains Mono',monospace; --p-body:'JetBrains Mono',monospace; --p-meta:'JetBrains Mono',monospace; --p-num:'JetBrains Mono',monospace;
+  --p-r:0px; --p-bd:1px solid #1D2523; --p-dash:1px dashed #1D2523; --p-chr:0px; --p-ckr:0px;
+  --p-h:21px; --p-hw:700; --p-hls:-.03em; --p-hcase:uppercase; --p-case:uppercase; --p-track:.13em;
+  --p-ex:13.5px; --p-exw:700; --p-exls:-.02em;
+  --p-fn:31px; --p-nw:700; --p-nls:-.05em; --p-nvar:normal;
+  --p-bh:46px; --p-br:0px; --p-bs:13px; --p-bw:700; --p-bls:.06em; --p-bcase:uppercase;
+  --p-pad:16px; --p-cpad:11px 12px; --p-gap:6px; --p-pgh:6px;
+}
+[data-dir="terminal"] .pg{border-radius:0;background:#151A19}
+[data-dir="terminal"] .pg i{border-radius:0}
+[data-dir="terminal"] .lbl::before{content:"[ "}
+[data-dir="terminal"] .lbl::after{content:" ]"}
+
+/* ================================================================
+   DIRECTION 6 — POP
+   ================================================================ */
+[data-dir="pop"]{
+  --p-paper:#FBF7F2; --p-surface:#FFFFFF; --p-surface2:#F4EFE8;
+  --p-ink:#181310; --p-ink2:#463C35; --p-muted:#7C6E64; --p-faint:#ADA096;
+  --p-rule:#E8E0D6; --p-accent:#F0483C; --p-on:#FFF; --p-accsoft:#FDE6E3;
+  --p-gain:#1D7A5F; --p-gainsoft:#DDF0E9; --p-short:#C97A16; --p-shortsoft:#FBEFDA;
+  --p-restbg:#F4EFE8;
+  --p-disp:'Bricolage Grotesque',sans-serif; --p-body:'DM Sans',sans-serif; --p-meta:'DM Sans',sans-serif; --p-num:'Bricolage Grotesque',sans-serif;
+  --p-r:19px; --p-bd:1.5px solid #E8E0D6; --p-dash:1.5px solid #F4EFE8; --p-chr:99px; --p-ckr:19px;
+  --p-h:31px; --p-hw:800; --p-hls:-.035em; --p-hcase:none; --p-case:uppercase; --p-track:.1em;
+  --p-ex:16px; --p-exw:700; --p-exls:-.025em;
+  --p-fn:42px; --p-nw:800; --p-nls:-.045em; --p-nvar:'opsz' 60;
+  --p-bh:60px; --p-br:19px; --p-bs:16.5px; --p-bw:700; --p-bls:-.02em; --p-bcase:none;
+  --p-pad:18px; --p-cpad:15px 16px; --p-gap:10px; --p-pgh:9px;
+}
+[data-dir="pop"] .h{font-variation-settings:'opsz' 72}
+[data-dir="pop"] .ch{font-weight:700;padding:4px 10px}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="board">
+  <header class="top">
+    <div>
+      <div class="eb">Visual directions · pick one</div>
+      <h1>Six Directions</h1>
+      <p>The same four screens drawn six ways. Each direction commits to its own palette, typefaces, corner radius, component size and density — not a recolour of the others. Four screens is enough to judge: they cover big numerals, a dense data table, list rhythm, and the primary button. Whichever you pick gets applied to all twenty.</p>
+    </div>
+    <button class="tbtn" id="tb">Dark page</button>
+  </header>
+
+  <section class="dir" data-dir="ledger">
+    <div class="dirhead">
+      <div>
+        <div class="dirname"><span class="dirnum">01</span><h2>Ledger</h2><span class="sp">current</span></div>
+        <p class="dirdesc">A training log book. Cool graph-paper ground, plate blue, hairline rules, mono for the columns. Quiet and precise — the numbers are the loudest thing on screen.</p>
+      </div>
+      <div class="specs">
+        <span class="sw"><i style="background:#EDEFF2"></i><i style="background:#1B4FD8"></i><i style="background:#17724A"></i><i style="background:#A56A12"></i><i style="background:#12161B"></i></span>
+        <span class="sp">Archivo + Plex Mono</span><span class="sp">radius 13</span><span class="sp">light</span>
+      </div>
+    </div>
+    <div class="rack"></div>
+  </section>
+
+  <section class="dir" data-dir="iron">
+    <div class="dirhead">
+      <div>
+        <div class="dirname"><span class="dirnum">02</span><h2>Iron</h2></div>
+        <p class="dirdesc">The weight room itself. Near-black with cast-iron greys, heated-metal orange, and Anton set in tight uppercase slabs. Square corners, dense spacing, numbers that read from arm's length on a rack.</p>
+      </div>
+      <div class="specs">
+        <span class="sw"><i style="background:#141416"></i><i style="background:#E4551F"></i><i style="background:#8FBF3F"></i><i style="background:#C98A2E"></i><i style="background:#F2F0ED"></i></span>
+        <span class="sp">Anton + Barlow</span><span class="sp">radius 3</span><span class="sp">dark</span>
+      </div>
+    </div>
+    <div class="rack"></div>
+  </section>
+
+  <section class="dir" data-dir="clinic">
+    <div class="dirhead">
+      <div>
+        <div class="dirname"><span class="dirnum">03</span><h2>Clinic</h2></div>
+        <p class="dirdesc">Calm and clinical. Cool mint ground, one confident green, deeply rounded cards and pill buttons. The most spacious of the six — big touch targets, soft edges, nothing shouting.</p>
+      </div>
+      <div class="specs">
+        <span class="sw"><i style="background:#F2F5F4"></i><i style="background:#0E9F73"></i><i style="background:#D08A2C"></i><i style="background:#0F2620"></i><i style="background:#FFFFFF"></i></span>
+        <span class="sp">Plus Jakarta Sans</span><span class="sp">radius 22</span><span class="sp">light</span>
+      </div>
+    </div>
+    <div class="rack"></div>
+  </section>
+
+  <section class="dir" data-dir="almanac">
+    <div class="dirhead">
+      <div>
+        <div class="dirname"><span class="dirnum">04</span><h2>Almanac</h2></div>
+        <p class="dirdesc">A printed training diary. Warm paper, Fraunces in its wonky optical cut, deep forest green, zero radius and continuous rules instead of floating cards. Rows sit flush against each other like a ledger page.</p>
+      </div>
+      <div class="specs">
+        <span class="sw"><i style="background:#F3F0E9"></i><i style="background:#1F4B3A"></i><i style="background:#9A5B24"></i><i style="background:#1C1E1A"></i><i style="background:#FBFAF6"></i></span>
+        <span class="sp">Fraunces + Karla</span><span class="sp">radius 0</span><span class="sp">light</span>
+      </div>
+    </div>
+    <div class="rack"></div>
+  </section>
+
+  <section class="dir" data-dir="terminal">
+    <div class="dirhead">
+      <div>
+        <div class="dirname"><span class="dirnum">05</span><h2>Terminal</h2></div>
+        <p class="dirdesc">Quantified-self, no decoration. Monospace everywhere, phosphor green on near-black, square corners, bracketed labels. The densest of the six — maximum data per screen, minimum ornament.</p>
+      </div>
+      <div class="specs">
+        <span class="sw"><i style="background:#080A09"></i><i style="background:#3DDC84"></i><i style="background:#E0A33A"></i><i style="background:#D8E6DE"></i><i style="background:#0E1211"></i></span>
+        <span class="sp">JetBrains Mono</span><span class="sp">radius 0</span><span class="sp">dark</span>
+      </div>
+    </div>
+    <div class="rack"></div>
+  </section>
+
+  <section class="dir" data-dir="pop">
+    <div class="dirhead">
+      <div>
+        <div class="dirname"><span class="dirnum">06</span><h2>Pop</h2></div>
+        <p class="dirdesc">Loud and friendly. Warm off-white, a vivid coral that carries the whole page, Bricolage Grotesque cranked to its display optical size. The biggest type and the largest buttons of the six.</p>
+      </div>
+      <div class="specs">
+        <span class="sw"><i style="background:#FBF7F2"></i><i style="background:#F0483C"></i><i style="background:#1D7A5F"></i><i style="background:#C97A16"></i><i style="background:#181310"></i></span>
+        <span class="sp">Bricolage + DM Sans</span><span class="sp">radius 19</span><span class="sp">light</span>
+      </div>
+    </div>
+    <div class="rack"></div>
+  </section>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var TABS = [
+    {l:"Today",     d:"M4 5h16v15H4zM4 10h16M9 3v4M15 3v4"},
+    {l:"Plan",      d:"M5 4h14v16H5zM9 9h6M9 13h6M9 17h3"},
+    {l:"History",   d:"M4 12a8 8 0 1 0 2.5-5.8M4 4v4h4M12 8v4l3 2"},
+    {l:"Exercises", d:"M3 10v4M7 7v10M17 7v10M21 10v4M7 12h10"},
+    {l:"Settings",  d:"M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6M4 12h2M18 12h2M12 4v2M12 18v2"}
+  ];
+
+  function shell(inner, active){
+    var tabs = TABS.map(function(t,i){
+      return '<div class="tbi'+(i===active?" on":"")+'">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="'+t.d+'"/></svg>' +
+        '<span>'+t.l+'</span></div>';
+    }).join("");
+    return '<div class="ph">' +
+      '<div class="sb"><span>9:41</span><span class="dd"><i></i><i></i><i></i><span class="bt"></span></span></div>' +
+      '<div class="scr">'+inner+'</div>' +
+      '<div class="tb">'+tabs+'</div></div>';
+  }
+
+  var TICK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 13l4 4L19 7"/></svg>';
+
+  /* ---- screen 1: today ---- */
+  var today =
+    '<div class="bar"><div><div class="kick">Monday 22 August</div><div class="h">Push Day</div><div class="sub">5 exercises · 15 sets</div></div></div>' +
+    '<div class="stk" style="margin-bottom:16px">' +
+      [['Machine Chest Press','3','10','30.0'],['Incline Dumbbell Press','3','10','15.0'],
+       ['Cable Fly','3','12','10.0'],['Lateral Raise','3','15','7.5'],['Tricep Pushdown','3','12','25.0']]
+      .map(function(e){
+        return '<div class="cd"><div class="ex">'+e[0]+'</div>' +
+               '<div class="pr" style="margin-top:5px">target <b>'+e[1]+'</b> × <b>'+e[2]+'</b> · <b>'+e[3]+'</b> kg</div></div>';
+      }).join("") +
+    '</div>' +
+    '<button class="btn">Start workout</button>';
+
+  /* ---- screen 2: recording a set (the signature) ---- */
+  var workout =
+    '<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0 10px">' +
+      '<div><div class="kick">Push Day</div><div class="sub" style="margin-top:3px">6 / 15 sets · 2 of 5 exercises</div></div></div>' +
+    '<div class="pg" style="margin-bottom:16px"><i style="width:40%"></i></div>' +
+    '<div class="h" style="margin-bottom:0">Machine Chest Press</div>' +
+    '<div class="pr" style="margin:8px 0 14px">last time <b>30.0</b>×<b>10</b> · <b>30.0</b>×<b>10</b> · <b>30.0</b>×<b>8</b></div>' +
+
+    '<div class="sr dn2"><div class="srh"><span class="srl">Set 1</span><span class="pr">target <b>10</b> × <b>30.0</b></span></div>' +
+      '<div class="srb"><div class="fl"><div class="fn">30.0</div><div class="fu">kg</div></div><div class="xx" style="padding-bottom:6px">×</div>' +
+      '<div class="fl"><div class="fn">10</div><div class="fu">reps</div></div><span class="ch ok">Achieved</span></div></div>' +
+
+    '<div class="sr dn2"><div class="srh"><span class="srl">Set 2</span><span class="pr">target <b>10</b> × <b>30.0</b></span></div>' +
+      '<div class="srb"><div class="fl"><div class="fn">30.0</div><div class="fu">kg</div></div><div class="xx" style="padding-bottom:6px">×</div>' +
+      '<div class="fl"><div class="fn">12</div><div class="fu">reps</div></div><span class="ch up">+2 reps</span></div></div>' +
+
+    '<div class="sr" style="border-color:var(--p-accent);box-shadow:0 0 0 2px var(--p-accsoft)">' +
+      '<div class="srh" style="background:var(--p-accsoft);border-bottom-color:var(--p-accent)">' +
+      '<span class="srl" style="color:var(--p-accent)">Set 3</span><span class="pr">target <b>10</b> × <b>30.0</b></span></div>' +
+      '<div class="srb">' +
+        '<div class="fl"><div class="fn">30.0</div><div class="fu">kg</div><div class="st"><button>−</button><button>+</button></div></div>' +
+        '<div class="xx">×</div>' +
+        '<div class="fl"><div class="fn">10</div><div class="fu">reps</div><div class="st"><button>−</button><button>+</button></div></div>' +
+        '<button class="ck">'+TICK+'</button>' +
+      '</div></div>' +
+
+    '<div style="display:flex;gap:8px;margin-top:12px">' +
+      '<button class="btn gh" style="flex:1">Add set</button><button class="btn gh" style="flex:1">Skip set</button></div>';
+
+  /* ---- screen 3: history day detail ---- */
+  function tbl(rows){
+    return '<table class="lg" style="margin-bottom:18px"><thead><tr><th>Set</th><th>Target</th><th>Actual</th><th class="r">Result</th></tr></thead><tbody>' +
+      rows.map(function(r){
+        return '<tr><td>'+r[0]+'</td><td class="t">'+r[1]+'</td><td class="a">'+r[2]+'</td><td class="r" style="color:'+r[4]+'">'+r[3]+'</td></tr>';
+      }).join("") + '</tbody></table>';
+  }
+  var detail =
+    '<div class="bar"><div><div class="kick">Friday 21 August</div><div class="h">Push Day</div><div class="sub">48 min · 4,280 kg volume</div></div></div>' +
+    '<div class="lbl">Machine Chest Press</div>' +
+    tbl([['1','10 × 30.0','10 × 30.0','even','var(--p-ink2)'],
+         ['2','10 × 30.0','12 × 30.0','+2 reps','var(--p-gain)'],
+         ['3','10 × 30.0','8 × 32.5','−40 vol','var(--p-short)']]) +
+    '<div class="lbl">Incline Dumbbell Press</div>' +
+    tbl([['1','10 × 15.0','10 × 15.0','even','var(--p-ink2)'],
+         ['2','10 × 15.0','10 × 15.0','even','var(--p-ink2)'],
+         ['3','10 × 15.0','—','skipped','var(--p-faint)']]) +
+    '<div class="lbl">Cable Fly · added on the day</div>' +
+    tbl([['1','—','12 × 10.0','unplanned','var(--p-muted)'],
+         ['2','—','12 × 10.0','unplanned','var(--p-muted)']]);
+
+  /* ---- screen 4: week overview ---- */
+  var week =
+    '<div class="bar"><div><div class="kick">Active plan</div><div class="h">Your week</div><div class="sub">5 workout days · 15 exercises</div></div></div>' +
+    '<div class="stk">' +
+      [['Mon','Push Day','5 exercises · 15 sets',0],['Tue','Pull Day','4 exercises · 12 sets',0],
+       ['Wed','Rest day','',1],['Thu','Leg Day','5 exercises · 16 sets',0],
+       ['Fri','Upper Body','4 exercises · 12 sets',0],['Sat','Rest day','',1],['Sun','Not set up','',2]]
+      .map(function(d){
+        var cls = d[3]===1 ? " rest" : (d[3]===2 ? " un" : "");
+        var col = d[3]===1 ? "var(--p-muted)" : (d[3]===2 ? "var(--p-faint)" : "var(--p-ink)");
+        return '<div class="dt'+cls+'"><span class="ab">'+d[0]+'</span><div style="flex:1">' +
+               '<div class="ex" style="color:'+col+'">'+d[1]+'</div>' +
+               (d[2] ? '<div class="mt">'+d[2]+'</div>' : '') + '</div></div>';
+      }).join("") +
+    '</div>';
+
+  var SCREENS = [[today,0],[workout,0],[detail,2],[week,1]];
+
+  document.querySelectorAll(".dir .rack").forEach(function(rack){
+    rack.innerHTML = SCREENS.map(function(s){ return shell(s[0], s[1]); }).join("");
+  });
+
+  var tb = document.getElementById("tb");
+  tb.addEventListener("click", function(){
+    var dark = document.documentElement.getAttribute("data-theme") === "dark";
+    document.documentElement.setAttribute("data-theme", dark ? "light" : "dark");
+    tb.textContent = dark ? "Dark page" : "Light page";
+  });
+})();
+</script>

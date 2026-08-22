@@ -1,0 +1,520 @@
+<title>Six More Directions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Narrow:wght@400;500;600;700&family=Archivo:wdth,wght@62.5..125,400..800&family=Courier+Prime:wght@400;700&family=Fraunces:opsz,wght@9..144,400..900&family=Saira+Condensed:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;700&family=Spline+Sans+Mono:wght@400;500;600;700&display=swap">
+
+<style>
+/* ===================== deck chrome ===================== */
+:root{
+  --ground:#E7EAEC; --panel:#FBFCFC; --ink:#12161A; --muted:#5D676F;
+  --faint:#8A939A; --rule:#CBD2D7; --rulesoft:#DDE2E6; --mark:#1E5FBF;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#0D1013; --panel:#15191D; --ink:#E6EAED; --muted:#939CA4;
+    --faint:#6C757D; --rule:#272D33; --rulesoft:#1F252A; --mark:#6E9BF5;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0D1013; --panel:#15191D; --ink:#E6EAED; --muted:#939CA4;
+  --faint:#6C757D; --rule:#272D33; --rulesoft:#1F252A; --mark:#6E9BF5;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:'Archivo',system-ui,sans-serif;font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4,p{margin:0}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+:focus-visible{outline:2px solid var(--mark);outline-offset:2px}
+.wrap{max-width:1240px;margin:0 auto;padding:56px 24px 96px}
+.eyebrow{font-family:'Spline Sans Mono',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);margin-bottom:16px}
+h1{font-weight:800;font-size:clamp(34px,6vw,52px);line-height:1.02;letter-spacing:-.03em;font-variation-settings:'wdth' 112;margin-bottom:18px;text-wrap:balance}
+.lede{max-width:64ch;color:var(--muted);font-size:17px}
+.lede strong{color:var(--ink);font-weight:600}
+.tbtn{border:1px solid var(--rule);border-radius:999px;padding:9px 17px;font-size:13px;font-weight:600;color:var(--muted);background:var(--panel);margin-top:22px}
+.tbtn:hover{border-color:var(--mark);color:var(--mark)}
+
+.dir{padding:56px 0 10px;border-top:1px solid var(--rule);margin-top:44px}
+.dhead{display:flex;gap:16px;align-items:baseline;flex-wrap:wrap;margin-bottom:12px}
+.tag{font-family:'Spline Sans Mono',monospace;font-size:12px;font-weight:600;letter-spacing:.1em;border:1px solid var(--rule);border-radius:3px;padding:3px 9px;color:var(--muted)}
+.dname{font-weight:800;font-size:clamp(26px,4vw,36px);letter-spacing:-.028em;font-variation-settings:'wdth' 110;line-height:1}
+.thesis{max-width:66ch;color:var(--muted);margin-bottom:22px;font-size:16.5px}
+.thesis strong{color:var(--ink);font-weight:600}
+.spec{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px;padding:18px 0 26px;border-top:1px solid var(--rulesoft)}
+.spec h4{font-family:'Spline Sans Mono',monospace;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);margin-bottom:8px;font-weight:500}
+.spec p{font-size:14.5px;color:var(--muted);line-height:1.5}
+.spec p b{color:var(--ink);font-weight:600}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{width:26px;height:26px;border-radius:4px;border:1px solid rgba(128,128,128,.35)}
+.screens{display:flex;gap:28px;overflow-x:auto;padding:4px 2px 26px}
+.slot{flex:0 0 auto;display:flex;flex-direction:column;gap:10px}
+.slab{font-family:'Spline Sans Mono',monospace;font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--faint)}
+
+/* ===================== phone frame ===================== */
+.ph{width:306px;height:642px;border-radius:38px;padding:9px;background:linear-gradient(160deg,#3A4046,#1A1E22);
+    box-shadow:0 18px 40px -18px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.06)}
+.sc{width:100%;height:100%;border-radius:30px;overflow:hidden;display:flex;flex-direction:column;position:relative}
+.st{height:32px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 18px;font-size:11px;font-weight:600;opacity:.8}
+.st .r{display:flex;gap:3px;align-items:center}
+.st .r i{width:3.5px;height:3.5px;border-radius:99px;background:currentColor;opacity:.6;display:block}
+.st .b{width:17px;height:9px;border:1.2px solid currentColor;border-radius:2px;opacity:.5}
+.bd{flex:1;overflow:hidden;position:relative}
+
+/* ============================================================
+   01 · SCOREBOARD — powerlifting meet lights
+   ============================================================ */
+[data-d="score"] .sc{background:#0A0A0B;color:#F2F2EE;font-family:'Saira Condensed',sans-serif}
+[data-d="score"] .pad{padding:14px 15px}
+[data-d="score"] .meet{font-family:'Spline Sans Mono',monospace;font-size:9px;letter-spacing:.22em;color:#6E6E68;text-transform:uppercase}
+[data-d="score"] .big{font-size:38px;font-weight:800;letter-spacing:.01em;text-transform:uppercase;line-height:.94;margin-top:4px}
+[data-d="score"] .well{background:#131315;border:1px solid #232326;border-radius:3px;padding:10px 12px;box-shadow:inset 0 2px 8px rgba(0,0,0,.7)}
+[data-d="score"] .lifter{display:flex;justify-content:space-between;align-items:baseline;padding:9px 0;border-bottom:1px solid #1C1C1F}
+[data-d="score"] .lifter:last-child{border:0}
+[data-d="score"] .lname{font-size:16px;font-weight:600;text-transform:uppercase;letter-spacing:.02em}
+[data-d="score"] .ltgt{font-family:'Spline Sans Mono',monospace;font-size:10px;color:#6E6E68;letter-spacing:.08em}
+[data-d="score"] .segs{font-family:'Saira Condensed',sans-serif;font-size:64px;font-weight:800;line-height:.86;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+[data-d="score"] .unit{font-family:'Spline Sans Mono',monospace;font-size:9px;letter-spacing:.2em;color:#6E6E68;text-transform:uppercase}
+[data-d="score"] .lights{display:flex;gap:7px}
+[data-d="score"] .lt{width:20px;height:20px;border-radius:99px;background:#1A1A1D;border:1px solid #2A2A2E}
+[data-d="score"] .lt.w{background:#F2F2EE;border-color:#F2F2EE;box-shadow:0 0 12px rgba(242,242,238,.5)}
+[data-d="score"] .lt.g{background:#1FA65A;border-color:#1FA65A;box-shadow:0 0 12px rgba(31,166,90,.55)}
+[data-d="score"] .lt.r{background:#D4262B;border-color:#D4262B;box-shadow:0 0 12px rgba(212,38,43,.5)}
+[data-d="score"] .abtn{display:block;width:100%;background:#D4262B;color:#fff;border-radius:3px;height:52px;font-size:19px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;font-family:'Saira Condensed',sans-serif}
+[data-d="score"] .abtn.k{background:#131315;color:#8A8A84;border:1px solid #232326}
+[data-d="score"] .nav{height:52px;display:grid;grid-template-columns:repeat(5,1fr);border-top:1px solid #1C1C1F;background:#0E0E10}
+
+/* ============================================================
+   02 · BLUEPRINT — targets drawn as dimensions
+   ============================================================ */
+[data-d="blue"] .sc{background:#0E2A4A;color:#DCE8F5;font-family:'Archivo Narrow',sans-serif;
+  background-image:linear-gradient(rgba(127,179,232,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(127,179,232,.07) 1px,transparent 1px);
+  background-size:14px 14px}
+[data-d="blue"] .pad{padding:14px 15px}
+[data-d="blue"] .sheet{font-family:'Spline Sans Mono',monospace;font-size:8.5px;letter-spacing:.2em;color:#6E96C4;text-transform:uppercase}
+[data-d="blue"] .ttl{font-size:26px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-top:3px}
+[data-d="blue"] .frame{border:1px solid #4E7BAE;padding:11px 12px;position:relative}
+[data-d="blue"] .frame + .frame{border-top:none}
+[data-d="blue"] .part{font-size:14px;font-weight:600;text-transform:uppercase;letter-spacing:.03em}
+[data-d="blue"] .dim{display:flex;align-items:center;gap:0;margin-top:9px;font-family:'Spline Sans Mono',monospace;font-size:10px;color:#9FC4EA}
+[data-d="blue"] .arrow{flex:1;height:1px;background:#4E7BAE;position:relative}
+[data-d="blue"] .arrow::before,[data-d="blue"] .arrow::after{content:"";position:absolute;top:-3px;width:1px;height:7px;background:#4E7BAE}
+[data-d="blue"] .arrow::before{left:0}
+[data-d="blue"] .arrow::after{right:0}
+[data-d="blue"] .dimv{padding:0 7px;letter-spacing:.06em;color:#DCE8F5}
+[data-d="blue"] .callout{border:1px solid #FF5C3D;color:#FF5C3D;font-family:'Spline Sans Mono',monospace;font-size:9px;padding:2px 6px;letter-spacing:.1em;text-transform:uppercase}
+[data-d="blue"] .num{font-family:'Archivo Narrow',sans-serif;font-size:46px;font-weight:700;line-height:.9;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+[data-d="blue"] .abtn{width:100%;height:46px;border:1px solid #DCE8F5;background:none;color:#DCE8F5;font-family:'Spline Sans Mono',monospace;font-size:12px;letter-spacing:.16em;text-transform:uppercase}
+[data-d="blue"] .abtn.p{background:#FF5C3D;border-color:#FF5C3D;color:#10233A;font-weight:600}
+[data-d="blue"] .nav{height:52px;display:grid;grid-template-columns:repeat(5,1fr);border-top:1px solid #4E7BAE}
+
+/* ============================================================
+   03 · ZINE — photocopied, stamped, struck through
+   ============================================================ */
+[data-d="zine"] .sc{background:#F2F0EA;color:#0A0A0A;font-family:'Archivo',sans-serif}
+[data-d="zine"] .pad{padding:14px 15px}
+[data-d="zine"] .hdr{background:#0A0A0A;color:#F2F0EA;padding:8px 11px;margin-bottom:11px}
+[data-d="zine"] .hdr .d{font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;opacity:.75}
+[data-d="zine"] .hdr h3{font-size:29px;font-weight:800;line-height:.94;letter-spacing:-.03em;text-transform:uppercase;font-variation-settings:'wdth' 100;margin-top:2px}
+[data-d="zine"] .row{border:2.5px solid #0A0A0A;padding:9px 11px;margin-bottom:8px;background:#F2F0EA}
+[data-d="zine"] .row.done{opacity:.45}
+[data-d="zine"] .row.done .nm{text-decoration:line-through;text-decoration-thickness:2.5px}
+[data-d="zine"] .nm{font-size:15px;font-weight:800;text-transform:uppercase;letter-spacing:-.01em;line-height:1.06}
+[data-d="zine"] .tw{font-family:'Courier Prime',monospace;font-size:11px;margin-top:3px}
+[data-d="zine"] .stamp{display:inline-block;border:2.5px solid #FF2D6F;color:#FF2D6F;font-family:'Courier Prime',monospace;font-weight:700;font-size:11px;
+  letter-spacing:.14em;text-transform:uppercase;padding:2px 7px;transform:rotate(-4deg)}
+[data-d="zine"] .stamp.k{border-color:#0A0A0A;color:#0A0A0A}
+[data-d="zine"] .huge{font-size:56px;font-weight:800;line-height:.84;letter-spacing:-.045em;font-variant-numeric:tabular-nums;font-variation-settings:'wdth' 92}
+[data-d="zine"] .abtn{width:100%;height:52px;background:#FF2D6F;color:#F2F0EA;border:2.5px solid #0A0A0A;font-size:18px;font-weight:800;text-transform:uppercase;letter-spacing:.02em;box-shadow:4px 4px 0 #0A0A0A}
+[data-d="zine"] .abtn.k{background:#F2F0EA;color:#0A0A0A}
+[data-d="zine"] .nav{height:52px;display:grid;grid-template-columns:repeat(5,1fr);border-top:2.5px solid #0A0A0A;background:#F2F0EA}
+
+/* ============================================================
+   04 · ENAMEL — heritage athletic club plaque
+   ============================================================ */
+[data-d="enam"] .sc{background:#EFE9DC;color:#1A1A17;font-family:'Archivo Narrow',sans-serif}
+[data-d="enam"] .pad{padding:15px 16px}
+[data-d="enam"] .plaque{background:#14432E;color:#EFE9DC;padding:13px 14px;border:1px solid #0C2C1E;box-shadow:inset 0 0 0 3px #14432E, inset 0 0 0 4px #B08A4A}
+[data-d="enam"] .club{font-family:'Fraunces',serif;font-size:9.5px;letter-spacing:.26em;text-transform:uppercase;color:#B08A4A}
+[data-d="enam"] .plaque h3{font-family:'Fraunces',serif;font-size:27px;font-weight:800;letter-spacing:-.01em;margin-top:4px;font-variation-settings:'opsz' 60,'WONK' 1}
+[data-d="enam"] .entry{display:flex;justify-content:space-between;align-items:baseline;padding:10px 0;border-bottom:1px solid #D6CDB8}
+[data-d="enam"] .entry:last-child{border-bottom:2px solid #14432E}
+[data-d="enam"] .en{font-family:'Fraunces',serif;font-size:15px;font-weight:600;font-variation-settings:'opsz' 20,'WONK' 1}
+[data-d="enam"] .et{font-family:'Archivo Narrow',sans-serif;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#6E6552}
+[data-d="enam"] .badge{width:26px;height:26px;border-radius:99px;background:#B08A4A;color:#EFE9DC;display:grid;place-items:center;font-family:'Fraunces',serif;font-size:12px;font-weight:700;flex:none}
+[data-d="enam"] .fig{font-family:'Fraunces',serif;font-size:44px;font-weight:800;line-height:.92;font-variant-numeric:tabular-nums;letter-spacing:-.02em;font-variation-settings:'opsz' 90}
+[data-d="enam"] .abtn{width:100%;height:50px;background:#14432E;color:#EFE9DC;border:1px solid #0C2C1E;font-family:'Archivo Narrow',sans-serif;font-size:14px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;box-shadow:inset 0 0 0 1px #B08A4A}
+[data-d="enam"] .abtn.k{background:none;color:#14432E;box-shadow:none;border:1px solid #14432E}
+[data-d="enam"] .nav{height:52px;display:grid;grid-template-columns:repeat(5,1fr);border-top:2px solid #14432E;background:#E7E0D0}
+
+/* ============================================================
+   05 · DOCKET — the workout prints as a receipt
+   ============================================================ */
+[data-d="dock"] .sc{background:#EDEAE4;color:#1A1A18;font-family:'Courier Prime',monospace}
+[data-d="dock"] .pad{padding:14px 17px}
+[data-d="dock"] .ctr{text-align:center}
+[data-d="dock"] .shop{font-size:14px;font-weight:700;letter-spacing:.24em;text-transform:uppercase}
+[data-d="dock"] .sub{font-size:10px;letter-spacing:.1em;color:#6B6B63;margin-top:3px}
+[data-d="dock"] .tear{border-top:1px dashed #9A9A90;margin:11px 0}
+[data-d="dock"] .tear.d{border-top-style:double;border-top-width:3px;border-color:#1A1A18}
+[data-d="dock"] .li{display:flex;align-items:baseline;gap:5px;font-size:12px;margin:5px 0}
+[data-d="dock"] .li .n{white-space:nowrap}
+[data-d="dock"] .li .dots{flex:1;border-bottom:1px dotted #9A9A90;transform:translateY(-3px)}
+[data-d="dock"] .li .v{white-space:nowrap;font-weight:700}
+[data-d="dock"] .li.mut .n,[data-d="dock"] .li.mut .v{color:#6B6B63;font-weight:400}
+[data-d="dock"] .hd{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;margin:10px 0 4px}
+[data-d="dock"] .tot{font-size:20px;font-weight:700;letter-spacing:.04em}
+[data-d="dock"] .fig{font-size:40px;font-weight:700;line-height:1;letter-spacing:-.02em}
+[data-d="dock"] .stampr{display:inline-block;border:2px solid #C0392B;color:#C0392B;font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;padding:2px 7px;transform:rotate(-3deg)}
+[data-d="dock"] .abtn{width:100%;height:46px;background:#1A1A18;color:#EDEAE4;font-size:13px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;font-family:'Courier Prime',monospace}
+[data-d="dock"] .abtn.k{background:none;color:#1A1A18;border:1px dashed #1A1A18}
+[data-d="dock"] .bars{display:flex;gap:1.5px;height:26px;align-items:stretch;margin-top:4px}
+[data-d="dock"] .bars i{display:block;background:#1A1A18}
+[data-d="dock"] .nav{height:52px;display:grid;grid-template-columns:repeat(5,1fr);border-top:1px dashed #9A9A90;background:#E6E2DA}
+
+/* ============================================================
+   06 · BAUHAUS — sets are geometry
+   ============================================================ */
+[data-d="baus"] .sc{background:#F4F1E8;color:#1A1A1A;font-family:'Space Grotesk',sans-serif}
+[data-d="baus"] .pad{padding:15px 16px}
+[data-d="baus"] .blk{background:#005BBB;color:#F4F1E8;padding:14px 15px}
+[data-d="baus"] .blk.r{background:#E03C31}
+[data-d="baus"] .blk.y{background:#F5C518;color:#1A1A1A}
+[data-d="baus"] .blk .k{font-size:10px;letter-spacing:.2em;text-transform:uppercase;opacity:.8;font-weight:500}
+[data-d="baus"] .blk h3{font-size:30px;font-weight:700;line-height:.96;letter-spacing:-.03em;margin-top:5px}
+[data-d="baus"] .item{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:2px solid #1A1A1A}
+[data-d="baus"] .item:first-of-type{border-top:2px solid #1A1A1A}
+[data-d="baus"] .glyph{width:26px;height:26px;flex:none;background:#1A1A1A}
+[data-d="baus"] .glyph.c{border-radius:99px;background:#E03C31}
+[data-d="baus"] .glyph.t{background:#F5C518;clip-path:polygon(50% 0,100% 100%,0 100%)}
+[data-d="baus"] .glyph.s{background:#005BBB}
+[data-d="baus"] .inm{font-size:15px;font-weight:700;letter-spacing:-.02em}
+[data-d="baus"] .imt{font-size:11px;color:#6B675E;letter-spacing:.02em;margin-top:1px}
+[data-d="baus"] .dots{display:flex;gap:6px;margin-top:8px}
+[data-d="baus"] .dot{width:17px;height:17px;border-radius:99px;border:2.5px solid #1A1A1A}
+[data-d="baus"] .dot.f{background:#1A1A1A}
+[data-d="baus"] .dot.g{background:#005BBB;border-color:#005BBB}
+[data-d="baus"] .dot.o{background:#F5C518;border-color:#1A1A1A}
+[data-d="baus"] .fig{font-size:54px;font-weight:700;line-height:.88;letter-spacing:-.045em;font-variant-numeric:tabular-nums}
+[data-d="baus"] .abtn{width:100%;height:56px;background:#E03C31;color:#F4F1E8;font-size:17px;font-weight:700;letter-spacing:-.01em;border-radius:0}
+[data-d="baus"] .abtn.k{background:none;color:#1A1A1A;border:2.5px solid #1A1A1A}
+[data-d="baus"] .nav{height:52px;display:grid;grid-template-columns:repeat(5,1fr);border-top:2.5px solid #1A1A1A;background:#F4F1E8}
+
+/* shared nav glyphs */
+.nav .ni{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:8.5px;font-weight:600;opacity:.42;letter-spacing:.02em}
+.nav .ni svg{width:16px;height:16px}
+.nav .ni.on{opacity:1}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="wrap">
+  <div class="eyebrow">Round two · concept-led</div>
+  <h1>Six More Directions</h1>
+  <p class="lede">The first six were skins — one skeleton, six palettes. These are six different <strong>ideas</strong>, each taken from something real in the gym, and in each one the idea changes the interface rather than just its colours. Three screens apiece: today, recording a set, and a finished session.</p>
+  <button class="tbtn" id="tb">Dark page</button>
+
+  <section class="dir" data-d="score">
+    <div class="dhead"><span class="tag">01</span><h2 class="dname">Scoreboard</h2></div>
+    <p class="thesis">A powerlifting meet. Three referee lights decide every attempt — <strong>white for a good lift, red for a failed one</strong> — and that maps exactly onto three sets against a target. You read the lights before you read a single word. Numbers are set like a venue scoreboard: tall, condensed, glowing out of an inset well.</p>
+    <div class="spec">
+      <div><h4>Palette</h4><div class="chips"><i class="chip" style="background:#0A0A0B"></i><i class="chip" style="background:#F2F2EE"></i><i class="chip" style="background:#D4262B"></i><i class="chip" style="background:#1FA65A"></i></div></div>
+      <div><h4>Type</h4><p><b>Saira Condensed</b> 800 · Spline Sans Mono</p></div>
+      <div><h4>Idea</h4><p>Referee lights <b>are</b> the result chip</p></div>
+      <div><h4>Shape</h4><p>Radius 3 · inset wells · glow</p></div>
+    </div>
+    <div class="screens"></div>
+  </section>
+
+  <section class="dir" data-d="blue">
+    <div class="dhead"><span class="tag">02</span><h2 class="dname">Blueprint</h2></div>
+    <p class="thesis">Your plan is a technical drawing and the targets are <strong>dimensions</strong> — measured between extension lines, exactly the way a drafted part is annotated. Deviation gets marked in red pencil, the way a site correction is. Grid paper underneath, sheet numbers in the corner, nothing rounded anywhere.</p>
+    <div class="spec">
+      <div><h4>Palette</h4><div class="chips"><i class="chip" style="background:#0E2A4A"></i><i class="chip" style="background:#DCE8F5"></i><i class="chip" style="background:#4E7BAE"></i><i class="chip" style="background:#FF5C3D"></i></div></div>
+      <div><h4>Type</h4><p><b>Archivo Narrow</b> · Spline Sans Mono</p></div>
+      <div><h4>Idea</h4><p>Targets drawn as <b>dimension lines</b></p></div>
+      <div><h4>Shape</h4><p>Radius 0 · 1px hairlines · grid</p></div>
+    </div>
+    <div class="screens"></div>
+  </section>
+
+  <section class="dir" data-d="zine">
+    <div class="dhead"><span class="tag">03</span><h2 class="dname">Zine</h2></div>
+    <p class="thesis">A photocopied flyer taped to the gym door. Fat black rules, hard offset shadows, one fluorescent pink, and typewriter figures. Completed exercises get <strong>struck through and stamped</strong> rather than ticked — the page fills up with evidence as you work, and finishing a session looks like a marked-up sheet.</p>
+    <div class="spec">
+      <div><h4>Palette</h4><div class="chips"><i class="chip" style="background:#F2F0EA"></i><i class="chip" style="background:#0A0A0A"></i><i class="chip" style="background:#FF2D6F"></i></div></div>
+      <div><h4>Type</h4><p><b>Archivo</b> 800 · Courier Prime</p></div>
+      <div><h4>Idea</h4><p>Strike through, don't tick</p></div>
+      <div><h4>Shape</h4><p>Radius 0 · 2.5px rules · 4px offset</p></div>
+    </div>
+    <div class="screens"></div>
+  </section>
+
+  <section class="dir" data-d="enam">
+    <div class="dhead"><span class="tag">04</span><h2 class="dname">Enamel</h2></div>
+    <p class="thesis">The record book of an old athletic club. Racing green enamel plaques with a brass keyline, cream paper, and Fraunces cut wonky for the headings. Every session is <strong>an entry in a ledger someone will read in fifty years</strong> — which is the honest description of what this app actually stores.</p>
+    <div class="spec">
+      <div><h4>Palette</h4><div class="chips"><i class="chip" style="background:#EFE9DC"></i><i class="chip" style="background:#14432E"></i><i class="chip" style="background:#B08A4A"></i><i class="chip" style="background:#1A1A17"></i></div></div>
+      <div><h4>Type</h4><p><b>Fraunces</b> 800 wonk · Archivo Narrow</p></div>
+      <div><h4>Idea</h4><p>Brass-keyed <b>enamel plaques</b></p></div>
+      <div><h4>Shape</h4><p>Radius 3 · double keyline · badges</p></div>
+    </div>
+    <div class="screens"></div>
+  </section>
+
+  <section class="dir" data-d="dock">
+    <div class="dhead"><span class="tag">05</span><h2 class="dname">Docket</h2></div>
+    <p class="thesis">Every workout prints as a <strong>till receipt</strong>. Dotted leaders run from each exercise to its numbers, dashed tear-lines separate the sections, and the session ends with a double rule and a total — volume, in kilograms, like a bill. Narrow, monospaced, and completely uninterested in looking like an app.</p>
+    <div class="spec">
+      <div><h4>Palette</h4><div class="chips"><i class="chip" style="background:#EDEAE4"></i><i class="chip" style="background:#1A1A18"></i><i class="chip" style="background:#6B6B63"></i><i class="chip" style="background:#C0392B"></i></div></div>
+      <div><h4>Type</h4><p><b>Courier Prime</b> throughout</p></div>
+      <div><h4>Idea</h4><p>The session is <b>a printed bill</b></p></div>
+      <div><h4>Shape</h4><p>No boxes · dashed rules · leaders</p></div>
+    </div>
+    <div class="screens"></div>
+  </section>
+
+  <section class="dir" data-d="baus">
+    <div class="dhead"><span class="tag">06</span><h2 class="dname">Bauhaus</h2></div>
+    <p class="thesis">Primary red, blue and yellow with black rules, and <strong>sets drawn as circles you fill in</strong> — empty, solid, or blue for a set that beat its target. Each exercise carries a geometric glyph so the list reads as shapes before it reads as words. Colour blocks do the work that cards do elsewhere.</p>
+    <div class="spec">
+      <div><h4>Palette</h4><div class="chips"><i class="chip" style="background:#F4F1E8"></i><i class="chip" style="background:#E03C31"></i><i class="chip" style="background:#005BBB"></i><i class="chip" style="background:#F5C518"></i><i class="chip" style="background:#1A1A1A"></i></div></div>
+      <div><h4>Type</h4><p><b>Space Grotesk</b> 700</p></div>
+      <div><h4>Idea</h4><p>Sets are <b>circles you fill in</b></p></div>
+      <div><h4>Shape</h4><p>Circles and squares only · 2.5px</p></div>
+    </div>
+    <div class="screens"></div>
+  </section>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var NAV = [
+    ["Today","M4 5h16v15H4zM4 10h16M9 3v4M15 3v4"],
+    ["Plan","M5 4h14v16H5zM9 9h6M9 13h6M9 17h3"],
+    ["Log","M4 12a8 8 0 1 0 2.5-5.8M4 4v4h4M12 8v4l3 2"],
+    ["Lifts","M3 10v4M7 7v10M17 7v10M21 10v4M7 12h10"],
+    ["More","M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6M4 12h2M18 12h2M12 4v2M12 18v2"]
+  ];
+  function nav(a){
+    return '<div class="nav">' + NAV.map(function(n,i){
+      return '<div class="ni'+(i===a?" on":"")+'">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="'+n[1]+'"/></svg>' +
+        '<span>'+n[0]+'</span></div>';
+    }).join("") + '</div>';
+  }
+  function ph(body, a){
+    return '<div class="ph"><div class="sc">' +
+      '<div class="st"><span>9:41</span><span class="r"><i></i><i></i><i></i><span class="b"></span></span></div>' +
+      '<div class="bd">'+body+'</div>' + nav(a) + '</div></div>';
+  }
+
+  var EX = [["Machine Chest Press","30.0","10"],["Incline Dumbbell Press","15.0","10"],
+            ["Cable Fly","10.0","12"],["Lateral Raise","7.5","15"],["Tricep Pushdown","25.0","12"]];
+
+  var D = {};
+
+  /* ---------------- 01 SCOREBOARD ---------------- */
+  D.score = {
+    today:'<div class="pad"><div class="meet">Session 41 · Monday</div><div class="big">Push Day</div>' +
+      '<div class="well" style="margin-top:12px">' +
+      EX.map(function(e){return '<div class="lifter"><div><div class="lname">'+e[0]+'</div><div class="ltgt">3 × '+e[2]+' @ '+e[1]+'</div></div><div class="lights"><span class="lt"></span><span class="lt"></span><span class="lt"></span></div></div>';}).join("") +
+      '</div><div style="margin-top:14px"><button class="abtn">Start</button></div></div>',
+    work:'<div class="pad"><div class="meet">Attempt 3 of 3 · Push Day</div>' +
+      '<div class="big" style="font-size:27px;margin-bottom:11px">Machine Chest Press</div>' +
+      '<div class="well" style="text-align:center;padding:16px 12px">' +
+        '<div class="ltgt" style="margin-bottom:9px">Target &nbsp;10 × 30.0</div>' +
+        '<div style="display:flex;align-items:flex-end;justify-content:center;gap:14px">' +
+          '<div><div class="segs">30.0</div><div class="unit">kg</div></div>' +
+          '<div style="color:#3A3A3E;font-size:26px;padding-bottom:16px">×</div>' +
+          '<div><div class="segs">10</div><div class="unit">reps</div></div></div>' +
+      '</div>' +
+      '<div style="display:flex;justify-content:center;gap:9px;margin:15px 0"><span class="lt w"></span><span class="lt w"></span><span class="lt"></span></div>' +
+      '<button class="abtn" style="margin-bottom:8px">Good lift</button>' +
+      '<button class="abtn k">No lift</button></div>',
+    done:'<div class="pad"><div class="meet">Friday 21 August</div><div class="big" style="font-size:27px">Push Day</div>' +
+      '<div class="well" style="margin-top:12px;padding:12px">' +
+        [["Machine Chest Press",["w","w","r"]],["Incline Dumbbell Press",["w","w","w"]],
+         ["Cable Fly",["w","g","w"]],["Lateral Raise",["w","w","r"]],["Tricep Pushdown",["w","w","w"]]]
+        .map(function(x){return '<div class="lifter"><div class="lname" style="font-size:13px">'+x[0]+'</div><div class="lights">' +
+          x[1].map(function(c){return '<span class="lt '+c+'" style="width:15px;height:15px"></span>';}).join("") + '</div></div>';}).join("") +
+      '</div>' +
+      '<div style="display:flex;align-items:flex-end;gap:10px;margin-top:14px"><div class="segs" style="font-size:52px">4280</div><div class="unit" style="padding-bottom:9px">kg total</div></div></div>'
+  };
+
+  /* ---------------- 02 BLUEPRINT ---------------- */
+  D.blue = {
+    today:'<div class="pad"><div class="sheet">Sheet 04 · Rev C · Mon</div><div class="ttl">Push Day</div>' +
+      '<div style="margin-top:12px">' +
+      EX.map(function(e,i){return '<div class="frame"><div style="display:flex;justify-content:space-between;align-items:center">' +
+        '<div class="part">'+e[0]+'</div><div class="sheet">'+String(i+1).padStart(2,"0")+'</div></div>' +
+        '<div class="dim"><span class="dimv">3 SETS</span><span class="arrow"></span><span class="dimv">'+e[2]+' × '+e[1]+'</span></div></div>';}).join("") +
+      '</div><div style="margin-top:14px"><button class="abtn p">Begin work</button></div></div>',
+    work:'<div class="pad"><div class="sheet">Detail A · Item 01</div><div class="ttl" style="font-size:20px">Machine Chest Press</div>' +
+      '<div class="frame" style="margin-top:12px">' +
+        '<div class="sheet" style="margin-bottom:8px">Specified</div>' +
+        '<div class="dim"><span class="dimv">10 REPS</span><span class="arrow"></span><span class="dimv">30.0 KG</span></div>' +
+      '</div>' +
+      '<div class="frame">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:9px"><div class="sheet">As built</div><span class="callout">Set 3</span></div>' +
+        '<div style="display:flex;align-items:flex-end;justify-content:center;gap:12px">' +
+          '<div style="text-align:center"><div class="num">30.0</div><div class="sheet" style="margin-top:4px">KG</div></div>' +
+          '<div style="color:#4E7BAE;padding-bottom:12px">×</div>' +
+          '<div style="text-align:center"><div class="num">10</div><div class="sheet" style="margin-top:4px">REPS</div></div></div>' +
+      '</div>' +
+      '<div style="display:flex;gap:7px;margin-top:12px"><button class="abtn p" style="flex:1">Record</button><button class="abtn" style="flex:1">Omit</button></div>' +
+      '<div class="frame" style="margin-top:12px;border-color:#FF5C3D"><div class="sheet" style="color:#FF5C3D">Deviation · set 3 prior</div>' +
+      '<div style="font-family:\'Spline Sans Mono\',monospace;font-size:11px;margin-top:5px;color:#FF5C3D">8 × 32.5 — 40 kg under specified volume</div></div></div>',
+    done:'<div class="pad"><div class="sheet">Sheet 04 · As built · 21 Aug</div><div class="ttl" style="font-size:22px">Push Day</div>' +
+      [["Machine Chest Press","10 × 30.0","10 × 30.0",0],["","10 × 30.0","12 × 30.0",0],["","10 × 30.0","8 × 32.5",1],
+       ["Incline Dumbbell Press","10 × 15.0","10 × 15.0",0],["","10 × 15.0","— omitted",1]]
+      .map(function(r){
+        return '<div class="frame" style="padding:8px 12px">' + (r[0]?'<div class="part" style="font-size:12px;margin-bottom:5px">'+r[0]+'</div>':'') +
+        '<div class="dim" style="margin:0"><span class="dimv" style="color:#6E96C4">'+r[1]+'</span><span class="arrow"></span>' +
+        '<span class="dimv"'+(r[3]?' style="color:#FF5C3D"':'')+'>'+r[2]+'</span></div></div>';
+      }).join("") +
+      '<div class="frame" style="border-color:#DCE8F5;margin-top:10px"><div class="sheet">Total volume</div><div class="num" style="font-size:32px;margin-top:3px">4280 <span style="font-size:13px">KG</span></div></div></div>'
+  };
+
+  /* ---------------- 03 ZINE ---------------- */
+  D.zine = {
+    today:'<div class="pad"><div class="hdr"><div class="d">Mon 22 Aug // session 41</div><h3>Push Day</h3></div>' +
+      EX.map(function(e){return '<div class="row"><div class="nm">'+e[0]+'</div><div class="tw">3 sets · '+e[2]+' reps · '+e[1]+' kg</div></div>';}).join("") +
+      '<button class="abtn" style="margin-top:4px">Go</button></div>',
+    work:'<div class="pad"><div class="hdr" style="padding:6px 10px"><div class="d">6 of 15 done</div><h3 style="font-size:21px">Machine Chest Press</h3></div>' +
+      '<div class="row done"><div style="display:flex;justify-content:space-between;align-items:center"><div class="nm" style="font-size:13px">Set 1 — 30 × 10</div><span class="stamp k">Done</span></div></div>' +
+      '<div class="row done"><div style="display:flex;justify-content:space-between;align-items:center"><div class="nm" style="font-size:13px">Set 2 — 30 × 12</div><span class="stamp">+2</span></div></div>' +
+      '<div class="row" style="border-width:3.5px"><div class="tw" style="margin:0 0 6px">Set 3 · target 10 × 30</div>' +
+        '<div style="display:flex;align-items:flex-end;justify-content:center;gap:10px">' +
+          '<div style="text-align:center"><div class="huge">30</div><div class="tw">KG</div></div>' +
+          '<div style="font-size:22px;padding-bottom:14px">×</div>' +
+          '<div style="text-align:center"><div class="huge">10</div><div class="tw">REPS</div></div></div>' +
+      '</div>' +
+      '<button class="abtn" style="margin-top:4px">Log it</button>' +
+      '<button class="abtn k" style="margin-top:9px;height:42px;font-size:14px">Skip</button></div>',
+    done:'<div class="pad"><div class="hdr"><div class="d">Fri 21 Aug</div><h3 style="font-size:24px">Push Day<br>Wrecked</h3></div>' +
+      '<div style="display:flex;align-items:baseline;gap:9px;margin:2px 0 12px"><div class="huge" style="font-size:62px">93</div><div class="nm" style="font-size:15px">% OF<br>PLAN</div></div>' +
+      [["Machine Chest Press","3/3"],["Incline Dumbbell Press","2/3"],["Cable Fly","3/3"],["Lateral Raise","3/3"],["Tricep Pushdown","3/3"]]
+      .map(function(r,i){return '<div class="row'+(i===1?"":" done")+'" style="padding:7px 10px"><div style="display:flex;justify-content:space-between;align-items:center">' +
+        '<div class="nm" style="font-size:12px">'+r[0]+'</div><div class="tw" style="margin:0;font-weight:700">'+r[1]+'</div></div></div>';}).join("") +
+      '<div class="row" style="background:#0A0A0A;color:#F2F0EA;border-color:#0A0A0A;margin-top:4px"><div style="display:flex;justify-content:space-between;align-items:baseline">' +
+      '<div class="tw" style="margin:0">TOTAL VOLUME</div><div class="nm">4280 KG</div></div></div></div>'
+  };
+
+  /* ---------------- 04 ENAMEL ---------------- */
+  D.enam = {
+    today:'<div class="pad"><div class="plaque"><div class="club">One More Rep · Est. 2026</div><h3>Push Day</h3>' +
+      '<div style="font-family:\'Archivo Narrow\';font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#B08A4A;margin-top:5px">Monday 22 August · five movements</div></div>' +
+      '<div style="margin-top:14px">' +
+      EX.map(function(e,i){return '<div class="entry"><div style="display:flex;align-items:center;gap:11px"><span class="badge">'+(i+1)+'</span>' +
+        '<div><div class="en">'+e[0]+'</div><div class="et">3 × '+e[2]+' · '+e[1]+' kg</div></div></div></div>';}).join("") +
+      '</div><div style="margin-top:16px"><button class="abtn">Commence</button></div></div>',
+    work:'<div class="pad"><div class="plaque" style="padding:11px 13px"><div class="club">Movement 1 of 5</div><h3 style="font-size:21px">Machine Chest Press</h3></div>' +
+      '<div class="entry" style="padding-top:12px"><div><div class="et">Set 1</div><div class="en">30.0 × 10</div></div><span class="et">As entered</span></div>' +
+      '<div class="entry"><div><div class="et">Set 2</div><div class="en">30.0 × 12</div></div><span class="et" style="color:#14432E;font-weight:700">Over</span></div>' +
+      '<div style="border:1px solid #14432E;box-shadow:inset 0 0 0 3px #EFE9DC, inset 0 0 0 4px #B08A4A;padding:14px;margin-top:12px;text-align:center">' +
+        '<div class="et" style="margin-bottom:7px">Set 3 · entered against 10 × 30.0</div>' +
+        '<div style="display:flex;align-items:flex-end;justify-content:center;gap:13px">' +
+          '<div><div class="fig">30.0</div><div class="et" style="margin-top:3px">kg</div></div>' +
+          '<div style="color:#B08A4A;font-size:20px;padding-bottom:11px">×</div>' +
+          '<div><div class="fig">10</div><div class="et" style="margin-top:3px">reps</div></div></div>' +
+      '</div>' +
+      '<div style="display:flex;gap:8px;margin-top:14px"><button class="abtn" style="flex:1">Enter</button><button class="abtn k" style="flex:1">Pass</button></div></div>',
+    done:'<div class="pad"><div class="plaque"><div class="club">Record of Session · 21 August</div><h3>Push Day</h3></div>' +
+      '<div style="margin-top:13px">' +
+      [["Machine Chest Press","860 kg"],["Incline Dumbbell Press","900 kg"],["Cable Fly","720 kg"],["Lateral Raise","640 kg"],["Tricep Pushdown","1160 kg"]]
+      .map(function(r){return '<div class="entry"><div class="en" style="font-size:14px">'+r[0]+'</div><div class="et" style="font-weight:700;color:#1A1A17">'+r[1]+'</div></div>';}).join("") +
+      '</div>' +
+      '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:13px">' +
+      '<div class="club" style="color:#14432E">Total lifted</div><div class="fig" style="font-size:34px">4,280</div></div></div>'
+  };
+
+  /* ---------------- 05 DOCKET ---------------- */
+  D.dock = {
+    today:'<div class="pad"><div class="ctr"><div class="shop">One More Rep</div><div class="sub">Mon 22 Aug 2026 · 07:14</div><div class="sub">Session #41 — Push Day</div></div>' +
+      '<div class="tear"></div>' +
+      EX.map(function(e){return '<div class="li"><span class="n">'+e[0]+'</span><span class="dots"></span><span class="v">3×'+e[2]+' @'+e[1]+'</span></div>';}).join("") +
+      '<div class="tear"></div>' +
+      '<div class="li"><span class="n">ITEMS</span><span class="dots"></span><span class="v">5</span></div>' +
+      '<div class="li"><span class="n">SETS DUE</span><span class="dots"></span><span class="v">15</span></div>' +
+      '<div class="tear"></div>' +
+      '<button class="abtn">Open session</button></div>',
+    work:'<div class="pad"><div class="ctr"><div class="sub">SESSION #41 · IN PROGRESS</div><div class="shop" style="font-size:12px;margin-top:3px">MACHINE CHEST PRESS</div></div>' +
+      '<div class="tear"></div>' +
+      '<div class="li mut"><span class="n">Set 1</span><span class="dots"></span><span class="v">30.0 × 10</span></div>' +
+      '<div class="li mut"><span class="n">Set 2</span><span class="dots"></span><span class="v">30.0 × 12</span></div>' +
+      '<div class="tear"></div>' +
+      '<div class="hd">Set 3 · due 10 × 30.0</div>' +
+      '<div class="ctr" style="margin:8px 0"><div class="fig">30.0 × 10</div></div>' +
+      '<div class="ctr"><span class="stampr">Unposted</span></div>' +
+      '<div class="tear"></div>' +
+      '<button class="abtn">Post set</button>' +
+      '<button class="abtn k" style="margin-top:8px">Void</button></div>',
+    done:'<div class="pad"><div class="ctr"><div class="shop">One More Rep</div><div class="sub">Fri 21 Aug · 48 min</div></div>' +
+      '<div class="tear"></div><div class="hd">Machine Chest Press</div>' +
+      '<div class="li"><span class="n">1</span><span class="dots"></span><span class="v">30.0×10</span></div>' +
+      '<div class="li"><span class="n">2</span><span class="dots"></span><span class="v">30.0×12</span></div>' +
+      '<div class="li"><span class="n">3</span><span class="dots"></span><span class="v">32.5×8</span></div>' +
+      '<div class="hd">Incline Dumbbell Press</div>' +
+      '<div class="li"><span class="n">1</span><span class="dots"></span><span class="v">15.0×10</span></div>' +
+      '<div class="li"><span class="n">2</span><span class="dots"></span><span class="v">15.0×10</span></div>' +
+      '<div class="li mut"><span class="n">3</span><span class="dots"></span><span class="v">VOID</span></div>' +
+      '<div class="tear d"></div>' +
+      '<div class="li" style="font-size:15px"><span class="n tot">TOTAL</span><span class="dots"></span><span class="v tot">4280 KG</span></div>' +
+      '<div class="tear"></div><div class="ctr"><span class="stampr">Filed</span>' +
+      '<div class="bars" id="barsDock"></div><div class="sub" style="margin-top:5px">S41-20260821</div></div></div>'
+  };
+
+  /* ---------------- 06 BAUHAUS ---------------- */
+  D.baus = {
+    today:'<div class="blk"><div class="k">Monday 22 August</div><h3>Push Day</h3></div>' +
+      '<div class="pad" style="padding-top:12px">' +
+      EX.map(function(e,i){var g=["c","s","t","c","s"][i];
+        return '<div class="item"><span class="glyph '+g+'"></span><div style="flex:1"><div class="inm">'+e[0]+'</div>' +
+        '<div class="imt">'+e[2]+' reps · '+e[1]+' kg</div></div>' +
+        '<div style="display:flex;gap:5px"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div></div>';}).join("") +
+      '<button class="abtn" style="margin-top:14px">Start</button></div>',
+    work:'<div class="blk r"><div class="k">Set 3 of 3 · exercise 1 of 5</div><h3 style="font-size:24px">Machine Chest Press</h3></div>' +
+      '<div class="pad" style="padding-top:13px">' +
+      '<div style="display:flex;gap:7px;margin-bottom:14px"><span class="dot f"></span><span class="dot g"></span><span class="dot"></span>' +
+      '<span style="margin-left:auto;font-size:11px;color:#6B675E;letter-spacing:.05em">TARGET 10 × 30.0</span></div>' +
+      '<div class="blk y" style="text-align:center;padding:18px 14px">' +
+        '<div style="display:flex;align-items:flex-end;justify-content:center;gap:14px">' +
+        '<div><div class="fig">30</div><div class="k" style="margin-top:4px">KG</div></div>' +
+        '<div style="font-size:26px;padding-bottom:12px">×</div>' +
+        '<div><div class="fig">10</div><div class="k" style="margin-top:4px">REPS</div></div></div></div>' +
+      '<button class="abtn" style="margin-top:14px">Fill the circle</button>' +
+      '<button class="abtn k" style="margin-top:9px;height:46px;font-size:15px">Leave it empty</button></div>',
+    done:'<div class="blk"><div class="k">Friday 21 August</div><h3>Push Day</h3></div>' +
+      '<div class="pad" style="padding-top:13px">' +
+      [["Machine Chest Press","c",["f","g","o"]],["Incline Dumbbell Press","s",["f","f","o"]],
+       ["Cable Fly","t",["f","f","f"]],["Lateral Raise","c",["f","f","f"]],["Tricep Pushdown","s",["f","g","f"]]]
+      .map(function(r){return '<div class="item"><span class="glyph '+r[1]+'"></span><div style="flex:1"><div class="inm" style="font-size:13px">'+r[0]+'</div></div>' +
+        '<div style="display:flex;gap:5px">' + r[2].map(function(c){return '<span class="dot '+c+'"></span>';}).join("") + '</div></div>';}).join("") +
+      '<div class="blk r" style="margin-top:14px;display:flex;justify-content:space-between;align-items:baseline">' +
+      '<div class="k">TOTAL VOLUME</div><div class="fig" style="font-size:34px">4280</div></div></div>'
+  };
+
+  var LABELS = ["Today","Recording a set","Finished session"];
+  Object.keys(D).forEach(function(k){
+    var host = document.querySelector('[data-d="'+k+'"] .screens');
+    var s = D[k];
+    host.innerHTML = [ [s.today,0], [s.work,0], [s.done,2] ].map(function(x,i){
+      return '<div class="slot"><div class="slab">'+LABELS[i]+'</div>' + ph(x[0], x[1]) + '</div>';
+    }).join("");
+  });
+
+  // barcode for the docket
+  var bars = document.getElementById("barsDock");
+  if(bars){
+    var w = [1,2,1,3,1,1,2,1,2,3,1,1,3,2,1,1,2,1,3,1,1,2,2,1,3,1,1,2,1,1];
+    bars.innerHTML = w.map(function(x,i){ return '<i style="width:'+x+'px;'+(i%2?'opacity:0':'')+'"></i>'; }).join("");
+  }
+
+  var tb = document.getElementById("tb");
+  tb.addEventListener("click", function(){
+    var dark = document.documentElement.getAttribute("data-theme") === "dark";
+    document.documentElement.setAttribute("data-theme", dark ? "light" : "dark");
+    tb.textContent = dark ? "Dark page" : "Light page";
+  });
+})();
+</script>
