@@ -1,4 +1,5 @@
 import {seedExerciseData} from '@/db/seed';
+import {MUSCLE_FILTERS} from '@/features/exercises/muscles';
 
 describe('bundled exercise seed', () => {
   it('carries a substantial library', () => {
@@ -70,5 +71,19 @@ describe('bundled exercise seed', () => {
   it('is sorted by name, so the library needs no runtime sort', () => {
     const names = seedExerciseData.map(e => e.name);
     expect([...names].sort((a, b) => a.localeCompare(b))).toEqual(names);
+  });
+});
+
+describe('muscle filters', () => {
+  it('covers every primary muscle in the library, so nothing is unreachable', () => {
+    const covered = new Set(MUSCLE_FILTERS.flatMap(f => f.values));
+    const used = new Set(seedExerciseData.map(e => e.primaryMuscle));
+    const missing = [...used].filter(m => !covered.has(m));
+    expect(missing).toEqual([]);
+  });
+
+  it('never lists the same muscle under two labels', () => {
+    const all = MUSCLE_FILTERS.flatMap(f => f.values);
+    expect(new Set(all).size).toBe(all.length);
   });
 });
