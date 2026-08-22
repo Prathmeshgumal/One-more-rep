@@ -552,7 +552,7 @@ git commit -m "feat: add exercise seed transform with reviewed weight_applicable
 - Consumes: `AppDatabase`, `exercises`, `ExerciseRow` (Task 1).
 - Produces:
   - `type Exercise` — `ExerciseRow` with `secondaryMuscles` parsed to `string[]`.
-  - `type ExerciseQuery = {search?: string; muscle?: string; includeDeleted?: boolean}`
+  - `type ExerciseQuery = {search?: string; muscles?: readonly string[]; includeDeleted?: boolean}`
   - `listExercises(db, query?): Promise<Exercise[]>`
   - `getExercise(db, id): Promise<Exercise | undefined>`
   - `createCustomExercise(db, input): Promise<Exercise>` where input is `{name, primaryMuscle, secondaryMuscles, equipment, weightApplicable, instructions?}`
@@ -646,13 +646,26 @@ describe('exerciseRepo', () => {
 
   it('filters by primary muscle', async () => {
     await seed();
-    const found = await listExercises(ctx.db, {muscle: 'chest'});
+    const found = await listExercises(ctx.db, {muscles: ['chest']});
     expect(found.map(e => e.name)).toEqual(['Cable Fly']);
+  });
+
+  it('filters by a group of muscles, so Back catches lats and traps alike', async () => {
+    await seed();
+    const found = await listExercises(ctx.db, {muscles: ['chest', 'quadriceps']});
+    expect(found.map(e => e.name)).toEqual(['Air Squat', 'Cable Fly']);
+  });
+
+  it('treats an empty muscle group as no filter', async () => {
+    await seed();
+    expect(await listExercises(ctx.db, {muscles: []})).toHaveLength(2);
   });
 
   it('combines search and muscle filter', async () => {
     await seed();
-    expect(await listExercises(ctx.db, {search: 'cable', muscle: 'quadriceps'})).toEqual([]);
+    expect(
+      await listExercises(ctx.db, {search: 'cable', muscles: ['quadriceps']}),
+    ).toEqual([]);
   });
 
   it('updates a custom exercise', async () => {
@@ -717,7 +730,7 @@ Expected: FAIL — `Cannot find module '@/repositories/exerciseRepo'`.
 Create `src/repositories/exerciseRepo.ts`:
 
 ```ts
-import {and, asc, eq, isNull, like, sql} from 'drizzle-orm';
+import {and, asc, eq, inArray, isNull, like, sql} from 'drizzle-orm';
 import {exercises, type ExerciseRow} from '@/db/schema';
 import type {AppDatabase} from '@/db/types';
 
@@ -728,7 +741,12 @@ export type Exercise = Omit<ExerciseRow, 'secondaryMuscles'> & {
 
 export type ExerciseQuery = {
   search?: string;
-  muscle?: string;
+  /**
+   * Primary muscles to include. A group, not a single value: the upstream data
+   * splits the back across lats, middle back, lower back and traps, so one
+   * "Back" filter must match all four.
+   */
+  muscles?: readonly string[];
   includeDeleted?: boolean;
 };
 
@@ -775,8 +793,8 @@ export async function listExercises(
       like(sql`lower(${exercises.name})`, `%${escapeLike(query.search.trim().toLowerCase())}%`),
     );
   }
-  if (query.muscle) {
-    conditions.push(eq(exercises.primaryMuscle, query.muscle));
+  if (query.muscles && query.muscles.length > 0) {
+    conditions.push(inArray(exercises.primaryMuscle, [...query.muscles]));
   }
 
   const rows = await db
@@ -1114,7 +1132,7 @@ Screen 18 needs a search field, filter chips, and a card. Phase 2's exercise pic
   - `SearchField` — props `{value: string; onChangeText: (t: string) => void; placeholder?: string}`
   - `Chip` — props `{label: string; selected?: boolean; onPress?: () => void}`
   - `Card` — props `{onPress?: () => void; children: React.ReactNode}`
-  - `MUSCLE_FILTERS: ReadonlyArray<{label: string; value: string | null}>`
+  - `MUSCLE_FILTERS: ReadonlyArray<{label: string; values: readonly string[]}>`
 
 - [ ] **Step 1: Write the failing test**
 
@@ -1326,22 +1344,68 @@ const styles = StyleSheet.create({
 });
 ```
 
-Create `src/features/exercises/muscles.ts`. The values are free-exercise-db's own muscle names, which is why they are lowercase:
+Create `src/features/exercises/muscles.ts`. The values are free-exercise-db's own
+muscle names, which is why they are lowercase. Each label covers a **group**, because
+the upstream data splits body parts across several names — verified against the actual
+dataset, whose 873 exercises use exactly seventeen primary-muscle values:
 
 ```ts
 /**
- * The filter row on screen 18. Labels are ours; values are free-exercise-db's
- * muscle names, so they match `primary_muscle` exactly.
+ * The filter row on screen 18.
+ *
+ * Labels are ours; values are free-exercise-db's own muscle names. Each label
+ * covers a group because the upstream data is finer-grained than a person
+ * browsing a gym: "back" is four separate values there, and "legs" is six.
+ * Matching only one of each would hide most of the library — Legs alone would
+ * drop from 298 exercises to 148.
+ *
+ * Every one of the seventeen upstream values appears here exactly once, so no
+ * exercise is unreachable by filtering. `neck` sits under Back, next to traps,
+ * which is where neck work lands in practice.
  */
-export const MUSCLE_FILTERS: ReadonlyArray<{label: string; value: string | null}> = [
-  {label: 'All', value: null},
-  {label: 'Chest', value: 'chest'},
-  {label: 'Back', value: 'lats'},
-  {label: 'Legs', value: 'quadriceps'},
-  {label: 'Shoulders', value: 'shoulders'},
-  {label: 'Arms', value: 'biceps'},
-  {label: 'Core', value: 'abdominals'},
+export const MUSCLE_FILTERS: ReadonlyArray<{
+  label: string;
+  values: readonly string[];
+}> = [
+  {label: 'All', values: []},
+  {label: 'Chest', values: ['chest']},
+  {label: 'Back', values: ['lats', 'middle back', 'lower back', 'traps', 'neck']},
+  {
+    label: 'Legs',
+    values: [
+      'quadriceps',
+      'hamstrings',
+      'glutes',
+      'calves',
+      'adductors',
+      'abductors',
+    ],
+  },
+  {label: 'Shoulders', values: ['shoulders']},
+  {label: 'Arms', values: ['biceps', 'triceps', 'forearms']},
+  {label: 'Core', values: ['abdominals']},
 ];
+```
+
+Add a test that the grouping stays exhaustive as the dataset changes. Append to
+`__tests__/db/seed.test.ts`:
+
+```ts
+import {MUSCLE_FILTERS} from '@/features/exercises/muscles';
+
+describe('muscle filters', () => {
+  it('covers every primary muscle in the library, so nothing is unreachable', () => {
+    const covered = new Set(MUSCLE_FILTERS.flatMap(f => f.values));
+    const used = new Set(seedExerciseData.map(e => e.primaryMuscle));
+    const missing = [...used].filter(m => !covered.has(m));
+    expect(missing).toEqual([]);
+  });
+
+  it('never lists the same muscle under two labels', () => {
+    const all = MUSCLE_FILTERS.flatMap(f => f.values);
+    expect(new Set(all).size).toBe(all.length);
+  });
+});
 ```
 
 - [ ] **Step 4: Run the tests**
@@ -1565,11 +1629,13 @@ export function ExerciseListScreen() {
     useNavigation<NativeStackNavigationProp<ExercisesStackParamList>>();
 
   const [search, setSearch] = useState('');
-  const [muscle, setMuscle] = useState<string | null>(null);
+  const [group, setGroup] = useState('All');
+
+  const selected = MUSCLE_FILTERS.find(f => f.label === group) ?? MUSCLE_FILTERS[0]!;
 
   const {data, isPending} = useExerciseListQuery({
     search: search || undefined,
-    muscle: muscle ?? undefined,
+    muscles: selected.values.length ? selected.values : undefined,
   });
 
   const header = (
@@ -1592,8 +1658,8 @@ export function ExerciseListScreen() {
           <Chip
             key={filter.label}
             label={filter.label}
-            selected={muscle === filter.value}
-            onPress={() => setMuscle(filter.value)}
+            selected={group === filter.label}
+            onPress={() => setGroup(filter.label)}
           />
         ))}
       </View>
@@ -2301,7 +2367,7 @@ The spec's gate for Phase 1 is: *open Exercises, search the library, filter by e
 
 1. Open the **Exercises** tab. The header reports a count in the hundreds.
 2. Type `squat` into search. The list narrows as you type.
-3. Clear it. Tap **Chest**. Only chest movements remain. Tap **All** to reset.
+3. Clear it. Tap **Chest**. Only chest movements remain. Tap **Legs** — hamstring curls, calf raises and squats all appear, not just quad work. Tap **All** to reset.
 4. Tap any exercise. The detail screen shows muscles, equipment, whether weight is tracked, and instructions. Built-ins show no Edit button.
 5. Back, then **New exercise**. Save with an empty name — it refuses and says why.
 6. Fill in a name, pick a muscle and equipment, turn **Track weight** off, save.
@@ -2345,8 +2411,10 @@ git tag -a phase-1 -m "Phase 1: exercise library complete"
 
 **Spec coverage.** §29's fields are Task 1's schema and Task 2's mapping; searchability is Task 3 and Task 6. §30's create-your-own is Task 7, and "behave identically to built-ins" is enforced by there being one table, one repository, and one list — `is_custom` drives a badge and edit permission, nothing more. §4.1's soft-delete rule is Task 3 and tested. D12's seed source, licence check, and `weight_applicable` derivation are Task 2, with the human review pass as an explicit blocking step. The spec's Phase 1 gate is Task 8 Step 3, walked verbatim.
 
-**Deliberate gaps.** Secondary muscles are not editable in the custom editor — screen 19 shows an "Also works" chip row, but making it multi-select adds state for a field the MVP never reads. Seeded exercises keep their secondary muscles; custom ones start empty. Flagged for Phase 5 rather than silently dropped. Equipment filtering is by muscle chips only; the spec's gate says "filter by equipment", and screen 18 draws muscle chips — I have followed the design and noted the discrepancy here. **If equipment filtering matters more than muscle filtering, say so before Task 6 and the chip row changes.**
+**Deliberate gaps.** Secondary muscles are not editable in the custom editor — screen 19 shows an "Also works" chip row, but making it multi-select adds state for a field the MVP never reads. Seeded exercises keep their secondary muscles; custom ones start empty. Flagged for Phase 5 rather than silently dropped. Equipment filtering is not built. The spec's gate text says "filter by equipment" while screen 18 draws muscle chips; asked directly, the user chose **body part, as designed**. The gate in Task 8 is worded accordingly.
 
 **Type consistency.** `Exercise` (Task 3) is what every screen consumes; `ExerciseRow` never leaves the repository, because `secondaryMuscles` is a JSON string in the database and an array everywhere else. `ExerciseQuery` is shared by the repository and the query key. `ExercisesStackParamList` is declared in Task 6 and consumed in Tasks 6 and 7. `NewCustomExercise` is the editor's save payload and the repository's input.
 
-**Risks.** Two. First, seeding performance on a mid-range phone is unmeasured — Task 8 Step 2 gates it rather than assuming. Second, `MUSCLE_FILTERS` maps friendly labels onto single upstream muscle names, so "Back" means `lats` and misses `middle back` and `traps`. That is a real simplification; it is visible in one file and worth revisiting once you have used it. It is called out here rather than buried.
+**Risks.** One. Seeding performance on a mid-range phone is unmeasured — Task 8 Step 2 gates it rather than assuming.
+
+The muscle-grouping risk this plan originally carried is closed. The first draft mapped each filter label onto a *single* upstream muscle name, which would have hidden most of the library: Legs would have shown 148 of 298 exercises and Arms would have lost all 71 triceps movements. `MUSCLE_FILTERS` now maps each label to a group, and a test asserts the groups remain exhaustive against the seed data, so a future dataset change that adds a muscle fails the build rather than silently orphaning exercises.
