@@ -5,43 +5,45 @@ node_modules/
 
 # React Native / Metro
 .metro-health-check*
-metro.config.js.bak
 *.jsbundle
+.kotlin/
 
 # Android
 android/app/build/
 android/build/
 android/.gradle/
-android/local.properties
 android/.idea/
+android/local.properties
 android/app/release/
-*.keystore
-!debug.keystore
+build/
+.gradle
+local.properties
+*.iml
+*.hprof
+.cxx/
 *.apk
 *.aab
+
+# Signing — never commit these
+*.keystore
+!debug.keystore
+*.jks
+
+# Drizzle intermediate output. The committed artefact is src/db/migrations/*.ts
+drizzle/
 
 # testing
 coverage/
 
-# build output
-dist/
-build/
-
-# environment
-.env
-.env.local
-.env.*.local
-
 # editors
-.vscode/
 .idea/
+.vscode/
 *.swp
-*.swo
 
 # OS
 .DS_Store
 Thumbs.db
-desktop.ini
+ehthumbs.db
 
 # logs
 *.log

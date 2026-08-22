@@ -29,6 +29,8 @@ Every task's requirements implicitly include this section.
 - **Falling short of a target is never red.** The `short` token is ochre. (Design README)
 - **Both themes ship together.** Any token added to the light palette must be added to the dark palette in the same commit; a test enforces this.
 - **Package name:** `com.onemorerep`. **Display name:** `One More Rep`.
+- **Versions:** React Native 0.87.0, React 19.2.3, TypeScript ^6.0.3, JDK 17, Node 24. Do not downgrade.
+- **Android SDK:** `ANDROID_HOME=C:\Android\Sdk`, platforms 36.1/37.0, build-tools 36.0.0/37.0.0.
 - **Commit after every task.** Conventional Commits (`feat:`, `test:`, `chore:`, `fix:`).
 
 ---
@@ -125,8 +127,7 @@ Replace `tsconfig.json` with:
     "noImplicitOverride": true,
     "noFallthroughCasesInSwitch": true,
     "forceConsistentCasingInFileNames": true,
-    "baseUrl": ".",
-    "paths": { "@/*": ["src/*"] }
+    "paths": { "@/*": ["./src/*"] }
   },
   "include": ["src", "__tests__", "scripts", "drizzle.config.ts"]
 }
@@ -187,7 +188,7 @@ Create `jest.config.js`:
 
 ```js
 module.exports = {
-  preset: 'react-native',
+  preset: '@react-native/jest-preset',
   setupFiles: ['<rootDir>/jest.setup.js'],
   moduleNameMapper: {'^@/(.*)$': '<rootDir>/src/$1'},
   testMatch: ['<rootDir>/__tests__/**/*.test.ts?(x)'],
