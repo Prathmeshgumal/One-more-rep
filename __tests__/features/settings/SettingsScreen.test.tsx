@@ -48,16 +48,27 @@ describe('SettingsScreen', () => {
 
   it('writes the new unit to the database and re-renders', async () => {
     const view = await renderScreen();
-    await view.findByLabelText('Pounds');
+
+    // The controls are disabled while the first query is in flight, and
+    // findBy resolves as soon as the element exists rather than when it is
+    // live. Waiting for the loaded state is what makes the press land.
+    await waitFor(() => {
+      expect(
+        view.getByLabelText('Kilograms').props.accessibilityState.selected,
+      ).toBe(true);
+    });
+
     fireEvent.press(view.getByLabelText('Pounds'));
 
-    await waitFor(async () => {
-      expect((await getSettings(ctx.db)).unit).toBe('lb');
-    });
+    // Wait on the UI, not on the database. The screen only shows Pounds
+    // selected once the write has landed and its invalidation has refetched,
+    // so this is deterministic; polling the database directly races the
+    // mutation and fails intermittently under load.
     await waitFor(() => {
       expect(
         view.getByLabelText('Pounds').props.accessibilityState.selected,
       ).toBe(true);
     });
+    expect((await getSettings(ctx.db)).unit).toBe('lb');
   });
 });

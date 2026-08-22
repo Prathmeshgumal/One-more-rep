@@ -27,6 +27,13 @@ Carried forward from Phase 0's hard-won findings — do not regress these:
 - **React Native Testing Library 14's `render` is async.** Always `await render(...)`.
 - **QueryClients in tests need `gcTime: 0` and an explicit `clear()` in teardown**, or the run hangs.
 - **Every `createTestDb()` must be closed** in teardown.
+- **Wait for a control to be *live*, not merely present, before firing an event.** Screens
+  disable their controls while the first query is in flight, and `findBy*` resolves as soon
+  as the element exists. Pressing then lands on a dead control and the test fails
+  intermittently. Wait on the loaded state first, then press.
+- **Assert on the UI, then on the database — never poll the database inside `waitFor`.**
+  The screen only updates after a write and its invalidation, so the UI is the honest
+  signal; polling the database races the mutation.
 
 New for this phase:
 
