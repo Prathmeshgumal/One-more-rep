@@ -10,8 +10,15 @@ const wrap = (ui: React.ReactElement) =>
   render(<ThemeProvider>{ui}</ThemeProvider>);
 
 describe('DatabaseGate', () => {
+  let open: Array<() => void> = [];
+  afterEach(() => {
+    open.forEach(close => close());
+    open = [];
+  });
+
   it('renders children once migrations succeed', async () => {
-    const {db} = createTestDb();
+    const {db, close} = createTestDb();
+    open.push(close);
     const view = await wrap(
       <DatabaseGate getDb={() => db}>
         <Text>ready</Text>

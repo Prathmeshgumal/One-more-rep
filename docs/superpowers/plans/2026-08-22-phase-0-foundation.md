@@ -2168,3 +2168,56 @@ grep -rn "#[0-9A-Fa-f]\{6\}\|fontSize:" src/features src/ui && echo "FAIL: liter
 **Type consistency.** `AppDatabase` (Task 3) is the parameter type in Tasks 4, 5, 6, and 8. `Migration` (Task 3, generated) is consumed by Task 4. `SettingsPatch` is defined in Task 5 and exported for Task 8 — Task 8 Step 4 states the required change explicitly rather than assuming it. `SettingsRow`, `WeightUnit`, `SETTINGS_ROW_ID` flow from Task 3 to Tasks 5 and 8. `useDatabase` is produced in Task 6 and consumed in Task 8. `AppText`'s `variant`/`color` props take `TypeToken`/`ColorToken` from Task 2.
 
 **One risk worth naming.** Task 4 assumes `db.all()` and `db.run()` behave identically across `drizzle-orm/better-sqlite3` and `drizzle-orm/op-sqlite`. The Jest tests only exercise the former. Task 8 Step 8's device verification is what covers the latter, which is why that step is a hard gate rather than a nicety.
+
+
+---
+
+## Outcome
+
+Phase 0 complete. All eight tasks committed; 30 tests green; exit criteria met on a
+physical arm64 device (Redmi Note 11 Pro+, Android 13).
+
+### What the device found that the tests could not
+
+The plan named one risk: that `db.all()` and `db.run()` might not behave identically
+across `better-sqlite3` and op-sqlite, and that only device verification would show it.
+That risk was real, and worse than expected.
+
+**drizzle-orm 0.45.2's op-sqlite driver is broken on every read path against op-sqlite
+v18.** It was written for v2-era result shapes:
+
+- `all()` and `get()` call `client.execute(sql, params).rows?._array`. In v18 `execute`
+  is async, so `.rows` on the returned Promise is `undefined` and the driver silently
+  yields `[]`. Reads do not fail — they come back empty.
+- The query-builder path goes through `values()` → `executeRawAsync`, which in v18
+  resolves to `{rawRows, columnNames}`. drizzle then calls `.map()` on that object and
+  throws.
+
+Writes are unaffected, which is what makes it dangerous: a migration appears to succeed,
+`user_version` never reads back, migrations re-run on every launch, and `CREATE TABLE`
+fails on the second start. No version pairing avoids it — 0.45.2 is the newest stable
+drizzle. `src/db/client.ts` adapts the connection to the contract drizzle expects.
+
+Three other environment problems the plan did not anticipate:
+
+- **Metro needs `unstable_enablePackageExports`**, or drizzle's ESM internal imports
+  never resolve and the bundle fails outright.
+- **`NoDefaultCurrentDirectoryInExePath=1`** on this machine stops `cmd.exe` finding
+  `gradlew.bat`. Cleared for the build scripts only.
+- **`.gitattributes` must pin `*.bat` to CRLF**, or `gradlew.bat` becomes unrunnable.
+
+### Deviations from the plan as written
+
+| Planned | Actual | Why |
+|---|---|---|
+| `Archivo_Expanded-*` at width 120 | `ArchivoSemiExpanded-*` at 112.5 | Archivo's STAT table rejects unnamed widths; 112.5 is the named SemiExpanded instance and sits between the design's 112 and 120. |
+| Fonts downloaded from Google Fonts | Instanced from the variable font by `scripts/build-fonts.py` | Google no longer serves a zip, and its CSS kit endpoint returns a wrapped subset that is not a valid TTF. |
+| `preset: 'react-native'` | `preset: '@react-native/jest-preset'` | What RN 0.87 actually generates. |
+| Placeholder screens carry an eyebrow | Eyebrow dropped where it duplicated the title | Today/History/Settings read the tab name three times over. |
+
+### Known, accepted
+
+`npm test` intermittently prints "A worker process has failed to exit gracefully" on
+roughly two runs in three. Suites are clean in isolation and `--detectOpenHandles`
+reports nothing, so this is React Native's Jest preset rather than our teardown. Not
+masked with `forceExit`, which would hide a real leak later.
