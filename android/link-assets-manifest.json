@@ -1,0 +1,41 @@
+{
+  "migIndex": 1,
+  "data": [
+    {
+      "path": "assets/fonts/Archivo-Bold.ttf",
+      "sha1": "7289abee9e14203eb635ace7a61785b3724f0eee"
+    },
+    {
+      "path": "assets/fonts/Archivo-Medium.ttf",
+      "sha1": "ef80f217778fbf009b4b9163229720f9d5bd5269"
+    },
+    {
+      "path": "assets/fonts/Archivo-Regular.ttf",
+      "sha1": "7ff2132d2252dad18ad8d4537517b4702ae4b113"
+    },
+    {
+      "path": "assets/fonts/Archivo-SemiBold.ttf",
+      "sha1": "e5c1b9a6b4e8b4be75f5ed1bef5c60654994bf97"
+    },
+    {
+      "path": "assets/fonts/ArchivoSemiExpanded-Bold.ttf",
+      "sha1": "9dc4b2f46f75325eab070967c11cf761f83637c3"
+    },
+    {
+      "path": "assets/fonts/ArchivoSemiExpanded-SemiBold.ttf",
+      "sha1": "3ec2488889e2d5d3008cbed8291315ec7dac868d"
+    },
+    {
+      "path": "assets/fonts/IBMPlexMono-Medium.ttf",
+      "sha1": "d1246280a315c377a651879047723bab6e3b411e"
+    },
+    {
+      "path": "assets/fonts/IBMPlexMono-Regular.ttf",
+      "sha1": "2b7c2393fff41a6e1446fd6351002e1aa1a999e8"
+    },
+    {
+      "path": "assets/fonts/IBMPlexMono-SemiBold.ttf",
+      "sha1": "f3a7efe0dc14fce44455e570ab6dea33dddc5133"
+    }
+  ]
+}
