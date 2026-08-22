@@ -1,3 +1,4 @@
+import {sql} from 'drizzle-orm';
 import {runMigrations} from '@/db/migrate';
 import {
   listExercises,
@@ -158,5 +159,30 @@ describe('exerciseRepo', () => {
     await new Promise(r => setTimeout(r, 5));
     const updated = await updateCustomExercise(ctx.db, created.id, {name: 'Fly'});
     expect(updated.updatedAt).toBeGreaterThan(created.updatedAt);
+  });
+
+  // Phase 1's exit criteria say built-ins cannot be edited. Today the detail
+  // screen's Edit button is the only thing enforcing that, and a rule that
+  // lives in one button is one the next screen breaks without noticing.
+  it('refuses to edit a built-in exercise', async () => {
+    await ctx.db.run(
+      sql`INSERT INTO exercises (id, name, primary_muscle, secondary_muscles,
+            equipment, exercise_type, weight_applicable, is_custom, updated_at)
+          VALUES ('Barbell_Squat', 'Barbell Squat', 'quadriceps', '[]',
+            'barbell', 'strength', 1, 0, 0)`,
+    );
+    await expect(
+      updateCustomExercise(ctx.db, 'Barbell_Squat', {name: 'Mine now'}),
+    ).rejects.toThrow(/Built-in exercises cannot be edited/);
+
+    expect((await getExercise(ctx.db, 'Barbell_Squat'))!.name).toBe(
+      'Barbell Squat',
+    );
+  });
+
+  it('says so when asked to edit an exercise that does not exist', async () => {
+    await expect(
+      updateCustomExercise(ctx.db, 'nope', {name: 'x'}),
+    ).rejects.toThrow(/does not exist/);
   });
 });

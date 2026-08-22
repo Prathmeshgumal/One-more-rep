@@ -130,11 +130,28 @@ export async function createCustomExercise(
   return created;
 }
 
+/**
+ * Edits a user's own exercise.
+ *
+ * Refuses to touch a built-in. Phase 1's exit criteria say built-ins cannot be
+ * edited, and today only the detail screen's Edit button enforces that — a
+ * rule that lives in one button is a rule the next screen can break without
+ * noticing. Rewriting a built-in would also silently diverge this device's
+ * library from the seed every other install has.
+ */
 export async function updateCustomExercise(
   db: AppDatabase,
   id: string,
   patch: CustomExercisePatch,
 ): Promise<Exercise> {
+  const existing = await getExercise(db, id);
+  if (!existing) {
+    throw new Error(`Exercise ${id} does not exist.`);
+  }
+  if (!existing.isCustom) {
+    throw new Error('Built-in exercises cannot be edited.');
+  }
+
   const values: Record<string, unknown> = {updatedAt: Date.now()};
   if (patch.name !== undefined) values.name = patch.name.trim();
   if (patch.primaryMuscle !== undefined) {

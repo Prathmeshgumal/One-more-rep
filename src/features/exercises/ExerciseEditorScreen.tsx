@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {Pressable, ScrollView, StyleSheet, TextInput, View} from 'react-native';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
@@ -52,10 +52,18 @@ export function ExerciseEditorScreen() {
   const [instructions, setInstructions] = useState('');
   const [error, setError] = useState<string | null>(null);
 
+  // Filled from the database exactly once. `existing` is a fresh object on
+  // every refetch, so without this guard any refetch — an invalidation
+  // elsewhere, a remount — would run the effect again and overwrite whatever
+  // the user had typed since. Losing someone's edits mid-sentence is the kind
+  // of bug that never reproduces on demand.
+  const populated = useRef(false);
+
   useEffect(() => {
-    if (!editingId || !existing) {
+    if (!editingId || !existing || populated.current) {
       return;
     }
+    populated.current = true;
     setName(existing.name);
     setPrimaryMuscle(existing.primaryMuscle);
     setEquipment(existing.equipment);
