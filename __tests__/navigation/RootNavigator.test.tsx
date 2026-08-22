@@ -1,19 +1,43 @@
 import React from 'react';
 import {render, fireEvent, waitFor} from '@testing-library/react-native';
 import {NavigationContainer} from '@react-navigation/native';
+import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
+import {runMigrations} from '@/db/migrate';
 import {ThemeProvider} from '@/theme';
+import {DatabaseContextTestProvider} from '@/providers/DatabaseGate';
 import {RootNavigator} from '@/navigation/RootNavigator';
-
-const renderApp = () =>
-  render(
-    <ThemeProvider>
-      <NavigationContainer>
-        <RootNavigator />
-      </NavigationContainer>
-    </ThemeProvider>,
-  );
+import {createTestDb} from '../helpers/testDb';
 
 describe('RootNavigator', () => {
+  let ctx: ReturnType<typeof createTestDb>;
+  let client: QueryClient;
+
+  const renderApp = () =>
+    render(
+      <ThemeProvider>
+        <QueryClientProvider client={client}>
+          <DatabaseContextTestProvider db={ctx.db}>
+            <NavigationContainer>
+              <RootNavigator />
+            </NavigationContainer>
+          </DatabaseContextTestProvider>
+        </QueryClientProvider>
+      </ThemeProvider>,
+    );
+
+  beforeEach(async () => {
+    ctx = createTestDb();
+    await runMigrations(ctx.db);
+    client = new QueryClient({
+      defaultOptions: {queries: {retry: false, gcTime: 0}},
+    });
+  });
+
+  afterEach(() => {
+    client.clear();
+    ctx.close();
+  });
+
   it('opens on Today', async () => {
     const view = await renderApp();
     expect(view.getByText(/workout for today/i)).toBeTruthy();
@@ -27,7 +51,7 @@ describe('RootNavigator', () => {
       ['Plan', /weekly routine/i],
       ['History', /past workouts/i],
       ['Exercises', /exercise library appears/i],
-      ['Settings', /^Settings$/],
+      ['Settings', /weight unit/i],
     ];
     for (const [tab, marker] of tabs) {
       fireEvent.press(view.getByRole('button', {name: new RegExp(tab)}));
