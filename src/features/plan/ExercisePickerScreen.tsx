@@ -7,6 +7,7 @@ import {Card} from '@/ui/Card';
 import {Chip} from '@/ui/Chip';
 import {Button} from '@/ui/Button';
 import {SearchField} from '@/ui/SearchField';
+import {BackButton} from '@/ui/BackButton';
 import {useTheme, space} from '@/theme';
 import {WEEKDAY_NAMES} from '@/domain/weekday';
 import {addExercises} from '@/domain/planDraft';
@@ -96,6 +97,7 @@ export function ExercisePickerScreen() {
           const isPicked = selected.includes(item.id);
           return (
             <Card onPress={() => toggle(item.id)}>
+        <BackButton />
               <View style={styles.row}>
                 <View style={styles.grow}>
                   <AppText variant="bodyStrong">{item.name}</AppText>

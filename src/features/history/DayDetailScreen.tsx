@@ -72,7 +72,7 @@ export function DayDetailScreen() {
 
   if (!session) {
     return (
-      <Screen eyebrow={formatLongDate(date)} title={title}>
+      <Screen back eyebrow={formatLongDate(date)} title={title}>
         {isPending ? null : (
           <Card>
             <AppText color="muted">{emptyMessageFor(day)}</AppText>
@@ -83,7 +83,7 @@ export function DayDetailScreen() {
   }
 
   return (
-    <Screen eyebrow={formatLongDate(date)} title={title}>
+    <Screen back eyebrow={formatLongDate(date)} title={title}>
       <AppText variant="printed" color="muted">
         {subtitleFor(session, unit)}
       </AppText>

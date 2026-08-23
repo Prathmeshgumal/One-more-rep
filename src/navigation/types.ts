@@ -32,7 +32,8 @@ export type PlanStackParamList = {
 };
 
 export type TodayStackParamList = {
-  Today: undefined;
+  /** Renamed from `Today`: sharing the tab's name made navigate() ambiguous. */
+  TodayHome: undefined;
   Workout: undefined;
   ExerciseSummary: {exerciseIndex: number};
   WorkoutComplete: undefined;

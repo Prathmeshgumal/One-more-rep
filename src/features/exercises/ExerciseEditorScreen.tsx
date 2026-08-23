@@ -7,6 +7,7 @@ import {Chip} from '@/ui/Chip';
 import {Card} from '@/ui/Card';
 import {Toggle} from '@/ui/Toggle';
 import {Button} from '@/ui/Button';
+import {BackButton} from '@/ui/BackButton';
 import {useTheme, type as typeScale, space, radius} from '@/theme';
 import {useExerciseQuery} from './useExercises';
 import {useCreateExercise, useUpdateExercise} from './useExerciseMutations';
@@ -119,6 +120,7 @@ export function ExerciseEditorScreen() {
         {paddingTop: insets.top + space.xl},
       ]}
       keyboardShouldPersistTaps="handled">
+      <BackButton />
       <AppText variant="eyebrow" color="muted">
         Custom
       </AppText>

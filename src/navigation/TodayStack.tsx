@@ -13,7 +13,7 @@ const Stack = createNativeStackNavigator<TodayStackParamList>();
 export function TodayStack() {
   return (
     <Stack.Navigator screenOptions={{headerShown: false}}>
-      <Stack.Screen name="Today" component={TodayScreen} />
+      <Stack.Screen name="TodayHome" component={TodayScreen} />
       <Stack.Screen name="Workout" component={WorkoutScreen} />
       <Stack.Screen name="ExerciseSummary" component={ExerciseSummaryScreen} />
       <Stack.Screen name="WorkoutComplete" component={WorkoutCompleteScreen} />

@@ -52,6 +52,9 @@ export function Stepper({
       ]}>
       <TextInput
         accessibilityLabel={label}
+        // Without this a screen reader announces the field's name but not what
+        // is in it, which on a weight stepper is the only part that matters.
+        accessibilityValue={{now: value, text: String(value)}}
         value={String(value)}
         keyboardType="decimal-pad"
         onChangeText={text => {
@@ -69,6 +72,9 @@ export function Stepper({
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={`Decrease ${label}`}
+          // The shoulder is drawn ~38px tall; the slop buys back the rest of a
+          // 44px target without changing the design.
+          hitSlop={space.sm}
           onPress={() => nudge(-step)}
           style={[styles.shoulder, {borderColor: colors.rule}]}>
           <AppText variant="bodyStrong" color="ink2">
@@ -78,6 +84,7 @@ export function Stepper({
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={`Increase ${label}`}
+          hitSlop={space.sm}
           onPress={() => nudge(step)}
           style={[styles.shoulder, {borderColor: colors.rule}]}>
           <AppText variant="bodyStrong" color="ink2">

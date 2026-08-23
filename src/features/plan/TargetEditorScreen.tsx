@@ -7,6 +7,7 @@ import {Button} from '@/ui/Button';
 import {Card} from '@/ui/Card';
 import {Toggle} from '@/ui/Toggle';
 import {Stepper} from '@/ui/Stepper';
+import {BackButton} from '@/ui/BackButton';
 import {useTheme, space} from '@/theme';
 import {setTargets, type DraftSet} from '@/domain/planDraft';
 import {usePlanQuery, useEditPlan} from './usePlan';
@@ -98,6 +99,7 @@ export function TargetEditorScreen() {
         {paddingTop: insets.top + space.xl},
       ]}
       keyboardShouldPersistTaps="handled">
+      <BackButton />
       <View style={styles.headerBlock}>
         <AppText variant="eyebrow" color="muted">
           Target

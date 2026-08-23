@@ -6,6 +6,7 @@ import {AppText} from '@/ui/Text';
 import {Card} from '@/ui/Card';
 import {Chip} from '@/ui/Chip';
 import {SearchField} from '@/ui/SearchField';
+import {BackButton} from '@/ui/BackButton';
 import {useTheme, space} from '@/theme';
 import {MUSCLE_FILTERS} from '@/features/exercises/muscles';
 import {useDebounced} from '@/features/exercises/useDebounced';
@@ -87,6 +88,7 @@ export function WorkoutExercisePickerScreen() {
                 {onSuccess: () => navigation.goBack()},
               );
             }}>
+        <BackButton />
             <AppText variant="bodyStrong">{item.name}</AppText>
             <AppText variant="small" color="muted">
               {item.equipment ?? 'No equipment'}

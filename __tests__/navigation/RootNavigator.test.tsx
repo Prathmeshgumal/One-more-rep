@@ -51,7 +51,7 @@ describe('RootNavigator', () => {
     // label and its heading can read the same.
     const tabs: ReadonlyArray<readonly [string, RegExp]> = [
       ['Plan', /Your week is empty/i],
-      ['History', /past workouts/i],
+      ['History', /completed workouts will appear here/i],
       ['Exercises', /create your own/i],
       ['Settings', /weight unit/i],
     ];
