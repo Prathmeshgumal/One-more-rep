@@ -139,6 +139,21 @@ Affects: `src/features/workout/WorkoutScreen.tsx`.
 
 Affects: `src/features/history/`, `src/features/exercises/ExerciseDetailScreen.tsx`.
 
+### The back control is invented — the design draws none
+**Added:** 2026-08-23, during Phase 5.
+
+The Phase 1 note said "the design's screen 19 is drawn with a back chevron".
+It is not: screen 19's app-bar button is **create**. No figure in
+`docs/design/screens.html` draws a back control at all.
+
+So `BackButton` is designed rather than transcribed. It is deliberately
+quieter than `IconButton` — no border, no plate, just a chevron in a 44px
+target — because leaving a screen is not an action worth advertising. If the
+design is ever revisited, this is a control to place properly rather than one
+to remove.
+
+Affects: `src/ui/BackButton.tsx`, and the twelve screens that use it.
+
 ## Observations from the Phase 4 device gate
 
 ### The debug APK cannot be trusted to be running your code
@@ -169,30 +184,52 @@ survives being turned into a rest day. Nothing renders it today — every screen
 special-cases rest days — so this is cosmetic, and it is flagged rather than
 changed because it may well be intentional.
 
-### The Today tab warns about nested screens with the same name
-**Added:** 2026-08-23, from `adb logcat`. Pre-existing since Phase 3.
+### ~~The Today tab warns about nested screens with the same name~~ — CLOSED
+**Added:** 2026-08-23, from `adb logcat`. **Closed:** 2026-08-23, in Phase 5.
 
-`Found screens with the same name nested inside one another: Today, Today >
-Today` — the tab and the stack's first screen share a name. Harmless today,
-but it makes `navigate('Today')` ambiguous. A one-line rename in
-`TodayStack.tsx` plus its param list.
+The inner screen is now `TodayHome`; the tab keeps the name the user sees.
+Nothing navigated to it by name — only `popToTop()` — so the rename touched
+two files. Confirmed gone from logcat on the bundled build.
+
+## Deferred verification — Phase 5
+
+### Three Phase 5 gate steps were not walked
+**Added:** 2026-08-23, at the Phase 5 gate.
+
+**Walked:** the back control on both kinds of screen; the nested-screen-name
+warning is gone from logcat; the calendar still lays out seven cells per row
+after the chrome change.
+
+**Not walked, and why:**
+
+1. **"A set recorded in under a second."** The spec's performance gate needs an
+   in-progress workout, and the only session on the device is finished. One
+   session per date is a unique index, so this is blocked on the same date
+   change as the workout paths above. Record a set and time the gap between the
+   tap and the next set appearing.
+2. **Every empty state, on the device.** All four §40 states are asserted in
+   `__tests__/features/emptyStates.test.tsx`, but reaching the no-plan ones on
+   hardware needs a database with no plan — i.e. `adb shell pm clear
+   com.onemorerep`, which would destroy the real data on the device. Not done,
+   and not to be done without the user asking for it.
+3. **TalkBack.** The accessibility work is asserted in tests — roles, names,
+   states, and 44px targets — but nobody has actually listened to the app.
+   Turning TalkBack on changes every gesture, so it is a hands-on pass rather
+   than something to drive over `adb`.
 
 ## Phase 5 — Polish
 
-### No visible back control on pushed screens
-**Added:** 2026-08-22, during the Phase 1 device gate.
+### ~~No visible back control on pushed screens~~ — CLOSED
+**Added:** 2026-08-22, at the Phase 1 gate. **Closed:** 2026-08-23, in Phase 5.
 
-`ExerciseDetailScreen` and `ExerciseEditorScreen` are pushed onto
-`ExercisesStack`, which sets `headerShown: false`. Android's system back and
-back-gesture both work, so nothing is broken — but a screen you enter and must
-leave should say how, and the design's screen 19 is drawn with a back chevron.
+Twelve pushed screens gained a chevron; `WorkoutScreen` and
+`WorkoutCompleteScreen` deliberately did not, and the test records why. A
+structural test fails when a screen is added to a stack without being
+classified either way, so the decision cannot be skipped in future.
 
-Deferred by the user's explicit decision. Needs a header treatment rather than
-a one-line fix, which is why it belongs with the rest of the chrome work.
-
-Affects: `src/navigation/ExercisesStack.tsx`, and every stack added in later
-phases — Phase 2's plan editor and Phase 3's workout screens will inherit the
-same gap unless this is fixed first.
+Verified on device on both kinds of screen — the raw `ScrollView` ones and the
+`Screen`-based ones — as visible, thumb-reachable, and returning to the right
+place.
 
 ### Secondary muscles are not editable on custom exercises
 **Added:** 2026-08-22, written into the Phase 1 plan's self-review.
