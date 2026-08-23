@@ -5525,6 +5525,7 @@ Create `src/features/workout/WorkoutCompleteScreen.tsx`:
 import React from 'react';
 import {ScrollView, StyleSheet, View} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
+import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {AppText} from '@/ui/Text';
 import {Button} from '@/ui/Button';
@@ -5539,6 +5540,7 @@ import {
   sessionVolume,
 } from '@/domain/sessionProgress';
 import {useSettingsQuery} from '@/features/settings/useSettings';
+import type {TodayStackParamList} from '@/navigation/types';
 import {useTodaySessionQuery, useFinishWorkout} from './useSession';
 
 const longDate = (ms: number) =>
@@ -5552,7 +5554,9 @@ const longDate = (ms: number) =>
 export function WorkoutCompleteScreen() {
   const {colors} = useTheme();
   const insets = useSafeAreaInsets();
-  const navigation = useNavigation();
+  // Typed, because popToTop only exists on a stack navigator's prop.
+  const navigation =
+    useNavigation<NativeStackNavigationProp<TodayStackParamList>>();
 
   const {data: session} = useTodaySessionQuery();
   const {data: settings} = useSettingsQuery();
