@@ -1445,18 +1445,39 @@ describe('startWorkout', () => {
     );
   });
 
+  // The whole materialization is one transaction, so a failure partway must
+  // leave no half-built session behind. There is no natural way to trip it —
+  // the plan is read through a join, so a missing exercise simply drops out of
+  // the plan rather than failing the insert — so the failure is injected.
   it('leaves nothing behind when starting fails partway', async () => {
-    // The exercise the plan points at is removed from the library, so
-    // materializing its performed_exercise row trips the foreign key.
-    await ctx.db.run(sql`PRAGMA foreign_keys = ON`);
-    await ctx.db.run(sql`DELETE FROM exercises WHERE id='pushup'`).catch(() => {
-      // The plan still references it, so the delete may itself be refused.
-    });
+    const insert = ctx.db.insert.bind(ctx.db);
+    let calls = 0;
+    const spy = jest
+      .spyOn(ctx.db, 'insert')
+      .mockImplementation(((table: Parameters<typeof insert>[0]) => {
+        calls += 1;
+        // The session and its exercises land, then the sets blow up.
+        if (calls > 2) {
+          throw new Error('injected failure');
+        }
+        return insert(table);
+      }) as typeof insert);
 
-    const sessions = await ctx.db.all<{n: number}>(
-      sql`SELECT COUNT(*) AS n FROM workout_sessions`,
+    await expect(startWorkout(ctx.db, {now: MONDAY})).rejects.toThrow(
+      /injected failure/,
     );
-    expect(sessions[0]?.n).toBe(0);
+    spy.mockRestore();
+
+    for (const table of [
+      'workout_sessions',
+      'performed_exercises',
+      'performed_sets',
+    ]) {
+      const rows = await ctx.db.all<{n: number}>(
+        sql.raw(`SELECT COUNT(*) AS n FROM ${table}`),
+      );
+      expect(rows[0]?.n).toBe(0);
+    }
   });
 
   it('reads back the session it just created', async () => {
