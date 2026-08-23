@@ -1,10 +1,12 @@
 import React, {useEffect, useRef, useState} from 'react';
-import {Pressable, ScrollView, StyleSheet, TextInput, View} from 'react-native';
+import {ScrollView, StyleSheet, TextInput, View} from 'react-native';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {AppText} from '@/ui/Text';
 import {Chip} from '@/ui/Chip';
 import {Card} from '@/ui/Card';
+import {Toggle} from '@/ui/Toggle';
+import {Button} from '@/ui/Button';
 import {useTheme, type as typeScale, space, radius} from '@/theme';
 import {useExerciseQuery} from './useExercises';
 import {useCreateExercise, useUpdateExercise} from './useExerciseMutations';
@@ -170,33 +172,12 @@ export function ExerciseEditorScreen() {
       </View>
 
       <Card>
-        <Pressable
-          accessibilityRole="switch"
-          accessibilityLabel="Track weight"
-          accessibilityState={{checked: weightApplicable}}
-          onPress={() => setWeightApplicable(v => !v)}
-          style={styles.toggleRow}>
-          <View style={styles.grow}>
-            <AppText variant="bodyStrong">Track weight</AppText>
-            <AppText variant="small" color="muted">
-              Turn this off for bodyweight movements. It decides whether this
-              exercise ever counts towards volume.
-            </AppText>
-          </View>
-          <View
-            style={[
-              styles.switch,
-              {backgroundColor: weightApplicable ? colors.plate : colors.rule},
-            ]}>
-            <View
-              style={[
-                styles.knob,
-                weightApplicable ? styles.knobOn : styles.knobOff,
-                {backgroundColor: colors.surface},
-              ]}
-            />
-          </View>
-        </Pressable>
+        <Toggle
+          label="Track weight"
+          hint="Turn this off for bodyweight movements. It decides whether this exercise ever counts towards volume."
+          value={weightApplicable}
+          onValueChange={setWeightApplicable}
+        />
       </Card>
 
       <View style={styles.field}>
@@ -219,14 +200,7 @@ export function ExerciseEditorScreen() {
         </AppText>
       ) : null}
 
-      <Pressable
-        accessibilityRole="button"
-        onPress={save}
-        style={[styles.save, {backgroundColor: colors.plate}]}>
-        <AppText variant="bodyStrong" color="plateInk">
-          Save exercise
-        </AppText>
-      </Pressable>
+      <Button label="Save exercise" onPress={save} />
     </ScrollView>
   );
 }
@@ -246,22 +220,4 @@ const styles = StyleSheet.create({
     paddingVertical: space.md,
   },
   multiline: {minHeight: 88, textAlignVertical: 'top'},
-  toggleRow: {flexDirection: 'row', alignItems: 'center', gap: space.md},
-  grow: {flex: 1, gap: 2},
-  switch: {
-    width: 48,
-    height: 28,
-    borderRadius: radius.pill,
-    padding: 3,
-    justifyContent: 'center',
-  },
-  knob: {width: 22, height: 22, borderRadius: radius.pill},
-  knobOn: {alignSelf: 'flex-end'},
-  knobOff: {alignSelf: 'flex-start'},
-  save: {
-    borderRadius: radius.md,
-    paddingVertical: space.lg,
-    alignItems: 'center',
-    marginTop: space.sm,
-  },
 });
