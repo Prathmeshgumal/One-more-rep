@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {Pressable, ScrollView, StyleSheet, TextInput, View} from 'react-native';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
@@ -61,6 +61,39 @@ export function PlanDayScreen() {
     }
   }, [day, populated]);
 
+  // Read through a ref so the listener below sees what has been typed rather
+  // than what was on screen when it was registered. `committed` remembers the
+  // last value written, because the plan query has not necessarily refetched
+  // by the time the screen is removed — without it, submitting and then going
+  // back would write the same rename twice and fork a second plan version.
+  const latest = useRef({typed: '', saved: '', mutate: edit.mutate});
+  latest.current = {
+    typed: name,
+    saved: day?.customName ?? '',
+    mutate: edit.mutate,
+  };
+  const committed = useRef<string | null>(null);
+
+  const commitName = () => {
+    const {typed, saved, mutate} = latest.current;
+    const value = typed.trim();
+    if (saved === value || committed.current === value) {
+      return;
+    }
+    committed.current = value;
+    mutate(draft => renameDay(draft, weekday, typed));
+  };
+
+  // Android's hardware back dismisses the keyboard without blurring the input,
+  // so `onBlur` never fires and the rename is silently lost — which is exactly
+  // what happened on the device. Committing as the screen is removed is the
+  // only hook that catches every way out of this screen.
+  useEffect(
+    () => navigation.addListener('beforeRemove', commitName),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [navigation, weekday],
+  );
+
   if (!plan || !day) {
     return <View style={[styles.root, {backgroundColor: colors.paper}]} />;
   }
@@ -71,12 +104,6 @@ export function PlanDayScreen() {
     : isNew
       ? `Set up ${weekdayName}`
       : (day.customName ?? weekdayName);
-
-  const commitName = () => {
-    if ((day.customName ?? '') !== name.trim()) {
-      edit.mutate(draft => renameDay(draft, weekday, name));
-    }
-  };
 
   return (
     <ScrollView

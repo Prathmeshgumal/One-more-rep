@@ -15,7 +15,7 @@ const TUE = new Date(2026, 7, 18, 9).getTime();
 
 jest.mock('@react-navigation/native', () => ({
   ...jest.requireActual('@react-navigation/native'),
-  useNavigation: () => ({goBack: jest.fn(), navigate: jest.fn()}),
+  useNavigation: () => ({goBack: jest.fn(), navigate: jest.fn(), addListener: () => () => {}}),
 }));
 
 describe('PlanHistoryScreen', () => {

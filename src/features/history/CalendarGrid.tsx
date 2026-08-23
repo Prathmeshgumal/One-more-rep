@@ -99,7 +99,16 @@ export function CalendarGrid({
                   styles.cell,
                   paint(cell.day.status),
                   cell.isToday && styles.today,
-                  cell.isToday && {borderColor: colors.plate},
+                  cell.isToday && {
+                    // The design rings today with an offset outline, which
+                    // React Native has no equivalent for. A plate border on a
+                    // plate fill is invisible, so a completed today is ringed
+                    // in the ink that sits on plate instead.
+                    borderColor:
+                      cell.day.status === 'completed'
+                        ? colors.plateInk
+                        : colors.plate,
+                  },
                 ]}>
                 <AppText variant="small" color={TONE[cell.day.status].ink}>
                   {cell.label}
