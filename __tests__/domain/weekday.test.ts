@@ -9,6 +9,7 @@ import {
   startOfLocalWeek,
   startOfLocalMonth,
   endOfLocalMonth,
+  weekdayName,
 } from '@/domain/weekday';
 
 describe('weekday', () => {
@@ -109,5 +110,16 @@ describe('date arithmetic', () => {
     // February 2028 is a leap year — the one month worth checking.
     const feb = new Date(2028, 1, 10).getTime();
     expect(endOfLocalMonth(feb)).toBe(new Date(2028, 1, 29).getTime());
+  });
+});
+
+describe('weekdayName', () => {
+  it('names each weekday, Monday first', () => {
+    expect(weekdayName(0)).toBe('Monday');
+    expect(weekdayName(6)).toBe('Sunday');
+  });
+
+  it('returns an empty string rather than undefined for a bad index', () => {
+    expect(weekdayName(9)).toBe('');
   });
 });

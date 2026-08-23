@@ -90,3 +90,14 @@ export function endOfLocalMonth(ms: number): number {
   // Day 0 of the next month is the last day of this one.
   return new Date(d.getFullYear(), d.getMonth() + 1, 0).getTime();
 }
+
+/**
+ * The weekday's own name, for a day that has not been given a custom one.
+ *
+ * Indexing `WEEKDAY_NAMES` directly yields `string | undefined` under
+ * `noUncheckedIndexedAccess`, and every caller then either asserts it away or
+ * invents its own fallback. One narrowing, in one place.
+ */
+export function weekdayName(weekday: number): string {
+  return WEEKDAY_NAMES[weekday] ?? '';
+}
