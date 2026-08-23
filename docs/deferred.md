@@ -41,6 +41,40 @@ back afterwards.
 
 Affects: `src/repositories/planRepo.ts`, `src/features/plan/PlanHistoryScreen.tsx`.
 
+### Four workout paths were never walked on the device
+**Added:** 2026-08-23, at the Phase 3 gate. **Deferred by the user's explicit
+decision.**
+
+The gate session went start — record all six sets — finish — save, cleanly. All
+four critical invariants were verified against the device database: no set
+carries actuals without being completed, every planned set kept its target
+snapshot, no orphans, `user_version` 5. The recorded verdicts matched the
+domain functions exactly (2 achieved / 3 exceeded / 1 below, 772.5 kg, 100%).
+
+**What that session did not touch:**
+
+1. **Skipping a set or an exercise.** Every set came back `completed`, so the
+   skip path has only ever run under Jest. This is the one where a silent bug
+   corrupts history rather than just looking wrong — a skipped set counts
+   towards the denominator of adherence and nothing else.
+2. **A bonus set.** `is_unplanned` is 0 on every row.
+3. **An unplanned exercise.** `planned_exercise_id` is set on both exercises,
+   so Task 13's feature is entirely unverified on hardware.
+4. **Force-kill and resume (§20).** The session ran start to finish in one go,
+   so crash safety was never tested where it actually matters.
+
+Separately, the **genuinely mixed verdict** — one dimension up, the other down —
+did not occur. Both volume-decided sets went up on both dimensions. The volume
+code path ran; the case where volume has to *overrule an apparent improvement*
+did not.
+
+**How to close it:** one short session. Skip a set, add a bonus set, add an
+exercise, force-kill mid-workout and resume, and on one set go heavier with
+fewer reps (e.g. target 12 x 10, do 8 x 12.5 — volume 100 against 120, so it
+must read below in ochre despite the heavier weight).
+
+Affects: `src/repositories/sessionRepo.ts`, `src/features/workout/`.
+
 ## Design departures
 
 ### The workout screen has an "Add an exercise" control the design does not draw
