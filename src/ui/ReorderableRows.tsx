@@ -63,6 +63,16 @@ function Row({children}: {children: React.ReactElement}) {
 }
 
 const styles = StyleSheet.create({
-  row: {flexDirection: 'row', alignItems: 'center', gap: space.md},
+  // Each row carries its own bottom gap rather than the parent spacing them.
+  // These are list cells, so a `gap` on the container never reaches between
+  // them — without this the cards sit flush against each other. It is a margin
+  // rather than padding so the drag handle stays centred on the card, and it
+  // travels with the row while it is being dragged.
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.md,
+    marginBottom: space.sm,
+  },
   grow: {flex: 1},
 });
