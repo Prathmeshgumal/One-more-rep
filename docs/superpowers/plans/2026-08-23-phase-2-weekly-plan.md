@@ -1393,7 +1393,7 @@ Expected: FAIL — `Cannot find module '@/repositories/planRepo'`.
 Create `src/repositories/planRepo.ts`:
 
 ```ts
-import {and, asc, desc, eq, isNull, or, gt, lte, sql} from 'drizzle-orm';
+import {and, asc, desc, eq, inArray, isNull, or, gt, lte, sql} from 'drizzle-orm';
 import {
   planVersions,
   planDays,
@@ -1470,7 +1470,7 @@ async function loadTree(
         })
         .from(plannedExercises)
         .innerJoin(exercises, eq(exercises.id, plannedExercises.exerciseId))
-        .where(inArrayOf(plannedExercises.planDayId, dayIds))
+        .where(inArray(plannedExercises.planDayId, dayIds))
         .orderBy(asc(plannedExercises.orderIndex))
     : [];
 
@@ -1479,7 +1479,7 @@ async function loadTree(
         .select()
         .from(plannedSets)
         .where(
-          inArrayOf(
+          inArray(
             plannedSets.plannedExerciseId,
             exerciseRows.map(e => e.id),
           ),
@@ -1532,11 +1532,6 @@ async function loadTree(
   });
 
   return {version, days};
-}
-
-/** `inArray` with a literal list; drizzle's own helper needs a non-empty array. */
-function inArrayOf(column: Parameters<typeof eq>[0], values: string[]) {
-  return sql`${column} IN ${values}`;
 }
 
 export async function getActivePlan(
@@ -1656,7 +1651,11 @@ npx jest planRepo.read
 
 Expected: PASS, all ten.
 
-If `inArrayOf` produces a syntax error, replace it with drizzle's `inArray(column, values)` imported from `drizzle-orm` — the local helper exists only to keep the empty-array case out of the call sites, and the guards above already ensure the arrays are non-empty.
+> **Amended during execution (2026-08-23).** This task first specified a local
+> `inArrayOf` helper binding the whole array as a single parameter, which
+> SQLite rejects. Drizzle's own `inArray(column, values)` is used instead —
+> it needs a non-empty array, and both call sites are already guarded by a
+> `.length` check.
 
 - [ ] **Step 5: Commit**
 
