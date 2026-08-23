@@ -77,7 +77,11 @@ export function ExerciseSummaryScreen() {
       <StatusChip status={aggregate.status} label="Exercise complete" />
       <AppText variant="h1">{exercise.name}</AppText>
       <AppText variant="printed" color="muted">
-        {`${aggregate.completedSets} of ${aggregate.plannedSets} sets recorded`}
+        {`${aggregate.completedSets} of ${aggregate.plannedSets} sets recorded${
+          aggregate.completedUnplannedSets > 0
+            ? ` · ${aggregate.completedUnplannedSets} bonus`
+            : ''
+        }`}
       </AppText>
 
       <LedgerTable rows={rows} />

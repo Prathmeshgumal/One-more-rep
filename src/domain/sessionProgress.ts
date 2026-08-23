@@ -12,7 +12,12 @@ export type ProgressSet = {
 
 export type ExerciseAggregate = {
   plannedSets: number;
+  /** Completed **planned** sets. Bonus work is counted separately, because a
+   *  numerator that includes it against a denominator that excludes it reads
+   *  as "you did everything" on an exercise where a set was skipped. */
   completedSets: number;
+  /** Completed bonus sets — real work, but never part of the plan. */
+  completedUnplannedSets: number;
   skippedSets: number;
   unplannedSets: number;
   /** NULL, never 0, when the exercise carries no weight (§26). */
@@ -41,6 +46,7 @@ export function aggregateExercise(
 ): ExerciseAggregate {
   let plannedSets = 0;
   let completedSets = 0;
+  let completedUnplannedSets = 0;
   let skippedSets = 0;
   let unplannedSets = 0;
   let actualVolume = 0;
@@ -61,7 +67,11 @@ export function aggregateExercise(
       skippedSets += 1;
     }
     if (isDone(set)) {
-      completedSets += 1;
+      if (set.isUnplanned) {
+        completedUnplannedSets += 1;
+      } else {
+        completedSets += 1;
+      }
       // Bonus work counts towards what was actually lifted. It is real work;
       // it just never had a target to be measured against.
       actualVolume += (set.actualWeight ?? 0) * (set.actualReps ?? 0);
@@ -81,6 +91,7 @@ export function aggregateExercise(
   return {
     plannedSets,
     completedSets,
+    completedUnplannedSets,
     skippedSets,
     unplannedSets,
     actualVolume: weightApplicable ? round(actualVolume) : null,

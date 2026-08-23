@@ -41,7 +41,10 @@ describe('aggregateExercise', () => {
       true,
     );
     expect(result.plannedSets).toBe(3);
-    expect(result.completedSets).toBe(2);
+    // One planned set completed, and one bonus set counted on its own. This
+    // used to read 2, mixing the two bases against a plan-only denominator.
+    expect(result.completedSets).toBe(1);
+    expect(result.completedUnplannedSets).toBe(1);
     expect(result.skippedSets).toBe(1);
     expect(result.unplannedSets).toBe(1);
   });
@@ -237,5 +240,28 @@ describe('countByStatus', () => {
         set({isUnplanned: true, targetReps: null, targetWeight: null}),
       ]),
     ).toEqual({achieved: 1, exceeded: 0, below: 0, skipped: 0});
+  });
+
+  // Found on the device at the Phase 5 gate: an exercise with one of three
+  // planned sets skipped and one bonus set added reported "3 of 3 sets
+  // recorded". Counting bonus work in the numerator against a denominator
+  // that excludes it is the same error spec 5.5 forbids for adherence.
+  it('counts completed planned sets separately from completed bonus sets', () => {
+    const aggregate = aggregateExercise(
+      [
+        {targetReps: 12, targetWeight: 7.5, actualReps: 8, actualWeight: 10, status: 'completed', isUnplanned: false},
+        {targetReps: 12, targetWeight: 7.5, actualReps: null, actualWeight: null, status: 'skipped', isUnplanned: false},
+        {targetReps: 12, targetWeight: 7.5, actualReps: 12, actualWeight: 7.5, status: 'completed', isUnplanned: false},
+        {targetReps: null, targetWeight: null, actualReps: 12, actualWeight: 7.5, status: 'completed', isUnplanned: true},
+      ],
+      true,
+    );
+    expect(aggregate.plannedSets).toBe(3);
+    expect(aggregate.completedSets).toBe(2);
+    expect(aggregate.completedUnplannedSets).toBe(1);
+    expect(aggregate.skippedSets).toBe(1);
+    // Bonus work still counts as lifted, which is why the volume includes it.
+    expect(aggregate.actualVolume).toBe(260);
+    expect(aggregate.targetVolume).toBe(270);
   });
 });
