@@ -8,6 +8,7 @@ import {createPlan, editPlan} from '@/repositories/planRepo';
 import {addExercises, renameDay, setTargets} from '@/domain/planDraft';
 import {
   startWorkout,
+  addExercise,
   completeSet,
   skipSet,
   getActiveSession,
@@ -22,6 +23,7 @@ import {createTestDb} from '../../helpers/testDb';
 const mockNavigate = jest.fn();
 const mockGoBack = jest.fn();
 const mockPopToTop = jest.fn();
+const mockParams = {exerciseIndex: 0};
 jest.mock('@react-navigation/native', () => ({
   ...jest.requireActual('@react-navigation/native'),
   useNavigation: () => ({
@@ -29,7 +31,7 @@ jest.mock('@react-navigation/native', () => ({
     goBack: mockGoBack,
     popToTop: mockPopToTop,
   }),
-  useRoute: () => ({params: {exerciseIndex: 0}}),
+  useRoute: () => ({params: mockParams}),
 }));
 
 describe('the workout summaries', () => {
@@ -80,6 +82,7 @@ describe('the workout summaries', () => {
       defaultOptions: {queries: {retry: false, gcTime: 0}},
     });
     mockNavigate.mockClear();
+    mockParams.exerciseIndex = 0;
     mockGoBack.mockClear();
     mockPopToTop.mockClear();
   });
@@ -129,6 +132,27 @@ describe('the workout summaries', () => {
       const view = await wrap(<ExerciseSummaryScreen />);
       expect(await view.findByText('1 of 3 sets recorded')).toBeTruthy();
       expect(view.getAllByText('Skipped').length).toBe(2);
+    });
+
+    // Found on the device: an exercise added on the day has nothing planned,
+    // and the line read "0 of 0 sets recorded · 1 bonus". Accurate, and it
+    // reads like a bug.
+    it('names bonus work plainly when nothing was planned', async () => {
+      const session = await getActiveSession(ctx.db);
+      await addExercise(ctx.db, session!.id, 'fly');
+      const withBonus = await getSessionForDate(ctx.db, Date.now());
+      const added = withBonus!.exercises.find(
+        e => e.plannedExerciseId === null,
+      )!;
+      await completeSet(ctx.db, added.sets[0]!.id, {
+        actualReps: 10,
+        actualWeight: 20,
+      });
+      mockParams.exerciseIndex = withBonus!.exercises.indexOf(added);
+
+      const view = await wrap(<ExerciseSummaryScreen />);
+      expect(await view.findByText('1 bonus set')).toBeTruthy();
+      expect(view.queryByText(/0 of 0/)).toBeNull();
     });
 
     it('moves on to the next exercise', async () => {

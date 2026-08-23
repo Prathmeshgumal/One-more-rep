@@ -11,7 +11,10 @@ import {LedgerTable, type LedgerRow} from '@/ui/LedgerTable';
 import {BackButton} from '@/ui/BackButton';
 import {useTheme, space} from '@/theme';
 import {compareSet, describeComparison} from '@/domain/setComparison';
-import {aggregateExercise} from '@/domain/sessionProgress';
+import {
+  aggregateExercise,
+  type ExerciseAggregate,
+} from '@/domain/sessionProgress';
 import {useSettingsQuery} from '@/features/settings/useSettings';
 import {useTodaySessionQuery} from './useSession';
 
@@ -21,6 +24,21 @@ const pair = (reps: number | null, weight: number | null): string => {
   }
   return weight === null ? `${reps}` : `${reps} × ${weight.toFixed(1)}`;
 };
+
+/**
+ * "2 of 3 sets recorded · 1 bonus", or just "1 bonus set" for an exercise that
+ * was added on the day and therefore had nothing planned. "0 of 0 sets
+ * recorded" is accurate and reads like a bug.
+ */
+function summaryLine(aggregate: ExerciseAggregate): string {
+  const bonus = aggregate.completedUnplannedSets;
+  const bonusSets = `${bonus} bonus ${bonus === 1 ? 'set' : 'sets'}`;
+  if (aggregate.plannedSets === 0) {
+    return bonus > 0 ? bonusSets : 'Nothing recorded';
+  }
+  const planned = `${aggregate.completedSets} of ${aggregate.plannedSets} sets recorded`;
+  return bonus > 0 ? `${planned} · ${bonus} bonus` : planned;
+}
 
 /** Design 10: the §16 table for one exercise, plus its §26 volume. */
 export function ExerciseSummaryScreen() {
@@ -77,11 +95,7 @@ export function ExerciseSummaryScreen() {
       <StatusChip status={aggregate.status} label="Exercise complete" />
       <AppText variant="h1">{exercise.name}</AppText>
       <AppText variant="printed" color="muted">
-        {`${aggregate.completedSets} of ${aggregate.plannedSets} sets recorded${
-          aggregate.completedUnplannedSets > 0
-            ? ` · ${aggregate.completedUnplannedSets} bonus`
-            : ''
-        }`}
+        {summaryLine(aggregate)}
       </AppText>
 
       <LedgerTable rows={rows} />

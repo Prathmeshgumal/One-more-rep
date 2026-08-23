@@ -1,12 +1,16 @@
 import React from 'react';
-import {render, fireEvent, waitFor} from '@testing-library/react-native';
+import {act, render, fireEvent, waitFor} from '@testing-library/react-native';
 import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
 import {NavigationContainer} from '@react-navigation/native';
 import {sql} from 'drizzle-orm';
 import {runMigrations} from '@/db/migrate';
 import {createPlan, editPlan} from '@/repositories/planRepo';
 import {addExercises, renameDay, setTargets} from '@/domain/planDraft';
-import {startWorkout, getActiveSession} from '@/repositories/sessionRepo';
+import {
+  startWorkout,
+  getActiveSession,
+  completeSet,
+} from '@/repositories/sessionRepo';
 import {ThemeProvider} from '@/theme';
 import {DatabaseContextTestProvider} from '@/providers/DatabaseGate';
 import {WorkoutScreen} from '@/features/workout/WorkoutScreen';
@@ -15,9 +19,19 @@ import {createTestDb} from '../../helpers/testDb';
 
 const mockNavigate = jest.fn();
 const mockGoBack = jest.fn();
+const mockFocus: Array<() => void> = [];
 jest.mock('@react-navigation/native', () => ({
   ...jest.requireActual('@react-navigation/native'),
   useNavigation: () => ({navigate: mockNavigate, goBack: mockGoBack}),
+  // Runs the callback once and keeps it, so a test can fire focus again the
+  // way returning from the exercise summary does.
+  useFocusEffect: (cb: () => void) => {
+    const React_ = require('react');
+    React_.useEffect(() => {
+      mockFocus.push(cb);
+      cb();
+    }, []);
+  },
 }));
 
 describe('WorkoutScreen', () => {
@@ -77,6 +91,7 @@ describe('WorkoutScreen', () => {
     });
     useActiveSet.getState().reset();
     mockNavigate.mockClear();
+    mockFocus.length = 0;
     mockGoBack.mockClear();
   });
 
@@ -246,5 +261,51 @@ describe('WorkoutScreen', () => {
     const view = await renderScreen();
     await fireEvent.press(await view.findByLabelText('Close workout'));
     expect(mockGoBack).toHaveBeenCalled();
+  });
+
+  // Spec 6.4: resume "at the first pending set". This screen used to open on
+  // the first exercise regardless, so on the device a half-finished workout
+  // resumed on an exercise that was already done — and the exercise summary's
+  // "Next — X" button landed back on the exercise it had just summarised.
+  it('opens on the first exercise that still has a pending set', async () => {
+    const session = await getActiveSession(ctx.db);
+    // Finish everything in the first exercise.
+    for (const set of session!.exercises[0]!.sets) {
+      await completeSet(ctx.db, set.id, {actualReps: 10, actualWeight: 20});
+    }
+
+    const view = await renderScreen();
+    expect(await view.findByText('Cable Fly')).toBeTruthy();
+    expect(view.queryByText('Bench Press')).toBeNull();
+  });
+
+  // Coming back from an exercise summary does not change the session, so an
+  // alignment that only watched the session would never re-run here.
+  it('realigns when the screen is focused again', async () => {
+    const view = await renderScreen();
+    await view.findByText('Bench Press');
+
+    // Finish the first exercise through the UI, so the query invalidates the
+    // way it does in the app.
+    for (let i = 0; i < 3; i += 1) {
+      await fireEvent.press(await view.findByLabelText('Complete set'));
+    }
+    await waitFor(() =>
+      expect(mockNavigate).toHaveBeenCalledWith('ExerciseSummary', {
+        exerciseIndex: 0,
+      }),
+    );
+
+    // Still on the finished exercise: recording sets must not move the screen
+    // out from under someone who is still working on it.
+    expect(view.getByText('Bench Press')).toBeTruthy();
+
+    // Now the summary hands focus back.
+    await act(async () => {
+      for (const focus of mockFocus) {
+        focus();
+      }
+    });
+    await waitFor(() => expect(view.getByText('Cable Fly')).toBeTruthy());
   });
 });
