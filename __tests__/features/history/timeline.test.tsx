@@ -94,7 +94,9 @@ describe('HistoryTimelineScreen', () => {
 
   it('invites a first workout when nothing has been recorded', async () => {
     const view = await renderScreen();
-    expect(await view.findByText(/past workouts/i)).toBeTruthy();
+    expect(
+      await view.findByText(/completed workouts will appear here/i),
+    ).toBeTruthy();
   });
 
   it('shows the week adherence card', async () => {

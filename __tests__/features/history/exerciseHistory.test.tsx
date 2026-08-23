@@ -106,7 +106,9 @@ describe('ExerciseHistoryScreen', () => {
   it('says plainly when an exercise has never been performed', async () => {
     mockParams.exerciseId = 'pushup';
     const view = await renderScreen();
-    expect(await view.findByText(/nothing recorded/i)).toBeTruthy();
+    expect(
+      await view.findByText(/complete this exercise to start building/i),
+    ).toBeTruthy();
   });
 
   it('names the exercise', async () => {
