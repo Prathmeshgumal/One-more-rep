@@ -1,4 +1,4 @@
-import {and, asc, eq, inArray, sql} from 'drizzle-orm';
+import {and, asc, desc, eq, inArray, sql} from 'drizzle-orm';
 import {
   workoutSessions,
   performedExercises,
@@ -251,4 +251,184 @@ export async function startWorkout(
     throw new Error('The workout could not be started.');
   }
   return created;
+}
+
+/**
+ * Recomputes one exercise's status from its sets.
+ *
+ * An exercise is finished when nothing is pending. Whether that reads as
+ * completed or skipped depends on whether anything was actually done — an
+ * exercise whose every set was skipped one by one should not be reported as
+ * completed, and one that was part-done should not be reported as skipped.
+ *
+ * An explicit "skip exercise" is not routed through here: that is a decision
+ * the user made, not a state derived from the sets.
+ */
+async function refreshExerciseStatus(
+  db: AppDatabase,
+  performedExerciseId: string,
+): Promise<void> {
+  const sets = await db
+    .select({status: performedSets.status})
+    .from(performedSets)
+    .where(eq(performedSets.performedExerciseId, performedExerciseId));
+
+  const pending = sets.some(s => s.status === 'pending');
+  const anyCompleted = sets.some(s => s.status === 'completed');
+
+  const status: ItemStatus = pending
+    ? 'pending'
+    : anyCompleted
+      ? 'completed'
+      : 'skipped';
+
+  await db
+    .update(performedExercises)
+    .set({status})
+    .where(eq(performedExercises.id, performedExerciseId));
+}
+
+async function requireSet(
+  db: AppDatabase,
+  setId: string,
+): Promise<typeof performedSets.$inferSelect> {
+  const rows = await db
+    .select()
+    .from(performedSets)
+    .where(eq(performedSets.id, setId))
+    .limit(1);
+  const row = rows[0];
+  if (!row) {
+    throw new Error(`Set ${setId} does not exist.`);
+  }
+  return row;
+}
+
+/**
+ * Records what was actually lifted (spec 6.3).
+ *
+ * Its own committed write, deliberately: there is no end-of-workout save that
+ * a crash could lose. Re-completing an already-completed set corrects it,
+ * because §14 makes the actual editable and the alternative is a wrong number
+ * stuck in history forever.
+ */
+export async function completeSet(
+  db: AppDatabase,
+  setId: string,
+  actuals: {actualReps: number; actualWeight: number | null},
+  opts: {now?: number} = {},
+): Promise<void> {
+  const set = await requireSet(db, setId);
+  await db
+    .update(performedSets)
+    .set({
+      actualReps: actuals.actualReps,
+      actualWeight: actuals.actualWeight,
+      status: 'completed',
+      completedAt: opts.now ?? Date.now(),
+    })
+    .where(eq(performedSets.id, setId));
+  await refreshExerciseStatus(db, set.performedExerciseId);
+}
+
+/** §21: skipped, with actuals left empty. Never pretend it happened. */
+export async function skipSet(db: AppDatabase, setId: string): Promise<void> {
+  const set = await requireSet(db, setId);
+  await db
+    .update(performedSets)
+    .set({
+      status: 'skipped',
+      actualReps: null,
+      actualWeight: null,
+      completedAt: null,
+    })
+    .where(eq(performedSets.id, setId));
+  await refreshExerciseStatus(db, set.performedExerciseId);
+}
+
+/**
+ * Skips an exercise and every set still pending on it (spec 6.5).
+ *
+ * Sets already recorded are left exactly as they are — someone who did two
+ * sets and gave up on the third did two sets, and history should say so.
+ */
+export async function skipExercise(
+  db: AppDatabase,
+  performedExerciseId: string,
+): Promise<void> {
+  await db
+    .update(performedSets)
+    .set({status: 'skipped', actualReps: null, actualWeight: null})
+    .where(
+      and(
+        eq(performedSets.performedExerciseId, performedExerciseId),
+        eq(performedSets.status, 'pending'),
+      ),
+    );
+  await db
+    .update(performedExercises)
+    .set({status: 'skipped'})
+    .where(eq(performedExercises.id, performedExerciseId));
+}
+
+/** An extra set beyond the plan (D3). No target, because there was none. */
+export async function addSet(
+  db: AppDatabase,
+  performedExerciseId: string,
+): Promise<string> {
+  const rows = await db
+    .select({setNumber: performedSets.setNumber})
+    .from(performedSets)
+    .where(eq(performedSets.performedExerciseId, performedExerciseId))
+    .orderBy(desc(performedSets.setNumber))
+    .limit(1);
+
+  const id = newId('pst');
+  await db.insert(performedSets).values({
+    id,
+    performedExerciseId,
+    setNumber: (rows[0]?.setNumber ?? 0) + 1,
+    targetReps: null,
+    targetWeight: null,
+    actualReps: null,
+    actualWeight: null,
+    status: 'pending',
+    isUnplanned: true,
+    completedAt: null,
+  });
+  // The exercise has pending work again, so it is no longer finished.
+  await refreshExerciseStatus(db, performedExerciseId);
+  return id;
+}
+
+/**
+ * An exercise added during the workout (D3).
+ *
+ * It arrives with one unplanned set already on it. Appending an exercise with
+ * nothing to record into would cost a second tap in a gym for no reason, and
+ * "Add set" is right there for anyone who wants more.
+ */
+export async function addExercise(
+  db: AppDatabase,
+  sessionId: string,
+  exerciseId: string,
+): Promise<string> {
+  const rows = await db
+    .select({orderIndex: performedExercises.orderIndex})
+    .from(performedExercises)
+    .where(eq(performedExercises.workoutSessionId, sessionId))
+    .orderBy(desc(performedExercises.orderIndex))
+    .limit(1);
+
+  const id = newId('pex');
+  await db.insert(performedExercises).values({
+    id,
+    workoutSessionId: sessionId,
+    exerciseId,
+    plannedExerciseId: null,
+    orderIndex: (rows[0]?.orderIndex ?? -1) + 1,
+    status: 'pending',
+  });
+  await addSet(db, id);
+  return id;
 }
