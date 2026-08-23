@@ -3,17 +3,21 @@ import {ScrollView, StyleSheet, View} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useTheme, space} from '@/theme';
 import {AppText} from './Text';
+import {BackButton} from './BackButton';
 
 export function Screen({
   title,
   eyebrow,
   action,
+  back = false,
   children,
 }: {
   title: string;
   eyebrow?: string;
   /** A control aligned to the right of the heading — the design's `.appbar` button. */
   action?: React.ReactNode;
+  /** Shows a back control above the heading. Pushed screens set this. */
+  back?: boolean;
   children?: React.ReactNode;
 }) {
   const {colors} = useTheme();
@@ -26,6 +30,7 @@ export function Screen({
           styles.content,
           {paddingTop: insets.top + space.xl},
         ]}>
+        {back ? <BackButton /> : null}
         <View style={styles.header}>
           <View style={styles.headerText}>
             {eyebrow ? (
