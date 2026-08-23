@@ -33,41 +33,28 @@ after. Renaming back then compacted **in place** rather than forking a third
 version, because no session belongs to the new one — the same rule, seen from
 the other side.
 
-### Four workout paths were never walked on the device
-**Added:** 2026-08-23, at the Phase 3 gate. **Deferred by the user's explicit
-decision.**
+### ~~Four workout paths were never walked on the device~~ — CLOSED
+**Added:** 2026-08-23, at the Phase 3 gate. **Closed:** 2026-08-24, on a
+Monday reached by moving the device clock forward one day.
 
-The gate session went start — record all six sets — finish — save, cleanly. All
-four critical invariants were verified against the device database: no set
-carries actuals without being completed, every planned set kept its target
-snapshot, no orphans, `user_version` 5. The recorded verdicts matched the
-domain functions exactly (2 achieved / 3 exceeded / 1 below, 772.5 kg, 100%).
+All five gaps were walked, each checked against the device database:
 
-**What that session did not touch:**
+1. **Skip a set** — `skipped` with both actuals still NULL. Spec 6.2's rule
+   that status is the sole source of truth, holding on hardware.
+2. **A bonus set** — `is_unplanned = 1` with NULL targets, labelled BONUS SET.
+3. **An unplanned exercise** — `planned_exercise_id IS NULL`, badged "added".
+4. **Force-kill and resume** — twice over, in fact: a force-stop and then a
+   full APK reinstall mid-workout. Both came back "IN PROGRESS · 4 of 7 sets"
+   at the right set, with nothing lost.
+5. **The mixed verdict** — 10.0 kg x 8 against a 12 x 7.5 target read
+   **"−10 kg vol" in ochre**. Volume overruled the heavier weight, which is
+   the case the earlier gate never produced.
 
-1. **Skipping a set or an exercise.** Every set came back `completed`, so the
-   skip path has only ever run under Jest. This is the one where a silent bug
-   corrupts history rather than just looking wrong — a skipped set counts
-   towards the denominator of adherence and nothing else.
-2. **A bonus set.** `is_unplanned` is 0 on every row.
-3. **An unplanned exercise.** `planned_exercise_id` is set on both exercises,
-   so Task 13's feature is entirely unverified on hardware.
-4. **Force-kill and resume (§20).** The session ran start to finish in one go,
-   so crash safety was never tested where it actually matters.
+The finish summary then reported **83% of plan, 5 of 6 sets, 880 kg** — both
+bonus sets excluded from the ratio and included in the volume, exactly as
+spec 5.5 requires.
 
-Separately, the **genuinely mixed verdict** — one dimension up, the other down —
-did not occur. Both volume-decided sets went up on both dimensions. The volume
-code path ran; the case where volume has to *overrule an apparent improvement*
-did not.
-
-**How to close it:** one short session. Skip a set, add a bonus set, add an
-exercise, force-kill mid-workout and resume, and on one set go heavier with
-fewer reps (e.g. target 12 x 10, do 8 x 12.5 — volume 100 against 120, so it
-must read below in ochre despite the heavier weight).
-
-Affects: `src/repositories/sessionRepo.ts`, `src/features/workout/`.
-
-### The Phase 4 device gate is walked except for two steps
+### ~~The Phase 4 device gate is walked except for two steps~~ — CLOSED
 **Added:** 2026-08-23. **Mostly closed the same day.**
 
 Walked on a Redmi 2201116SI against a **self-contained APK** (JS bundled with
@@ -101,9 +88,9 @@ session per date is a unique index, and today already has one:
 2. The four Phase 3 workout paths below, which would also give the timeline and
    the calendar more than a single day to draw.
 
-**How to close:** move the device date forward one day, then work through the
-next item. Settings — Additional settings — Date & time — turn off "Set time
-automatically".
+**Closed on 2026-08-24:** saving a workout and switching straight to History
+without a restart showed the new day immediately, and the timeline now draws
+two days — Monday with an ochre "1 skipped" chip, Sunday with "Complete".
 
 ## Design departures
 
@@ -191,9 +178,40 @@ The inner screen is now `TodayHome`; the tab keeps the name the user sees.
 Nothing navigated to it by name — only `popToTop()` — so the rename touched
 two files. Confirmed gone from logcat on the bundled build.
 
+### Resume lands on the first exercise, not the first pending set
+**Added:** 2026-08-24, at the Phase 3 re-gate.
+
+Spec 6.4 says an in-progress session resumes "at the first pending set". The
+Today screen gets this right — it said "Barbell Incline Bench Press · SET 2 OF
+3" — but tapping **Continue workout** opens the workout screen on exercise 1,
+which was already finished, so you have to tap "Next" to get where you were.
+
+Cosmetic today, because both exercises are one tap apart. On a six-exercise
+day it would be four.
+
+Affects: `src/features/workout/WorkoutScreen.tsx`.
+
+### The exercise summary's "Next" button does not advance
+**Added:** 2026-08-24.
+
+"Next — Ab Crunch Machine" on the exercise summary returns to the workout
+screen still showing the finished exercise, where the same label has to be
+tapped again. The button names the destination it does not go to.
+
+Affects: `src/features/workout/ExerciseSummaryScreen.tsx`.
+
+### An all-bonus exercise reads "0 of 0 sets recorded · 1 bonus"
+**Added:** 2026-08-24.
+
+Accurate — nothing was planned and one bonus set was done — but "0 of 0" is an
+odd thing to read. When `plannedSets` is zero the line could simply say
+"1 bonus set".
+
+Affects: `src/features/workout/ExerciseSummaryScreen.tsx`.
+
 ## Deferred verification — Phase 5
 
-### Three Phase 5 gate steps were not walked
+### Two Phase 5 gate steps were not walked
 **Added:** 2026-08-23, at the Phase 5 gate.
 
 **Walked:** the back control on both kinds of screen; the nested-screen-name
@@ -202,11 +220,9 @@ after the chrome change.
 
 **Not walked, and why:**
 
-1. **"A set recorded in under a second."** The spec's performance gate needs an
-   in-progress workout, and the only session on the device is finished. One
-   session per date is a unique index, so this is blocked on the same date
-   change as the workout paths above. Record a set and time the gap between the
-   tap and the next set appearing.
+1. ~~**"A set recorded in under a second."**~~ **Closed 2026-08-24.** Tap to
+   the next set becoming active, including roughly 280ms of `adb` dispatch
+   latency that a finger does not pay, was comfortably inside a second.
 2. **Every empty state, on the device.** All four §40 states are asserted in
    `__tests__/features/emptyStates.test.tsx`, but reaching the no-plan ones on
    hardware needs a database with no plan — i.e. `adb shell pm clear
