@@ -10,6 +10,7 @@ import {
 import type {AppDatabase} from '@/db/types';
 import {WEEKDAY_NAMES} from '@/domain/weekday';
 import {emptyDraft, type PlanDraft} from '@/domain/planDraft';
+import {canEditInPlace} from '@/domain/planVersioning';
 
 export type PlanSet = {
   setNumber: number;
@@ -245,4 +246,148 @@ export function toDraft(plan: Plan): PlanDraft {
       })),
     })),
   };
+}
+
+/** Writes a draft's days, exercises, and sets under one version id. */
+async function writeTree(
+  db: AppDatabase,
+  versionId: string,
+  draft: PlanDraft,
+): Promise<void> {
+  const dayValues = draft.days.map((day, weekday) => ({
+    id: newId('pd'),
+    planVersionId: versionId,
+    weekday,
+    customName: day.customName,
+    isRestDay: day.isRestDay,
+  }));
+  await db.insert(planDays).values(dayValues);
+
+  const exerciseValues: {
+    id: string;
+    planDayId: string;
+    exerciseId: string;
+    orderIndex: number;
+  }[] = [];
+  const setValues: {
+    id: string;
+    plannedExerciseId: string;
+    setNumber: number;
+    targetReps: number;
+    targetWeight: number | null;
+  }[] = [];
+
+  draft.days.forEach((day, weekday) => {
+    const planDayId = dayValues[weekday]!.id;
+    day.exercises.forEach((exercise, orderIndex) => {
+      const plannedExerciseId = newId('pe');
+      exerciseValues.push({
+        id: plannedExerciseId,
+        planDayId,
+        exerciseId: exercise.exerciseId,
+        // Array position is the order. Nothing else decides it.
+        orderIndex,
+      });
+      exercise.sets.forEach((set, index) => {
+        setValues.push({
+          id: newId('ps'),
+          plannedExerciseId,
+          // Array index + 1 is the set number. Nothing else decides it.
+          setNumber: index + 1,
+          targetReps: set.targetReps,
+          targetWeight: set.targetWeight,
+        });
+      });
+    });
+  });
+
+  if (exerciseValues.length > 0) {
+    await db.insert(plannedExercises).values(exerciseValues);
+  }
+  if (setValues.length > 0) {
+    await db.insert(plannedSets).values(setValues);
+  }
+}
+
+/**
+ * Persists a draft, forking a new version unless compaction applies.
+ *
+ * The forking branch is the one that matters: closing the old version and
+ * writing a fresh tree is what lets a workout performed last week keep the
+ * targets it was performed against (section 32). Compaction is the narrow
+ * exception, and `canEditInPlace` owns that decision.
+ *
+ * NOTE: `sessionCount` is hard-coded to 0 because `workout_sessions` does not
+ * exist until Phase 3. See docs/deferred.md — Phase 3 must replace it, or
+ * editing the plan after training on the same day will rewrite the version
+ * that workout was performed against.
+ */
+export async function savePlanDraft(
+  db: AppDatabase,
+  draft: PlanDraft,
+  now: number = Date.now(),
+): Promise<Plan> {
+  const active = await getActivePlan(db);
+  if (!active) {
+    throw new Error('There is no active plan to save into.');
+  }
+
+  const inPlace = canEditInPlace({
+    effectiveFrom: active.version.effectiveFrom,
+    now,
+    sessionCount: 0,
+  });
+
+  await db.run(sql.raw('BEGIN'));
+  try {
+    if (inPlace) {
+      // The cascade takes days, exercises, and sets with it.
+      await db.delete(planDays).where(eq(planDays.planVersionId, active.version.id));
+      await db
+        .update(planVersions)
+        .set({name: draft.name})
+        .where(eq(planVersions.id, active.version.id));
+      await writeTree(db, active.version.id, draft);
+    } else {
+      await db
+        .update(planVersions)
+        .set({effectiveTo: now})
+        .where(eq(planVersions.id, active.version.id));
+
+      const versionId = newId('pv');
+      await db.insert(planVersions).values({
+        id: versionId,
+        name: draft.name,
+        effectiveFrom: now,
+        effectiveTo: null,
+      });
+      await writeTree(db, versionId, draft);
+    }
+    await db.run(sql.raw('COMMIT'));
+  } catch (error) {
+    await db.run(sql.raw('ROLLBACK'));
+    throw error instanceof Error ? error : new Error(String(error));
+  }
+
+  const saved = await getActivePlan(db);
+  if (!saved) {
+    throw new Error('Plan could not be saved.');
+  }
+  return saved;
+}
+
+/**
+ * Load, apply a pure edit, save. Every screen mutation goes through here, so
+ * versioning is decided in exactly one place.
+ */
+export async function editPlan(
+  db: AppDatabase,
+  mutate: (draft: PlanDraft) => PlanDraft,
+  now: number = Date.now(),
+): Promise<Plan> {
+  const active = await getActivePlan(db);
+  if (!active) {
+    throw new Error('There is no active plan to edit.');
+  }
+  return savePlanDraft(db, mutate(toDraft(active)), now);
 }
