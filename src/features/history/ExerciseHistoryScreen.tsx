@@ -57,8 +57,7 @@ export function ExerciseHistoryScreen() {
       {progress.sessions.length === 0 ? (
         <Card>
           <AppText color="muted">
-            Nothing recorded for this exercise yet. It will appear here after
-            the first time you train it.
+            Complete this exercise to start building your history.
           </AppText>
         </Card>
       ) : null}

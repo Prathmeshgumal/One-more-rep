@@ -84,7 +84,7 @@ export function HistoryTimelineScreen() {
 
       {isPending ? null : timeline.length === 0 ? (
         <AppText color="muted">
-          Nothing here yet — past workouts appear once you finish one.
+          Your completed workouts will appear here.
         </AppText>
       ) : (
         <View>
