@@ -3689,7 +3689,10 @@ describe('TodayScreen', () => {
 
     const view = await renderScreen();
     expect(await view.findByText('Continue workout')).toBeTruthy();
-    expect(view.getByText(/1 of 6 sets recorded/)).toBeTruthy();
+    // The count and its label are separate nodes, as the design sets them:
+    // a big plate-coloured number over a printed caption.
+    expect(view.getByText('1')).toBeTruthy();
+    expect(view.getByText('of 6 sets recorded')).toBeTruthy();
     expect(view.queryByText('Start workout')).toBeNull();
   });
 

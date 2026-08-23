@@ -40,7 +40,9 @@ describe('RootNavigator', () => {
 
   it('opens on Today', async () => {
     const view = await renderApp();
-    expect(view.getByText(/workout for today/i)).toBeTruthy();
+    // The fixture has no plan, so Today shows the empty state that points at
+    // the Plan tab. Phase 3 replaced the placeholder this used to match.
+    expect(await view.findByText(/No plan yet/i)).toBeTruthy();
   });
 
   it('reaches every one of the five tabs', async () => {

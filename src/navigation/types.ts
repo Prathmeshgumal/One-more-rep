@@ -21,3 +21,11 @@ export type PlanStackParamList = {
   PlanCopyDay: {weekday: number};
   PlanHistory: undefined;
 };
+
+export type TodayStackParamList = {
+  Today: undefined;
+  Workout: undefined;
+  ExerciseSummary: {exerciseIndex: number};
+  WorkoutComplete: undefined;
+  WorkoutExercisePicker: undefined;
+};

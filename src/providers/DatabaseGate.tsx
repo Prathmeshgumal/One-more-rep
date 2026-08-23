@@ -3,6 +3,7 @@ import {ActivityIndicator, ScrollView, StyleSheet, Text, View} from 'react-nativ
 import {getDatabase} from '@/db/client';
 import {runMigrations} from '@/db/migrate';
 import {seedExercises} from '@/db/seed/seedExercises';
+import {rollOverStaleSessions} from '@/repositories/sessionRepo';
 import type {AppDatabase} from '@/db/types';
 import {useTheme, type as typeScale, space, radius} from '@/theme';
 
@@ -46,6 +47,10 @@ export function DatabaseGate({
         const db = getDb();
         await runMigrations(db);
         await seedExercises(db);
+        // Spec 6.4: a session left open overnight closes as abandoned, keeping
+        // every set it recorded. Launch is the only moment this can happen —
+        // there is no background job anywhere in this app.
+        await rollOverStaleSessions(db);
         if (!cancelled) {
           setStatus({phase: 'ready', db});
         }
