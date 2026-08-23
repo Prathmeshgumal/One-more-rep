@@ -11,6 +11,36 @@ visible at the moment completion is claimed.
 
 ---
 
+## Deferred verification
+
+### The fork is proven in tests but not yet on the device
+**Added:** 2026-08-23, at the Phase 2 gate. **Deferred by the user's explicit
+decision, to be raised again after Phase 5.**
+
+Phase 2's stated gate is "confirm an edit forks a new version". Every other
+step of that gate was walked on the device. This one was not, because it needs
+the device clock moved forward a day, and the user chose to do it later.
+
+**What is already proven, in `__tests__/repositories/planRepo.write.test.ts`:**
+an edit the next day opens a second version and closes the first; the old
+version keeps its own targets, asserted by resolving a date on each side of the
+fork; exactly one version stays open after every kind of edit; and the whole
+tree is carried into the fork, not just the edited day. The device holds one
+version because everything was done in a single day — that is the compaction
+rule working, not the fork failing.
+
+**What is not proven:** that this behaves the same through the real op-sqlite
+connection and the real screens, rather than through better-sqlite3 under Jest.
+That gap has already bitten once this phase — foreign keys were off on the
+device while every cascade test passed.
+
+**How to close it:** Settings — Date & time — turn off automatic, move forward
+one day. Reopen the app, rename any day, open Plan history. Expect two
+versions: one `Replaced` with a closed date range, one `Active`. Set the date
+back afterwards.
+
+Affects: `src/repositories/planRepo.ts`, `src/features/plan/PlanHistoryScreen.tsx`.
+
 ## Phase 3 — Today & Workout
 
 ### `canEditInPlace` is always told there are zero sessions
