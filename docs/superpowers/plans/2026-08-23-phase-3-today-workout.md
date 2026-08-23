@@ -1835,7 +1835,7 @@ Create `__tests__/repositories/sessionRepo.record.test.ts`:
 import {sql} from 'drizzle-orm';
 import {runMigrations} from '@/db/migrate';
 import {createPlan, editPlan} from '@/repositories/planRepo';
-import {addExercises, renameDay} from '@/domain/planDraft';
+import {addExercises, renameDay, setTargets} from '@/domain/planDraft';
 import {
   startWorkout,
   getActiveSession,
@@ -4353,6 +4353,16 @@ describe('WorkoutScreen', () => {
     await createPlan(ctx.db);
     await editPlan(ctx.db, d =>
       addExercises(renameDay(d, today(), 'Push Day'), today(), ['bench', 'fly']),
+    );
+    // A real target weight, so the pre-fill has something to pre-fill from.
+    // addExercises defaults to 3 x 10 with no weight, which would make every
+    // weight assertion below trivially zero.
+    await editPlan(ctx.db, d =>
+      setTargets(d, today(), 0, [
+        {targetReps: 10, targetWeight: 30},
+        {targetReps: 10, targetWeight: 30},
+        {targetReps: 10, targetWeight: 30},
+      ]),
     );
     await startWorkout(ctx.db);
 
