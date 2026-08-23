@@ -2296,7 +2296,7 @@ Create `__tests__/repositories/sessionRepo.finish.test.ts`:
 import {sql} from 'drizzle-orm';
 import {runMigrations} from '@/db/migrate';
 import {createPlan, editPlan} from '@/repositories/planRepo';
-import {addExercises, renameDay} from '@/domain/planDraft';
+import {addExercises, renameDay, setTargets} from '@/domain/planDraft';
 import {
   startWorkout,
   getActiveSession,
@@ -5220,6 +5220,15 @@ describe('the workout summaries', () => {
     await editPlan(ctx.db, d =>
       addExercises(renameDay(d, today(), 'Push Day'), today(), ['bench', 'fly']),
     );
+    // Real targets, so set 3 below is a genuine mixed case decided by volume
+    // rather than a bodyweight comparison on reps alone.
+    await editPlan(ctx.db, d =>
+      setTargets(d, today(), 0, [
+        {targetReps: 10, targetWeight: 30},
+        {targetReps: 10, targetWeight: 30},
+        {targetReps: 10, targetWeight: 30},
+      ]),
+    );
     await startWorkout(ctx.db);
 
     client = new QueryClient({
@@ -5247,7 +5256,7 @@ describe('the workout summaries', () => {
   describe('ExerciseSummaryScreen', () => {
     it('reads out every set against its target', async () => {
       await recordBench();
-      const view = wrap(<ExerciseSummaryScreen />);
+      const view = await wrap(<ExerciseSummaryScreen />);
 
       expect(await view.findByText('Bench Press')).toBeTruthy();
       expect(view.getByText('3 of 3 sets recorded')).toBeTruthy();
@@ -5259,7 +5268,7 @@ describe('the workout summaries', () => {
 
     it('totals the volume and the gap to target', async () => {
       await recordBench();
-      const view = wrap(<ExerciseSummaryScreen />);
+      const view = await wrap(<ExerciseSummaryScreen />);
       // 300 + 360 + 260 = 920 against a target of 900.
       expect(await view.findByText('920 kg')).toBeTruthy();
       expect(view.getByText('+20')).toBeTruthy();
@@ -5272,14 +5281,14 @@ describe('the workout summaries', () => {
       await skipSet(ctx.db, b!.id);
       await skipSet(ctx.db, c!.id);
 
-      const view = wrap(<ExerciseSummaryScreen />);
+      const view = await wrap(<ExerciseSummaryScreen />);
       expect(await view.findByText('1 of 3 sets recorded')).toBeTruthy();
       expect(view.getAllByText('Skipped').length).toBe(2);
     });
 
     it('moves on to the next exercise', async () => {
       await recordBench();
-      const view = wrap(<ExerciseSummaryScreen />);
+      const view = await wrap(<ExerciseSummaryScreen />);
       await fireEvent.press(await view.findByText(/Next — Cable Fly/));
       expect(mockGoBack).toHaveBeenCalled();
     });
@@ -5288,7 +5297,7 @@ describe('the workout summaries', () => {
   describe('WorkoutCompleteScreen', () => {
     it('reports the completion percentage of the plan', async () => {
       await recordBench();
-      const view = wrap(<WorkoutCompleteScreen />);
+      const view = await wrap(<WorkoutCompleteScreen />);
       // Three of six planned sets recorded.
       expect(await view.findByText('50')).toBeTruthy();
       expect(view.getByText('% of plan')).toBeTruthy();
@@ -5296,7 +5305,7 @@ describe('the workout summaries', () => {
 
     it('breaks the session down against target', async () => {
       await recordBench();
-      const view = wrap(<WorkoutCompleteScreen />);
+      const view = await wrap(<WorkoutCompleteScreen />);
       await view.findByText('50');
       expect(view.getByText('Achieved')).toBeTruthy();
       expect(view.getByText('Exceeded')).toBeTruthy();
@@ -5305,19 +5314,19 @@ describe('the workout summaries', () => {
 
     it('counts exercises and sets', async () => {
       await recordBench();
-      const view = wrap(<WorkoutCompleteScreen />);
+      const view = await wrap(<WorkoutCompleteScreen />);
       expect(await view.findByText('3 / 6')).toBeTruthy();
     });
 
     it('totals the volume lifted', async () => {
       await recordBench();
-      const view = wrap(<WorkoutCompleteScreen />);
+      const view = await wrap(<WorkoutCompleteScreen />);
       expect(await view.findByText('920 kg')).toBeTruthy();
     });
 
     it('saves the workout and leaves', async () => {
       await recordBench();
-      const view = wrap(<WorkoutCompleteScreen />);
+      const view = await wrap(<WorkoutCompleteScreen />);
       await fireEvent.press(await view.findByText('Save workout'));
 
       await waitFor(async () => {
@@ -5329,7 +5338,7 @@ describe('the workout summaries', () => {
     // §19: finishing with sets outstanding says so rather than silently
     // recording them as skipped.
     it('warns about what has not been recorded before finishing', async () => {
-      const view = wrap(<WorkoutCompleteScreen />);
+      const view = await wrap(<WorkoutCompleteScreen />);
       expect(
         await view.findByText(/6 sets not recorded/i),
       ).toBeTruthy();
@@ -5341,7 +5350,7 @@ describe('the workout summaries', () => {
       const {finishWorkout} = require('@/repositories/sessionRepo');
       await finishWorkout(ctx.db, session.id);
 
-      const view = wrap(<WorkoutCompleteScreen />);
+      const view = await wrap(<WorkoutCompleteScreen />);
       expect(await view.findByText('Done')).toBeTruthy();
       expect(view.queryByText('Save workout')).toBeNull();
     });
@@ -5353,7 +5362,7 @@ describe('the workout summaries', () => {
       const session = (await getSessionForDate(ctx.db, Date.now()))!;
       expect(session.exercises.every(e => e.sets.length === 0)).toBe(true);
 
-      const view = wrap(<WorkoutCompleteScreen />);
+      const view = await wrap(<WorkoutCompleteScreen />);
       expect(await view.findByText(/Nothing was planned/i)).toBeTruthy();
     });
   });
