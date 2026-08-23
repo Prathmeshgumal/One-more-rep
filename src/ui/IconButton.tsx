@@ -1,7 +1,7 @@
 import React from 'react';
 import {Pressable, StyleSheet} from 'react-native';
 import Svg, {Path} from 'react-native-svg';
-import {useTheme, radius} from '@/theme';
+import {useTheme, radius, space} from '@/theme';
 
 /** Copied from the design rather than redrawn — `.iconbtn svg` in screens.html. */
 const GLYPHS = {
@@ -26,6 +26,9 @@ export function IconButton({
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={label}
+      // The design draws 38px. The slop clears the 44px minimum without
+      // making the circle bigger than the design says it is.
+      hitSlop={space.xs}
       onPress={onPress}
       style={({pressed}) => [
         styles.button,
