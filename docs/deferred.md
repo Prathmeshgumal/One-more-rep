@@ -11,6 +11,23 @@ visible at the moment completion is claimed.
 
 ---
 
+## Phase 3 — Today & Workout
+
+### `canEditInPlace` is always told there are zero sessions
+**Added:** 2026-08-23, during Phase 2.
+
+`planRepo.savePlanDraft` passes `sessionCount: 0` to `canEditInPlace`, because
+`workout_sessions` does not exist yet. The domain rule handles a non-zero count
+correctly and is tested for it — only the query is missing.
+
+**Phase 3 must replace that literal** with a count of sessions referencing the
+active version. Until it does, editing the plan later on a day you have already
+trained rewrites that version in place instead of forking, and the workout you
+already did will appear to have been performed against the new targets. That is
+exactly the corruption section 32 forbids.
+
+Affects: `src/repositories/planRepo.ts`.
+
 ## Phase 5 — Polish
 
 ### No visible back control on pushed screens
