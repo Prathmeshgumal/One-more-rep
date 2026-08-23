@@ -97,6 +97,17 @@ export function ExerciseDetailScreen() {
         </View>
       ) : null}
 
+      <Pressable
+        accessibilityRole="button"
+        onPress={() =>
+          navigation.navigate('ExerciseHistory', {exerciseId: exercise.id})
+        }
+        style={[styles.edit, {borderColor: colors.rule}]}>
+        <AppText variant="bodyStrong" color="plate">
+          View history
+        </AppText>
+      </Pressable>
+
       {exercise.isCustom ? (
         <Pressable
           accessibilityRole="button"
