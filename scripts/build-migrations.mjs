@@ -20,6 +20,29 @@ if (files.length === 0) {
   process.exit(1);
 }
 
+// A migration's version is its position in this sorted list, and a device
+// records the highest version it has applied. Two files sharing a numeric
+// prefix therefore silently renumber every migration after them: one already
+// applied on a device gets skipped as "done" while its actual statements never
+// run. drizzle-kit numbers from its own journal and does not know about
+// hand-written migrations, so it will happily produce a duplicate — this check
+// is what turns that from a silent data catastrophe into a build failure.
+const byPrefix = new Map();
+for (const file of files) {
+  const prefix = file.slice(0, 4);
+  if (byPrefix.has(prefix)) {
+    console.error(
+      `Two migrations share the prefix ${prefix}: ` +
+        `${byPrefix.get(prefix)} and ${file}.
+` +
+        'Rename the newer one to the next free number, retag it in ' +
+        'drizzle/meta/_journal.json, and run this again.',
+    );
+    process.exit(1);
+  }
+  byPrefix.set(prefix, file);
+}
+
 mkdirSync(OUT_DIR, {recursive: true});
 
 const entries = files.map((file, index) => {

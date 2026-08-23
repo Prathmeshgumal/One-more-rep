@@ -256,10 +256,12 @@ describe('session schema', () => {
     await ctx.db.run(
       sql`INSERT INTO plan_versions (id,name,effective_from) VALUES ('v1','p',0)`,
     );
+    // A different date: the fixture already holds a session on date 0, and
+    // one session per date is exactly what the unique index enforces.
     await ctx.db.run(
       sql`INSERT INTO workout_sessions
             (id,date,plan_version_id,day_name_snapshot,status,started_at)
-          VALUES ('s2',0,'v1','Push Day','completed',0)`,
+          VALUES ('s2',86400000,'v1','Push Day','completed',0)`,
     );
 
     await ctx.db.run(sql`DELETE FROM plan_versions WHERE id='v1'`);

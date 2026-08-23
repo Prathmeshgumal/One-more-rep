@@ -3,6 +3,7 @@ import * as m1 from './0000_unusual_the_spike';
 import * as m2 from './0001_safe_darkstar';
 import * as m3 from './0002_fantastic_hellcat';
 import * as m4 from './0003_prune_plan_orphans';
+import * as m5 from './0004_workout_sessions';
 
 export type Migration = {
   readonly version: number;
@@ -15,4 +16,5 @@ export const migrations: readonly Migration[] = [
   m2,
   m3,
   m4,
+  m5,
 ];

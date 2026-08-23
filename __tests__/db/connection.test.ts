@@ -1,6 +1,7 @@
 import {sql} from 'drizzle-orm';
 import {CONNECTION_PRAGMAS, applyConnectionPragmas} from '@/db/client';
 import {runMigrations} from '@/db/migrate';
+import * as pruneMigration from '@/db/migrations/0003_prune_plan_orphans';
 import {createTestDb} from '../helpers/testDb';
 
 describe('connection pragmas', () => {
@@ -59,10 +60,12 @@ describe('the orphan-pruning migration', () => {
           VALUES ('s-keep','keep',1,10), ('s-orphan','orphan',1,10)`,
     );
 
-    // Rewind the recorded version so the pruning migration runs again over the
-    // rows just planted, which is what a real device does on next launch.
-    await ctx.db.run(sql.raw('PRAGMA user_version = 3'));
-    await runMigrations(ctx.db);
+    // Run the pruning migration's own statements over the rows just planted.
+    // Rewinding user_version and replaying the chain would re-run every later
+    // migration too, and their CREATE TABLEs would fail on tables that exist.
+    for (const statement of pruneMigration.statements) {
+      await ctx.db.run(sql.raw(statement));
+    }
 
     const ids = async (table: string) => {
       const rows = await ctx.db.all<{id: string}>(
@@ -100,8 +103,9 @@ describe('the orphan-pruning migration', () => {
           VALUES ('ps1','pe1',1,10)`,
     );
 
-    await ctx.db.run(sql.raw('PRAGMA user_version = 3'));
-    await runMigrations(ctx.db);
+    for (const statement of pruneMigration.statements) {
+      await ctx.db.run(sql.raw(statement));
+    }
 
     const count = async (table: string) => {
       const rows = await ctx.db.all<{n: number}>(
