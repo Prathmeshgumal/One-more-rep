@@ -11,6 +11,15 @@ export type ExercisesStackParamList = {
   ExerciseDetail: {id: string};
   /** No id means "create a new one". */
   ExerciseEditor: {id?: string};
+  ExerciseHistory: {exerciseId: string};
+};
+
+export type HistoryStackParamList = {
+  HistoryTimeline: undefined;
+  HistoryCalendar: undefined;
+  /** Local midnight of the day to open. */
+  DayDetail: {date: number};
+  ExerciseHistory: {exerciseId: string};
 };
 
 export type PlanStackParamList = {

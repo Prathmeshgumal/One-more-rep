@@ -7,10 +7,13 @@ import {AppText} from './Text';
 export function Screen({
   title,
   eyebrow,
+  action,
   children,
 }: {
   title: string;
   eyebrow?: string;
+  /** A control aligned to the right of the heading — the design's `.appbar` button. */
+  action?: React.ReactNode;
   children?: React.ReactNode;
 }) {
   const {colors} = useTheme();
@@ -23,14 +26,19 @@ export function Screen({
           styles.content,
           {paddingTop: insets.top + space.xl},
         ]}>
-        {eyebrow ? (
-          <AppText variant="eyebrow" color="muted">
-            {eyebrow}
-          </AppText>
-        ) : null}
-        <AppText variant="h1" style={styles.title}>
-          {title}
-        </AppText>
+        <View style={styles.header}>
+          <View style={styles.headerText}>
+            {eyebrow ? (
+              <AppText variant="eyebrow" color="muted">
+                {eyebrow}
+              </AppText>
+            ) : null}
+            <AppText variant="h1" style={styles.title}>
+              {title}
+            </AppText>
+          </View>
+          {action}
+        </View>
         {children}
       </ScrollView>
     </View>
@@ -45,4 +53,6 @@ const styles = StyleSheet.create({
     gap: space.lg,
   },
   title: {marginTop: space.xs},
+  header: {flexDirection: 'row', alignItems: 'flex-start', gap: space.md},
+  headerText: {flex: 1},
 });

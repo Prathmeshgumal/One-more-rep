@@ -1,5 +1,6 @@
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useDatabase} from '@/providers/DatabaseGate';
+import {historyKeys} from '@/features/history/useHistory';
 import {
   getActivePlan,
   createPlan,
@@ -43,7 +44,13 @@ export function useCreatePlan() {
   const client = useQueryClient();
   return useMutation({
     mutationFn: () => createPlan(db),
-    onSuccess: () => client.invalidateQueries({queryKey: planKeys.all}),
+    // Awaited for the same reason as the workout mutations: callers run their
+    // own onSuccess only once the promise returned from here settles.
+    onSuccess: async () => {
+      await client.invalidateQueries({queryKey: planKeys.all});
+      // A plan edit changes which future days count as rest or training.
+      await client.invalidateQueries({queryKey: historyKeys.all});
+    },
   });
 }
 
@@ -58,6 +65,12 @@ export function useEditPlan() {
   return useMutation({
     mutationFn: (mutate: (draft: PlanDraft) => PlanDraft) =>
       editPlan(db, mutate),
-    onSuccess: () => client.invalidateQueries({queryKey: planKeys.all}),
+    // Awaited for the same reason as the workout mutations: callers run their
+    // own onSuccess only once the promise returned from here settles.
+    onSuccess: async () => {
+      await client.invalidateQueries({queryKey: planKeys.all});
+      // A plan edit changes which future days count as rest or training.
+      await client.invalidateQueries({queryKey: historyKeys.all});
+    },
   });
 }
