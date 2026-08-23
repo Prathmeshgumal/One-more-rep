@@ -432,3 +432,119 @@ export async function addExercise(
   await addSet(db, id);
   return id;
 }
+
+/**
+ * Closes a session (spec 6.7).
+ *
+ * Sets still pending become skipped. Leaving them pending would make the
+ * session look permanently unfinished, and marking them completed would be a
+ * lie — skipped is the only honest reading of "the workout ended and this
+ * never happened".
+ */
+export async function finishWorkout(
+  db: AppDatabase,
+  sessionId: string,
+  opts: {now?: number} = {},
+): Promise<Session> {
+  const rows = await db
+    .select()
+    .from(workoutSessions)
+    .where(eq(workoutSessions.id, sessionId))
+    .limit(1);
+  const row = rows[0];
+  if (!row) {
+    throw new Error(`Session ${sessionId} does not exist.`);
+  }
+
+  const now = opts.now ?? Date.now();
+  const exerciseIds = (
+    await db
+      .select({id: performedExercises.id})
+      .from(performedExercises)
+      .where(eq(performedExercises.workoutSessionId, sessionId))
+  ).map(e => e.id);
+
+  await db.run(sql.raw('BEGIN'));
+  try {
+    if (exerciseIds.length > 0) {
+      await db
+        .update(performedSets)
+        .set({status: 'skipped'})
+        .where(
+          and(
+            inArray(performedSets.performedExerciseId, exerciseIds),
+            eq(performedSets.status, 'pending'),
+          ),
+        );
+      await db
+        .update(performedExercises)
+        .set({status: 'skipped'})
+        .where(
+          and(
+            eq(performedExercises.workoutSessionId, sessionId),
+            eq(performedExercises.status, 'pending'),
+          ),
+        );
+    }
+    await db
+      .update(workoutSessions)
+      .set({status: 'completed', completedAt: now})
+      .where(eq(workoutSessions.id, sessionId));
+    await db.run(sql.raw('COMMIT'));
+  } catch (error) {
+    await db.run(sql.raw('ROLLBACK'));
+    throw error instanceof Error ? error : new Error(String(error));
+  }
+
+  // Exercise statuses are derived, so recompute them now the sets have moved.
+  for (const id of exerciseIds) {
+    await refreshExerciseStatus(db, id);
+  }
+
+  const finished = await getSessionForDate(db, row.date);
+  if (!finished) {
+    throw new Error('The workout could not be finished.');
+  }
+  return finished;
+}
+
+/**
+ * Closes any in-progress session left over from a previous day (spec 6.4).
+ *
+ * Every set already recorded is retained, and pending sets are deliberately
+ * **not** marked skipped: nothing was decided about them, and Phase 4's
+ * resolver reads a session with no completed sets as missed rather than
+ * awarding partial credit for a workout that never happened.
+ *
+ * Called on launch. There is no background job anywhere in this app.
+ */
+export async function rollOverStaleSessions(
+  db: AppDatabase,
+  opts: {now?: number} = {},
+): Promise<number> {
+  const today = startOfLocalDay(opts.now ?? Date.now());
+  const stale = await db
+    .select({id: workoutSessions.id})
+    .from(workoutSessions)
+    .where(
+      and(
+        eq(workoutSessions.status, 'in_progress'),
+        sql`${workoutSessions.date} < ${today}`,
+      ),
+    );
+
+  if (stale.length === 0) {
+    return 0;
+  }
+
+  await db
+    .update(workoutSessions)
+    .set({status: 'abandoned'})
+    .where(
+      inArray(
+        workoutSessions.id,
+        stale.map(s => s.id),
+      ),
+    );
+  return stale.length;
+}
