@@ -44,6 +44,26 @@ function adaptForDrizzle(connection: ReturnType<typeof open>) {
   });
 }
 
+/**
+ * Settings that must be applied to every connection before anything uses it.
+ *
+ * SQLite enforces foreign keys **per connection and off by default**. The
+ * schema declares ON DELETE CASCADE and the Jest helper turns enforcement on,
+ * so the cascade tests passed while the shipped app quietly kept every orphan
+ * an in-place plan rewrite left behind — 65 of them by the time it was caught
+ * on the device. Test and production must open the database the same way.
+ */
+export const CONNECTION_PRAGMAS = ['PRAGMA foreign_keys = ON'] as const;
+
+/** Exported separately from `getDatabase` so it can be tested without op-sqlite. */
+export function applyConnectionPragmas(connection: {
+  executeSync: (query: string) => unknown;
+}): void {
+  for (const pragma of CONNECTION_PRAGMAS) {
+    connection.executeSync(pragma);
+  }
+}
+
 let instance: AppDatabase | null = null;
 
 /**
@@ -54,6 +74,7 @@ let instance: AppDatabase | null = null;
 export function getDatabase(): AppDatabase {
   if (!instance) {
     const connection = adaptForDrizzle(open({name: DB_NAME}));
+    applyConnectionPragmas(connection);
     instance = drizzle(connection, {schema}) as unknown as AppDatabase;
   }
   return instance;
