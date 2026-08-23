@@ -5,6 +5,7 @@ import {
   plannedExercises,
   plannedSets,
   exercises,
+  workoutSessions,
   type PlanVersionRow,
 } from '@/db/schema';
 import type {AppDatabase} from '@/db/types';
@@ -310,6 +311,28 @@ async function writeTree(
 }
 
 /**
+ * How many workouts were performed against a plan version.
+ *
+ * This is the number `canEditInPlace` has been waiting for. Until a version
+ * has been trained against, editing it the same day is harmless compaction;
+ * afterwards its targets are evidence, and editing must fork (§32).
+ *
+ * It lives here rather than in `sessionRepo` because `sessionRepo` already
+ * imports `getPlanForDate` from this module, and importing back would make the
+ * two circular. This is a query against a table, not a session behaviour.
+ */
+export async function countSessionsForPlanVersion(
+  db: AppDatabase,
+  planVersionId: string,
+): Promise<number> {
+  const rows = await db
+    .select({n: sql<number>`COUNT(*)`})
+    .from(workoutSessions)
+    .where(eq(workoutSessions.planVersionId, planVersionId));
+  return Number(rows[0]?.n ?? 0);
+}
+
+/**
  * Persists a draft, forking a new version unless compaction applies.
  *
  * The forking branch is the one that matters: closing the old version and
@@ -317,10 +340,9 @@ async function writeTree(
  * targets it was performed against (section 32). Compaction is the narrow
  * exception, and `canEditInPlace` owns that decision.
  *
- * NOTE: `sessionCount` is hard-coded to 0 because `workout_sessions` does not
- * exist until Phase 3. See docs/deferred.md — Phase 3 must replace it, or
- * editing the plan after training on the same day will rewrite the version
- * that workout was performed against.
+ * The session count is real from Phase 3 onward: once a workout has been
+ * performed against the active version, editing forks even on the same day,
+ * because that workout's targets are evidence.
  */
 export async function savePlanDraft(
   db: AppDatabase,
@@ -335,7 +357,7 @@ export async function savePlanDraft(
   const inPlace = canEditInPlace({
     effectiveFrom: active.version.effectiveFrom,
     now,
-    sessionCount: 0,
+    sessionCount: await countSessionsForPlanVersion(db, active.version.id),
   });
 
   await db.run(sql.raw('BEGIN'));
