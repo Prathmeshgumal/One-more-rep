@@ -36,7 +36,7 @@ export function ExerciseHistoryScreen() {
 
   if (!data) {
     return (
-      <Screen eyebrow="Exercise history" title={isPending ? '' : 'Not found'} />
+      <Screen back eyebrow="Exercise history" title={isPending ? '' : 'Not found'} />
     );
   }
 
@@ -53,7 +53,7 @@ export function ExerciseHistoryScreen() {
   }
 
   return (
-    <Screen eyebrow="Exercise history" title={data.name}>
+    <Screen back eyebrow="Exercise history" title={data.name}>
       {progress.sessions.length === 0 ? (
         <Card>
           <AppText color="muted">

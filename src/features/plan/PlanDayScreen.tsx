@@ -7,6 +7,7 @@ import {AppText} from '@/ui/Text';
 import {Button} from '@/ui/Button';
 import {Card} from '@/ui/Card';
 import {ReorderableRows} from '@/ui/ReorderableRows';
+import {BackButton} from '@/ui/BackButton';
 import {useTheme, type as typeScale, space, radius} from '@/theme';
 import {WEEKDAY_NAMES} from '@/domain/weekday';
 import {
@@ -113,6 +114,7 @@ export function PlanDayScreen() {
         {paddingTop: insets.top + space.xl},
       ]}
       keyboardShouldPersistTaps="handled">
+      <BackButton />
       <View style={styles.headerBlock}>
         <AppText variant="eyebrow" color="muted">
           {weekdayName}

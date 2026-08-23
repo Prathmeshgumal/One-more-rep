@@ -40,6 +40,7 @@ export function CalendarScreen() {
 
   return (
     <Screen
+      back
       eyebrow={formatYear(month)}
       title={formatMonthTitle(month)}
       action={

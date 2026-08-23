@@ -3,6 +3,7 @@ import {ScrollView, StyleSheet, View} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {AppText} from '@/ui/Text';
 import {Card} from '@/ui/Card';
+import {BackButton} from '@/ui/BackButton';
 import {useTheme, space} from '@/theme';
 import {usePlanVersionsQuery} from './usePlan';
 
@@ -37,6 +38,7 @@ export function PlanHistoryScreen() {
         styles.content,
         {paddingTop: insets.top + space.xl},
       ]}>
+      <BackButton />
       <View style={styles.headerBlock}>
         <AppText variant="eyebrow" color="muted">
           {versions && versions.length > 0

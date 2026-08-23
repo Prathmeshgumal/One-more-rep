@@ -5,6 +5,7 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {AppText} from '@/ui/Text';
 import {Card} from '@/ui/Card';
 import {Button} from '@/ui/Button';
+import {BackButton} from '@/ui/BackButton';
 import {useTheme, space} from '@/theme';
 import {WEEKDAY_NAMES} from '@/domain/weekday';
 import {copyDay} from '@/domain/planDraft';
@@ -69,6 +70,7 @@ export function CopyDayScreen() {
           styles.content,
           {paddingTop: insets.top + space.xl},
         ]}>
+        <BackButton />
         <View style={styles.headerBlock}>
           <AppText variant="eyebrow" color="muted">
             Copy from {WEEKDAY_NAMES[weekday]}

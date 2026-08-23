@@ -5,6 +5,7 @@ import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {AppText} from '@/ui/Text';
 import {Card} from '@/ui/Card';
+import {BackButton} from '@/ui/BackButton';
 import {useTheme, space, radius} from '@/theme';
 import type {ExercisesStackParamList} from '@/navigation/types';
 import {useExerciseQuery} from './useExercises';
@@ -46,6 +47,7 @@ export function ExerciseDetailScreen() {
         styles.content,
         {paddingTop: insets.top + space.xl},
       ]}>
+      <BackButton />
       <AppText variant="eyebrow" color="muted">
         {exercise.isCustom ? 'Custom' : titleCase(exercise.exerciseType)}
       </AppText>

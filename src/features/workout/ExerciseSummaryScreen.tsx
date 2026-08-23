@@ -8,6 +8,7 @@ import {Card} from '@/ui/Card';
 import {StatusChip} from '@/ui/StatusChip';
 import {ProgressBar} from '@/ui/ProgressBar';
 import {LedgerTable, type LedgerRow} from '@/ui/LedgerTable';
+import {BackButton} from '@/ui/BackButton';
 import {useTheme, space} from '@/theme';
 import {compareSet, describeComparison} from '@/domain/setComparison';
 import {aggregateExercise} from '@/domain/sessionProgress';
@@ -66,6 +67,7 @@ export function ExerciseSummaryScreen() {
         styles.content,
         {paddingTop: insets.top + space.lg},
       ]}>
+      <BackButton />
       <ProgressBar
         value={exerciseIndex + 1}
         total={session.exercises.length}
