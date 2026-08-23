@@ -13,6 +13,7 @@ import {
 } from '@/repositories/sessionRepo';
 import {getPlanForDate} from '@/repositories/planRepo';
 import {startOfLocalDay} from '@/domain/weekday';
+import {historyKeys} from '@/features/history/useHistory';
 
 export const sessionKeys = {
   all: ['session'] as const,
@@ -73,7 +74,16 @@ function useSessionMutation<TArgs>(
   const client = useQueryClient();
   return useMutation({
     mutationFn: (args: TArgs) => run(db, args),
-    onSuccess: () => client.invalidateQueries({queryKey: sessionKeys.all}),
+    // Async, and awaited: TanStack waits on a promise returned from here
+    // before running the caller's own `onSuccess`. The workout screen relies
+    // on that — it advances to the next set only once the refetched session
+    // has landed, so dropping the await leaves it stuck on set one.
+    onSuccess: async () => {
+      await client.invalidateQueries({queryKey: sessionKeys.all});
+      // History is a read over exactly what this just wrote. Without it the
+      // timeline keeps calling the day missed after the workout is finished.
+      await client.invalidateQueries({queryKey: historyKeys.all});
+    },
   });
 }
 

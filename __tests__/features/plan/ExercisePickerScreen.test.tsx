@@ -14,7 +14,7 @@ const mockGoBack = jest.fn();
 const mockNavigate = jest.fn();
 jest.mock('@react-navigation/native', () => ({
   ...jest.requireActual('@react-navigation/native'),
-  useNavigation: () => ({goBack: mockGoBack, navigate: mockNavigate}),
+  useNavigation: () => ({goBack: mockGoBack, navigate: mockNavigate, addListener: () => () => {}}),
   useRoute: () => ({params: {weekday: 0}}),
 }));
 

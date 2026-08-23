@@ -1,5 +1,6 @@
 import React from 'react';
 import {Pressable, StyleSheet, View} from 'react-native';
+import type {StyleProp, ViewStyle} from 'react-native';
 import {useTheme, space, radius} from '@/theme';
 
 /**
@@ -13,17 +14,20 @@ export function Card({
   onPress,
   onLongPress,
   accessibilityHint,
+  style: override,
   children,
 }: {
   onPress?: () => void;
   onLongPress?: () => void;
   accessibilityHint?: string;
+  style?: StyleProp<ViewStyle>;
   children: React.ReactNode;
 }) {
   const {colors} = useTheme();
   const style = [
     styles.card,
     {backgroundColor: colors.surface, borderColor: colors.ruleSoft},
+    override,
   ];
 
   if (!onPress && !onLongPress) {

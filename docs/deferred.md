@@ -13,33 +13,25 @@ visible at the moment completion is claimed.
 
 ## Deferred verification
 
-### The fork is proven in tests but not yet on the device
-**Added:** 2026-08-23, at the Phase 2 gate. **Deferred by the user's explicit
-decision, to be raised again after Phase 5.**
+### ~~The fork is proven in tests but not yet on the device~~ — CLOSED
+**Added:** 2026-08-23, at the Phase 2 gate. **Closed:** 2026-08-23, at the
+Phase 4 gate, without needing the clock change it was waiting on.
 
-Phase 2's stated gate is "confirm an edit forks a new version". Every other
-step of that gate was walked on the device. This one was not, because it needs
-the device clock moved forward a day, and the user chose to do it later.
+Renaming Sunday while a session existed against the active version forked a
+second plan version on the spot — no date change required, because
+`canEditInPlace` refuses to edit in place once a workout has been performed
+against a version. The device showed exactly two rows afterwards:
 
-**What is already proven, in `__tests__/repositories/planRepo.write.test.ts`:**
-an edit the next day opens a second version and closes the first; the old
-version keeps its own targets, asserted by resolving a date on each side of the
-fork; exactly one version stays open after every kind of edit; and the whole
-tree is carried into the fork, not just the edited day. The device holds one
-version because everything was done in a single day — that is the compaction
-rule working, not the fork failing.
+```
+pv_mt5c5fln...  10:27:17 -> 16:00:38   (closed)
+pv_mt5o24sd...  16:00:38 -> active
+```
 
-**What is not proven:** that this behaves the same through the real op-sqlite
-connection and the real screens, rather than through better-sqlite3 under Jest.
-That gap has already bitten once this phase — foreign keys were off on the
-device while every cascade test passed.
-
-**How to close it:** Settings — Date & time — turn off automatic, move forward
-one day. Reopen the app, rename any day, open Plan history. Expect two
-versions: one `Replaced` with a closed date range, one `Active`. Set the date
-back afterwards.
-
-Affects: `src/repositories/planRepo.ts`, `src/features/plan/PlanHistoryScreen.tsx`.
+And the point of the fork held: the session still read "Push Day" while the
+live plan read "Chest Day V2", and the day detail was byte-identical before and
+after. Renaming back then compacted **in place** rather than forking a third
+version, because no session belongs to the new one — the same rule, seen from
+the other side.
 
 ### Four workout paths were never walked on the device
 **Added:** 2026-08-23, at the Phase 3 gate. **Deferred by the user's explicit
@@ -75,6 +67,44 @@ must read below in ochre despite the heavier weight).
 
 Affects: `src/repositories/sessionRepo.ts`, `src/features/workout/`.
 
+### The Phase 4 device gate is walked except for two steps
+**Added:** 2026-08-23. **Mostly closed the same day.**
+
+Walked on a Redmi 2201116SI against a **self-contained APK** (JS bundled with
+`--dev false`, `adb reverse` removed), not against Metro — see the note below
+about why that matters.
+
+**Verified on hardware:**
+
+- Timeline: adherence card at 100%, one day card, correct counts.
+- Day detail: `1 MIN · 772.5 KG TOTAL VOLUME`, matching the domain functions
+  exactly. Below-target rendered as **ochre `−1 rep`** with a true minus sign;
+  the volume-decided verdict rendered as `+40 kg vol`.
+- Exercise history: working weight 17.5, best set `17.5 × 12` (210 volume,
+  correctly beating `10.0 × 14`), best volume 470 kg, session line right.
+- **Calendar: seven cells per row.** The thing Jest structurally cannot see.
+  Also correct: five greyed pad cells from July, Wednesday faint as a rest day,
+  Mondays and Sundays dashed as training days still ahead, everything else
+  plain. Month navigation works both directions (July, September checked).
+- Tapping a non-workout date opens the day with the right words rather than an
+  empty ledger.
+- The invariant: editing the plan left the past day untouched — see the closed
+  fork item above.
+- `user_version` still 5, no orphans, no set carrying actuals without being
+  completed, and `adb logcat` clean of errors.
+
+**Still not walked, because both need a day that has no session yet** — one
+session per date is a unique index, and today already has one:
+
+1. **Live update after finishing a workout.** The plan-edit path was seen to
+   refresh History without a restart; the session path was not.
+2. The four Phase 3 workout paths below, which would also give the timeline and
+   the calendar more than a single day to draw.
+
+**How to close:** move the device date forward one day, then work through the
+next item. Settings — Additional settings — Date & time — turn off "Set time
+automatically".
+
 ## Design departures
 
 ### The workout screen has an "Add an exercise" control the design does not draw
@@ -90,6 +120,62 @@ rather than warned about (D3). If the design is ever revisited, this is the
 control to place properly rather than the one to remove.
 
 Affects: `src/features/workout/WorkoutScreen.tsx`.
+
+### Four small additions the history designs do not draw
+**Added:** 2026-08-23, during Phase 4.
+
+1. **A calendar button in the History heading.** Design 12 draws no way to
+   reach design 13. One `IconButton` in the timeline's app bar is the smallest
+   honest addition.
+2. **A previous-month button.** Design 13 draws only a next chevron. A month
+   view you cannot go back in is not usable.
+3. **"Bonus" rather than "unplanned" in the result column.** Design 14 writes
+   "unplanned"; Phase 3's finish summary already ships "Bonus", from the shared
+   `describeComparison`. Two words for one thing across two screens is worse
+   than one deviation from one mock, so the shared function wins.
+4. **A "View history" control on the exercise detail screen.** Design 19 does
+   not draw one, but §24 says an exercise's history is reached by selecting the
+   exercise, and the library is where you do that.
+
+Affects: `src/features/history/`, `src/features/exercises/ExerciseDetailScreen.tsx`.
+
+## Observations from the Phase 4 device gate
+
+### The debug APK cannot be trusted to be running your code
+**Added:** 2026-08-23.
+
+Half an hour was lost concluding a fix "did not work" when the device was in
+fact running stale JS from a Metro instance that had been left running. The
+symptom is indistinguishable from a real defect.
+
+**Rule for every future gate:** bundle the JS into the APK and remove the
+reverse tunnel, so what is on the phone is what is in the repository:
+
+```bash
+npx react-native bundle --platform android --dev false --entry-file index.js   --bundle-output android/app/src/main/assets/index.android.bundle   --assets-dest android/app/src/main/res
+cd android && ./gradlew assembleDebug
+adb reverse --remove-all && adb install -r app/build/outputs/apk/debug/app-debug.apk
+```
+
+This also removes the dev-warning toast, which sits over the tab bar and
+silently swallows taps — worth knowing when driving the UI with `adb`.
+
+### Wednesday's plan day carries the custom name "Tr"
+**Added:** 2026-08-23, seen in the device database.
+
+`plan_days.custom_name` is `'Tr'` on the rest day. `setRestDay` clears a day's
+exercises but deliberately does not clear its name, so a half-typed name
+survives being turned into a rest day. Nothing renders it today — every screen
+special-cases rest days — so this is cosmetic, and it is flagged rather than
+changed because it may well be intentional.
+
+### The Today tab warns about nested screens with the same name
+**Added:** 2026-08-23, from `adb logcat`. Pre-existing since Phase 3.
+
+`Found screens with the same name nested inside one another: Today, Today >
+Today` — the tab and the stack's first screen share a name. Harmless today,
+but it makes `navigate('Today')` ambiguous. A one-line rename in
+`TodayStack.tsx` plus its param list.
 
 ## Phase 5 — Polish
 

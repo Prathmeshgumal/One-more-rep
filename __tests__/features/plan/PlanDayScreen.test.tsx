@@ -4,7 +4,12 @@ import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
 import {NavigationContainer} from '@react-navigation/native';
 import {sql} from 'drizzle-orm';
 import {runMigrations} from '@/db/migrate';
-import {createPlan, editPlan, getActivePlan} from '@/repositories/planRepo';
+import {
+  createPlan,
+  editPlan,
+  getActivePlan,
+  listPlanVersions,
+} from '@/repositories/planRepo';
 import {addExercises, renameDay, setRestDay} from '@/domain/planDraft';
 import {ThemeProvider} from '@/theme';
 import {DatabaseContextTestProvider} from '@/providers/DatabaseGate';
@@ -12,10 +17,22 @@ import {PlanDayScreen} from '@/features/plan/PlanDayScreen';
 import {createTestDb} from '../../helpers/testDb';
 
 const mockNavigate = jest.fn();
+const mockBeforeRemove: Array<() => void> = [];
 const mockParams: {weekday: number} = {weekday: 0};
 jest.mock('@react-navigation/native', () => ({
   ...jest.requireActual('@react-navigation/native'),
-  useNavigation: () => ({navigate: mockNavigate, goBack: jest.fn()}),
+  useNavigation: () => ({
+    navigate: mockNavigate,
+    goBack: jest.fn(),
+    // Records the listener so a test can fire the screen's removal, which is
+    // the only exit Android's hardware back actually takes.
+    addListener: (event: string, cb: () => void) => {
+      if (event === 'beforeRemove') {
+        mockBeforeRemove.push(cb);
+      }
+      return () => {};
+    },
+  }),
   useRoute: () => ({params: mockParams}),
 }));
 
@@ -51,6 +68,7 @@ describe('PlanDayScreen', () => {
     });
     mockParams.weekday = 0;
     mockNavigate.mockClear();
+    mockBeforeRemove.length = 0;
   });
 
   afterEach(() => {
@@ -64,6 +82,44 @@ describe('PlanDayScreen', () => {
     expect(view.getByText('Nothing here yet')).toBeTruthy();
     // The design: while the day is undecided, rest is a full button.
     expect(view.getByText('Make Monday a rest day')).toBeTruthy();
+  });
+
+  // Found on the device at the Phase 4 gate: Android's hardware back dismisses
+  // the keyboard without blurring the input, so onBlur never fired and the new
+  // name was silently discarded.
+  it('keeps a rename that was never blurred, when the screen is left', async () => {
+    const view = await renderScreen();
+    const field = await view.findByLabelText('Day name');
+    await fireEvent.changeText(field, 'Leg Day');
+
+    // No blur, no submit — just leaving, the way the back button does it.
+    for (const listener of mockBeforeRemove) {
+      listener();
+    }
+
+    await waitFor(async () => {
+      const plan = await getActivePlan(ctx.db);
+      expect(plan!.days[0]!.customName).toBe('Leg Day');
+    });
+  });
+
+  it('writes a rename once, even when submit and leaving both fire', async () => {
+    const view = await renderScreen();
+    const field = await view.findByLabelText('Day name');
+    await fireEvent.changeText(field, 'Pull Day');
+    await fireEvent(field, 'blur');
+    await waitFor(async () => {
+      const plan = await getActivePlan(ctx.db);
+      expect(plan!.days[0]!.customName).toBe('Pull Day');
+    });
+
+    const before = await listPlanVersions(ctx.db);
+    for (const listener of mockBeforeRemove) {
+      listener();
+    }
+    // A second identical write would fork a second plan version for nothing.
+    const after = await listPlanVersions(ctx.db);
+    expect(after).toHaveLength(before.length);
   });
 
   it('renames the day', async () => {
