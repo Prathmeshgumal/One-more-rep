@@ -1,0 +1,1 @@
+1. One thing I'd flag ahead of Task 8: src/db/seed/exercises.json is 776 KB and gets bundled into the JS. That's startup parse time on every launch, not just the first. Worth watching when the device gate runs.
