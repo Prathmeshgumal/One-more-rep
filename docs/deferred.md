@@ -41,6 +41,22 @@ back afterwards.
 
 Affects: `src/repositories/planRepo.ts`, `src/features/plan/PlanHistoryScreen.tsx`.
 
+## Design departures
+
+### The workout screen has an "Add an exercise" control the design does not draw
+**Added:** 2026-08-23, during Phase 3.
+
+Design 09 shows Add set, Skip set, Next and Skip this exercise, and no way to
+add an exercise mid-workout. Spec 6.5 and §21 both require one, and Phase 3's
+gate explicitly asks for "an unplanned exercise", so it is built as a quiet
+ghost button below the set controls.
+
+It is deliberately understated because it is rare, and unplanned work is badged
+rather than warned about (D3). If the design is ever revisited, this is the
+control to place properly rather than the one to remove.
+
+Affects: `src/features/workout/WorkoutScreen.tsx`.
+
 ## Phase 5 — Polish
 
 ### No visible back control on pushed screens

@@ -200,6 +200,13 @@ export function WorkoutScreen() {
         </View>
       </View>
 
+      <Button
+        label="Add an exercise"
+        variant="ghost"
+        size="sm"
+        onPress={() => navigation.navigate('WorkoutExercisePicker')}
+      />
+
       {next ? (
         <Button
           label={`Next — ${next.name}`}
