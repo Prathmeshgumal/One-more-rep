@@ -17,12 +17,12 @@ describe('BackButton', () => {
 
   it('is announced as a button that goes back', async () => {
     const view = await wrap(<BackButton />);
-    expect(view.getByLabelText('Back')).toBeTruthy();
+    expect(view.getByLabelText('Go back')).toBeTruthy();
   });
 
   it('goes back when pressed', async () => {
     const view = await wrap(<BackButton />);
-    await fireEvent.press(view.getByLabelText('Back'));
+    await fireEvent.press(view.getByLabelText('Go back'));
     expect(mockGoBack).toHaveBeenCalled();
   });
 

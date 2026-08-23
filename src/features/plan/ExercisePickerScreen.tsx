@@ -57,6 +57,7 @@ export function ExercisePickerScreen() {
 
   const header = (
     <View style={styles.header}>
+      <BackButton />
       <AppText variant="eyebrow" color="muted">
         Add to {dayName}
       </AppText>
@@ -97,7 +98,6 @@ export function ExercisePickerScreen() {
           const isPicked = selected.includes(item.id);
           return (
             <Card onPress={() => toggle(item.id)}>
-        <BackButton />
               <View style={styles.row}>
                 <View style={styles.grow}>
                   <AppText variant="bodyStrong">{item.name}</AppText>

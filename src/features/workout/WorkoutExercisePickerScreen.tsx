@@ -41,6 +41,7 @@ export function WorkoutExercisePickerScreen() {
 
   const header = (
     <View style={styles.header}>
+      <BackButton />
       <AppText variant="eyebrow" color="muted">
         Add to this workout
       </AppText>
@@ -88,7 +89,6 @@ export function WorkoutExercisePickerScreen() {
                 {onSuccess: () => navigation.goBack()},
               );
             }}>
-        <BackButton />
             <AppText variant="bodyStrong">{item.name}</AppText>
             <AppText variant="small" color="muted">
               {item.equipment ?? 'No equipment'}

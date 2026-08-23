@@ -12,8 +12,12 @@ import {useTheme, space} from '@/theme';
  * departure. It is deliberately quieter than `IconButton`: no border, no
  * plate, just the chevron, because leaving a screen is not an action worth
  * advertising.
+ *
+ * The spoken name is "Go back", not "Back": the exercise pickers carry a
+ * "Back" muscle-group filter, and a screen reader announcing two different
+ * controls with the same word is no help to anyone.
  */
-export function BackButton({label = 'Back'}: {label?: string}) {
+export function BackButton({label = 'Go back'}: {label?: string}) {
   const navigation = useNavigation();
   const {colors} = useTheme();
   return (

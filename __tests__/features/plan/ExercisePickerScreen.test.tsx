@@ -57,6 +57,17 @@ describe('ExercisePickerScreen', () => {
     ctx.close();
   });
 
+  // Found on the device: the back control had been inserted into the row
+  // renderer, so every exercise card drew its own chevron. A structural test
+  // that only asks "is there a BackButton" cannot see this. Writing the test
+  // also turned up why the control is called "Go back" — this screen has a
+  // "Back" muscle filter, and both were announced identically.
+  it('draws one back control, not one per row', async () => {
+    const view = await renderScreen();
+    await view.findByText('Bench Press');
+    expect(view.getAllByLabelText('Go back')).toHaveLength(1);
+  });
+
   it('lists the library', async () => {
     const view = await renderScreen();
     expect(await view.findByText('Bench Press')).toBeTruthy();
