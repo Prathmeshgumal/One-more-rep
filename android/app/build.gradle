@@ -92,15 +92,37 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
+        release {
+            // Credentials live in ~/.gradle/gradle.properties, never in this
+            // repo. The keystore itself is covered by .gitignore's *.keystore.
+            if (project.hasProperty('ONEMOREREP_STORE_FILE')) {
+                storeFile file(ONEMOREREP_STORE_FILE)
+                storePassword ONEMOREREP_STORE_PASSWORD
+                keyAlias ONEMOREREP_KEY_ALIAS
+                keyPassword ONEMOREREP_KEY_PASSWORD
+            }
+        }
     }
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
         }
         release {
-            // Caution! In production, you need to generate your own keystore file.
-            // see https://reactnative.dev/docs/signed-apk-android.
-            signingConfig signingConfigs.debug
+            // A release APK signed with the shared debug key installs fine and
+            // looks fine, which is exactly what makes it dangerous to hand to
+            // someone: anyone can forge an update over it, and it can never be
+            // re-signed with a real key without an uninstall. So the fallback
+            // is kept — a keyless machine can still build — but it announces
+            // itself loudly rather than producing a shippable-looking artifact
+            // in silence.
+            if (project.hasProperty('ONEMOREREP_STORE_FILE')) {
+                signingConfig signingConfigs.release
+            } else {
+                logger.warn("\n*** ONEMOREREP: signing release with the DEBUG " +
+                    "key. Do not distribute this APK. Set ONEMOREREP_STORE_FILE " +
+                    "in ~/.gradle/gradle.properties to sign it properly. ***\n")
+                signingConfig signingConfigs.debug
+            }
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
         }
