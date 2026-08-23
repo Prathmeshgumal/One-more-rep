@@ -1,6 +1,6 @@
-import React, {useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {Pressable, ScrollView, StyleSheet, View} from 'react-native';
-import {useNavigation} from '@react-navigation/native';
+import {useNavigation, useFocusEffect} from '@react-navigation/native';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Svg, {Path} from 'react-native-svg';
@@ -36,6 +36,48 @@ export function WorkoutScreen() {
 
   const [index, setIndex] = useState(0);
   const active = useActiveSet();
+
+  // Spec 6.4: an in-progress session resumes "at the first pending set". The
+  // index is local state, so on its own it would always open on the first
+  // exercise — which on the device meant resuming a half-finished workout on
+  // an exercise already done, and coming back from an exercise summary landing
+  // on the exercise it had just summarised rather than the one its button named.
+  const sessionRef = useRef(session);
+  sessionRef.current = session;
+  const aligned = useRef(false);
+
+  const alignToPending = useCallback((): boolean => {
+    const current = sessionRef.current;
+    if (!current) {
+      return false;
+    }
+    const pending = current.exercises.findIndex(e =>
+      e.sets.some(s => s.status === 'pending'),
+    );
+    if (pending >= 0) {
+      setIndex(pending);
+    }
+    return true;
+  }, []);
+
+  // Gaining focus realigns: on a cold open, and on returning from the exercise
+  // summary, whose "Next — X" button otherwise landed back on the exercise it
+  // had just summarised.
+  useFocusEffect(
+    useCallback(() => {
+      aligned.current = alignToPending();
+    }, [alignToPending]),
+  );
+
+  // On a cold open the query has usually not resolved by the time focus fires,
+  // so the alignment is retried once the session arrives — and only once, so
+  // that recording a set never moves the screen out from under someone who is
+  // still working on that exercise.
+  useEffect(() => {
+    if (!aligned.current) {
+      aligned.current = alignToPending();
+    }
+  }, [session, alignToPending]);
 
   const exercise = session?.exercises[index];
   const {data: previous} = usePreviousPerformanceQuery(
