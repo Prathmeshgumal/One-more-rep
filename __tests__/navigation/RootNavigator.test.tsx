@@ -48,7 +48,7 @@ describe('RootNavigator', () => {
     // Asserted on each screen's own copy rather than its title, because a tab
     // label and its heading can read the same.
     const tabs: ReadonlyArray<readonly [string, RegExp]> = [
-      ['Plan', /weekly routine/i],
+      ['Plan', /Your week is empty/i],
       ['History', /past workouts/i],
       ['Exercises', /create your own/i],
       ['Settings', /weight unit/i],

@@ -12,3 +12,12 @@ export type ExercisesStackParamList = {
   /** No id means "create a new one". */
   ExerciseEditor: {id?: string};
 };
+
+export type PlanStackParamList = {
+  PlanWeek: undefined;
+  PlanDay: {weekday: number};
+  PlanExercisePicker: {weekday: number};
+  PlanTargetEditor: {weekday: number; exerciseIndex: number};
+  PlanCopyDay: {weekday: number};
+  PlanHistory: undefined;
+};

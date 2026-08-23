@@ -11,6 +11,28 @@ visible at the moment completion is claimed.
 
 ---
 
+## Unresolved observations
+
+### A single test has failed twice, unreproducibly
+**Added:** 2026-08-23, during Phase 2 Tasks 7 and 9.
+
+Twice, `npm test` reported `1 failed, N passed` on the first full run
+immediately after a batch of new files was written. Both times the very next
+run was clean, and the failing test's name was not captured before it
+vanished.
+
+Investigated and **not** explained: 22 consecutive full runs pass, including
+three with `--clearCache` (12s cold vs 5s warm, so it is not cold-transform
+timing), and five runs of the suite that had just been touched. No hypothesis
+survives the evidence.
+
+**What to do:** always redirect `npm test` output to a file so the next
+occurrence captures the test name — `npx jest --forceExit > run.txt 2>&1`.
+Do not treat this as resolved until a failure is captured and explained, or
+until the phase gate passes without recurrence.
+
+Affects: unknown.
+
 ## Phase 3 — Today & Workout
 
 ### `canEditInPlace` is always told there are zero sessions
