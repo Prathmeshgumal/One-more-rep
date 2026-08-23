@@ -17,3 +17,37 @@ jest.mock('@op-engineering/op-sqlite', () => ({
 jest.mock('react-native-safe-area-context', () =>
   require('react-native-safe-area-context/jest/mock').default,
 );
+
+// Drag-to-reorder needs native gestures and worklets, neither of which exist
+// under Jest. The gesture itself is proved on the device (Task 8, step 8);
+// these mocks exist so screens that use it can still be rendered and asserted.
+require('react-native-gesture-handler/jestSetup');
+
+jest.mock('react-native-reorderable-list', () => {
+  const React = require('react');
+  const {View} = require('react-native');
+  const ReorderableList = ({data, renderItem, keyExtractor}) =>
+    React.createElement(
+      View,
+      null,
+      (data ?? []).map((item, index) =>
+        React.createElement(
+          View,
+          {key: keyExtractor ? keyExtractor(item, index) : index},
+          renderItem({item, index}),
+        ),
+      ),
+    );
+  return {
+    __esModule: true,
+    default: ReorderableList,
+    ReorderableListItem: View,
+    useReorderableDrag: () => () => {},
+    reorderItems: (list, from, to) => {
+      const next = [...list];
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved);
+      return next;
+    },
+  };
+});
