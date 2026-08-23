@@ -27,6 +27,16 @@ Everything in Phases 0–2's Global Constraints still applies. Restated because 
 - **Assert database constraints by behaviour, not by error message.** Drizzle wraps the driver error and the `cause` chain is not reliably walkable across Jest's per-file sandboxes.
 - **Asserting that a write is rejected needs an async IIFE.** better-sqlite3 throws synchronously; op-sqlite rejects. `await expect((async () => db.run(...))()).rejects` holds for both.
 - **Weekday is 0 = Monday … 6 = Sunday.** `Date.getDay()` is converted exactly once, in `weekdayIndex()`.
+- **Render once per test.** Calling `render` repeatedly inside a single test —
+  even with `unmount()` between — leaves RNTL returning a stale tree from the
+  third render onward, which reads as a component bug and is not one. Use
+  `it.each` for a table of cases.
+- **A percentage width is a string.** `width: '40%'` is what React Native lays
+  out against the parent; a test walking the tree for a numeric width finds
+  nothing.
+- **A `View` needs `accessible` for its `accessibilityRole` to be findable.**
+  Without it the role is set but neither a screen reader nor `getByRole` can
+  see it.
 - **Judge performance on release builds only.**
 - **A `gap` on a container does not reach between list cells.** Rows rendered by a `FlatList`/`ReorderableList` must carry their own spacing. This shipped as a visible bug in Phase 2.
 
@@ -3105,6 +3115,11 @@ Four small components and one new type token. Extracted first so the three scree
 
 - [ ] **Step 1: Write the failing test**
 
+> **Amended during execution (2026-08-23).** The version below rendered several
+> times inside one test and asserted numeric widths; both are wrong, for the
+> reasons now in Global Constraints. The shipped file splits the statuses with
+> `it.each` and asserts `'40%'`. Follow the shipped file.
+
 Create `__tests__/ui/workoutPrimitives.test.tsx`:
 
 ```tsx
@@ -3291,6 +3306,10 @@ export function ProgressBar({
 
   return (
     <View
+      // Without `accessible`, React Native does not treat this View as an
+      // accessibility element, so the role is set but nothing can find it —
+      // neither a screen reader nor getByRole.
+      accessible
       accessibilityRole="progressbar"
       accessibilityLabel={label}
       accessibilityValue={{min: 0, max: total, now: value}}

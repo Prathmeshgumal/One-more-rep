@@ -85,6 +85,14 @@ export const type = {
     letterSpacing: -0.8,
     fontVariant: TABULAR,
   },
+  /** The design's `.bignum` — the completion percentage and nothing else. */
+  bignum: {
+    fontFamily: font.wideBold,
+    fontSize: 56,
+    lineHeight: 56,
+    letterSpacing: -1.96,
+    fontVariant: TABULAR,
+  },
   h1: {fontFamily: font.sansBold, fontSize: 26, lineHeight: 30, letterSpacing: -0.4},
   h2: {fontFamily: font.sansSemi, fontSize: 20, lineHeight: 25},
   h3: {fontFamily: font.sansSemi, fontSize: 17, lineHeight: 22},
