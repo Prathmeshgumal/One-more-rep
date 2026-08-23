@@ -32,6 +32,12 @@ New for this phase:
 - **Editing the plan must never change history.** This is §32 and the reason the phase exists. A test proves an old date still resolves to the old targets after an edit.
 - **New exercises land on 3 × 10 with no weight**, per the design's "Added at 3 × 10 — set the real targets next".
 - **Weight is optional and `NULL` means bodyweight**, never `0`. A zero target would log zero volume forever, which §39 forbids correcting.
+- **Asserting that a write is rejected needs an async IIFE.** better-sqlite3 throws
+  synchronously, so `expect(db.run(...)).rejects` never sees the error; op-sqlite
+  rejects. `await expect((async () => db.run(...))()).rejects` holds for both.
+  Drizzle also wraps the driver error, so the constraint name is on `cause`, not
+  on the top-level message — walk the chain (see `messageChain` in
+  `__tests__/db/planSchema.test.ts`).
 - **Judge performance on release builds only.** Debug serves JS from Metro with no Hermes bytecode; measured on device, cold launch was 1348–2605 ms debug vs 470 ms release.
 
 ---
