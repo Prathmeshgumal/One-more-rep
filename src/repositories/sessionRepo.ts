@@ -548,3 +548,67 @@ export async function rollOverStaleSessions(
     );
   return stale.length;
 }
+
+export type PreviousPerformance = {
+  date: number;
+  sets: {reps: number; weight: number | null}[];
+};
+
+/**
+ * What was actually lifted the last time this exercise came up (§36).
+ *
+ * Rendered inline during the workout so nobody has to leave the set they are
+ * standing in front of to remember what they did last week.
+ *
+ * Only completed sets count: a skipped set is not a performance, and showing
+ * one would suggest a number that was never lifted. A session that was
+ * abandoned still counts, because the sets it did record really happened.
+ *
+ * One query, over the `performed_exercises(exercise_id)` index (spec 4.6).
+ */
+export async function getPreviousPerformance(
+  db: AppDatabase,
+  exerciseId: string,
+  opts: {before: number},
+): Promise<PreviousPerformance | undefined> {
+  const before = startOfLocalDay(opts.before);
+
+  const rows = await db
+    .select({
+      date: workoutSessions.date,
+      setNumber: performedSets.setNumber,
+      actualReps: performedSets.actualReps,
+      actualWeight: performedSets.actualWeight,
+    })
+    .from(performedSets)
+    .innerJoin(
+      performedExercises,
+      eq(performedExercises.id, performedSets.performedExerciseId),
+    )
+    .innerJoin(
+      workoutSessions,
+      eq(workoutSessions.id, performedExercises.workoutSessionId),
+    )
+    .where(
+      and(
+        eq(performedExercises.exerciseId, exerciseId),
+        eq(performedSets.status, 'completed'),
+        sql`${workoutSessions.date} < ${before}`,
+      ),
+    )
+    .orderBy(desc(workoutSessions.date), asc(performedSets.setNumber));
+
+  const first = rows[0];
+  if (!first) {
+    return undefined;
+  }
+
+  // The query is ordered newest first, so the leading run of rows sharing the
+  // newest date is the whole of that session's work on this exercise.
+  return {
+    date: first.date,
+    sets: rows
+      .filter(r => r.date === first.date && r.actualReps !== null)
+      .map(r => ({reps: r.actualReps!, weight: r.actualWeight})),
+  };
+}
