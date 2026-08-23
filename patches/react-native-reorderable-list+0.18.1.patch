@@ -1,0 +1,109 @@
+diff --git a/node_modules/react-native-reorderable-list/lib/commonjs/components/ReorderableListCore.js b/node_modules/react-native-reorderable-list/lib/commonjs/components/ReorderableListCore.js
+index 05e1cdb..bac4189 100644
+--- a/node_modules/react-native-reorderable-list/lib/commonjs/components/ReorderableListCore.js
++++ b/node_modules/react-native-reorderable-list/lib/commonjs/components/ReorderableListCore.js
+@@ -17,6 +17,17 @@ function _getRequireWildcardCache(e) { if ("function" != typeof WeakMap) return
+ function _interopRequireWildcard(e, r) { if (!r && e && e.__esModule) return e; if (null === e || "object" != typeof e && "function" != typeof e) return { default: e }; var t = _getRequireWildcardCache(r); if (t && t.has(e)) return t.get(e); var n = { __proto__: null }, a = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var u in e) if ("default" !== u && {}.hasOwnProperty.call(e, u)) { var i = a ? Object.getOwnPropertyDescriptor(e, u) : null; i && (i.get || i.set) ? Object.defineProperty(n, u, i) : n[u] = e[u]; } return n.default = e, t && t.set(e, n), n; }
+ function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
+ const AnimatedFlatList = _reactNativeReanimated.default.createAnimatedComponent(_reactNative.FlatList);
++/**
++ * PATCHED (One More Rep): react-native 0.87 removed InteractionManager from
++ * core; touching it throws an Invariant Violation as soon as a drag starts.
++ * The original call was only a deferred cache cleanup, not drag logic, so a
++ * plain macrotask with the same {cancel} contract is an exact substitute.
++ */
++const deferAfterInteractions = fn => {
++  const handle = setTimeout(fn, 0);
++  return {cancel: () => clearTimeout(handle)};
++};
++
+ const ReorderableListCore = ({
+   autoscrollThreshold = 0.1,
+   autoscrollThresholdOffset,
+@@ -128,7 +139,7 @@ const ReorderableListCore = ({
+     }
+ 
+     // Can be heavy to loop through all items, defer the task to run after interactions.
+-    const task = _reactNative.InteractionManager.runAfterInteractions(() => {
++    const task = deferAfterInteractions(() => {
+       if (!markedCellsRef.current) {
+         return;
+       }
+diff --git a/node_modules/react-native-reorderable-list/lib/module/components/ReorderableListCore.js b/node_modules/react-native-reorderable-list/lib/module/components/ReorderableListCore.js
+index 794a065..c1ba4a9 100644
+--- a/node_modules/react-native-reorderable-list/lib/module/components/ReorderableListCore.js
++++ b/node_modules/react-native-reorderable-list/lib/module/components/ReorderableListCore.js
+@@ -1,6 +1,6 @@
+ function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
+ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+-import { FlatList, InteractionManager, Platform } from 'react-native';
++import { FlatList, Platform } from 'react-native';
+ import { Gesture, GestureDetector, State } from 'react-native-gesture-handler';
+ import Animated, { Easing, measure, runOnJS, runOnUI, scrollTo, useAnimatedReaction, useAnimatedRef, useAnimatedScrollHandler, useComposedEventHandler, useDerivedValue, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
+ import { ReorderableListContext } from '../contexts';
+@@ -9,6 +9,17 @@ import { AUTOSCROLL_CONFIG, OPACITY_ANIMATION_CONFIG_DEFAULT, SCALE_ANIMATION_CO
+ import { ReorderableListCell } from './ReorderableListCell';
+ import { usePropAsSharedValue, useStableCallback } from '../hooks';
+ const AnimatedFlatList = Animated.createAnimatedComponent(FlatList);
++/**
++ * PATCHED (One More Rep): react-native 0.87 removed InteractionManager from
++ * core; touching it throws an Invariant Violation as soon as a drag starts.
++ * The original call was only a deferred cache cleanup, not drag logic, so a
++ * plain macrotask with the same {cancel} contract is an exact substitute.
++ */
++const deferAfterInteractions = fn => {
++  const handle = setTimeout(fn, 0);
++  return {cancel: () => clearTimeout(handle)};
++};
++
+ const ReorderableListCore = ({
+   autoscrollThreshold = 0.1,
+   autoscrollThresholdOffset,
+@@ -120,7 +131,7 @@ const ReorderableListCore = ({
+     }
+ 
+     // Can be heavy to loop through all items, defer the task to run after interactions.
+-    const task = InteractionManager.runAfterInteractions(() => {
++    const task = deferAfterInteractions(() => {
+       if (!markedCellsRef.current) {
+         return;
+       }
+diff --git a/node_modules/react-native-reorderable-list/src/components/ReorderableListCore.tsx b/node_modules/react-native-reorderable-list/src/components/ReorderableListCore.tsx
+index 81bdff2..5789d03 100644
+--- a/node_modules/react-native-reorderable-list/src/components/ReorderableListCore.tsx
++++ b/node_modules/react-native-reorderable-list/src/components/ReorderableListCore.tsx
+@@ -12,7 +12,6 @@ import {
+   CellRendererProps,
+   FlatList,
+   FlatListProps,
+-  InteractionManager,
+   LayoutChangeEvent,
+   Platform,
+   ScrollView,
+@@ -74,6 +73,17 @@ interface ReorderableListCoreProps<T> extends ReorderableListProps<T> {
+   scrollable: boolean | undefined;
+ }
+ 
++/**
++ * PATCHED (One More Rep): react-native 0.87 removed InteractionManager from
++ * core; touching it throws an Invariant Violation as soon as a drag starts.
++ * The original call was only a deferred cache cleanup, not drag logic, so a
++ * plain macrotask with the same {cancel} contract is an exact substitute.
++ */
++const deferAfterInteractions = (fn: () => void) => {
++  const handle = setTimeout(fn, 0);
++  return {cancel: () => clearTimeout(handle)};
++};
++
+ const ReorderableListCore = <T,>(
+   {
+     autoscrollThreshold = 0.1,
+@@ -205,7 +215,7 @@ const ReorderableListCore = <T,>(
+     }
+ 
+     // Can be heavy to loop through all items, defer the task to run after interactions.
+-    const task = InteractionManager.runAfterInteractions(() => {
++    const task = deferAfterInteractions(() => {
+       if (!markedCellsRef.current) {
+         return;
+       }

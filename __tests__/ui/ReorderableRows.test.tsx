@@ -71,6 +71,29 @@ describe('ReorderableRows', () => {
     expect(gaps.every(g => g > 0)).toBe(true);
   });
 
+  // The whole card starts the drag, so there is no separate grip to hunt for.
+  // The row is handed `drag` and decides for itself what triggers it.
+  it('hands each row a drag callback and draws no handle of its own', async () => {
+    const seen: unknown[] = [];
+    const view = await render(
+      <ThemeProvider>
+        <ReorderableRows
+          data={rows}
+          keyOf={r => r.id}
+          onReorder={jest.fn()}
+          renderRow={(r, drag) => {
+            seen.push(drag);
+            return <AppText>{r.name}</AppText>;
+          }}
+        />
+      </ThemeProvider>,
+    );
+
+    expect(seen).toHaveLength(rows.length);
+    expect(seen.every(d => typeof d === 'function')).toBe(true);
+    expect(view.queryByLabelText('Drag to reorder')).toBeNull();
+  });
+
   it('renders nothing but stays mounted when empty', async () => {
     const view = await render(
       <ThemeProvider>

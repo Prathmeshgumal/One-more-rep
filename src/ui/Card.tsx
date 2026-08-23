@@ -5,14 +5,19 @@ import {useTheme, space, radius} from '@/theme';
 /**
  * The list row of the Ledger design: a bordered plate on the paper ground.
  *
- * A card without `onPress` renders as a plain View rather than a disabled
- * button, so a screen reader never announces a control that does nothing.
+ * A card with neither `onPress` nor `onLongPress` renders as a plain View
+ * rather than a disabled button, so a screen reader never announces a control
+ * that does nothing.
  */
 export function Card({
   onPress,
+  onLongPress,
+  accessibilityHint,
   children,
 }: {
   onPress?: () => void;
+  onLongPress?: () => void;
+  accessibilityHint?: string;
   children: React.ReactNode;
 }) {
   const {colors} = useTheme();
@@ -21,14 +26,16 @@ export function Card({
     {backgroundColor: colors.surface, borderColor: colors.ruleSoft},
   ];
 
-  if (!onPress) {
+  if (!onPress && !onLongPress) {
     return <View style={style}>{children}</View>;
   }
 
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityHint={accessibilityHint}
       onPress={onPress}
+      onLongPress={onLongPress}
       style={({pressed}) => [
         style,
         pressed && {backgroundColor: colors.surface2},

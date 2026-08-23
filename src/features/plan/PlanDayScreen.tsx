@@ -133,7 +133,7 @@ export function PlanDayScreen() {
           </View>
 
           <AppText variant="eyebrow" color="muted">
-            {isNew ? 'Exercises' : 'Exercises · drag to reorder'}
+            {isNew ? 'Exercises' : 'Exercises · hold to reorder'}
           </AppText>
 
           {isNew ? (
@@ -153,10 +153,12 @@ export function PlanDayScreen() {
               onReorder={(from, to) =>
                 edit.mutate(draft => moveExercise(draft, weekday, from, to))
               }
-              renderRow={exercise => {
+              renderRow={(exercise, drag) => {
                 const index = day.exercises.indexOf(exercise);
                 return (
                   <Card
+                    accessibilityHint="Press and hold to drag this exercise into a new position"
+                    onLongPress={drag}
                     onPress={() =>
                       navigation.navigate('PlanTargetEditor', {
                         weekday,

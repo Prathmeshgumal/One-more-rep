@@ -13,7 +13,8 @@
     "fonts": "python scripts/build-fonts.py",
     "db:generate": "drizzle-kit generate && node scripts/build-migrations.mjs",
     "seed:fetch": "node scripts/fetch-exercise-source.mjs",
-    "seed:build": "node scripts/build-exercise-seed.mjs"
+    "seed:build": "node scripts/build-exercise-seed.mjs",
+    "postinstall": "patch-package"
   },
   "dependencies": {
     "@op-engineering/op-sqlite": "^18.1.4",
@@ -54,6 +55,7 @@
     "drizzle-kit": "^0.31.10",
     "eslint": "^8.19.0",
     "jest": "^29.6.3",
+    "patch-package": "^8.0.1",
     "prettier": "2.8.8",
     "react-test-renderer": "19.2.3",
     "typescript": "^6.0.3"
