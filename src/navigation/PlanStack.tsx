@@ -4,11 +4,13 @@ import {PlanWeekScreen} from '@/features/plan/PlanWeekScreen';
 import {PlanDayScreen} from '@/features/plan/PlanDayScreen';
 import {ExercisePickerScreen} from '@/features/plan/ExercisePickerScreen';
 import {TargetEditorScreen} from '@/features/plan/TargetEditorScreen';
+import {CopyDayScreen} from '@/features/plan/CopyDayScreen';
+import {PlanHistoryScreen} from '@/features/plan/PlanHistoryScreen';
 import type {PlanStackParamList} from './types';
 
 const Stack = createNativeStackNavigator<PlanStackParamList>();
 
-/** The Plan tab. Remaining routes are registered by Tasks 10–13. */
+/** The Plan tab: the week overview and everything reachable from it. */
 export function PlanStack() {
   return (
     <Stack.Navigator screenOptions={{headerShown: false}}>
@@ -19,6 +21,8 @@ export function PlanStack() {
         component={ExercisePickerScreen}
       />
       <Stack.Screen name="PlanTargetEditor" component={TargetEditorScreen} />
+      <Stack.Screen name="PlanCopyDay" component={CopyDayScreen} />
+      <Stack.Screen name="PlanHistory" component={PlanHistoryScreen} />
     </Stack.Navigator>
   );
 }
