@@ -38,6 +38,11 @@ New for this phase:
   Drizzle also wraps the driver error, so the constraint name is on `cause`, not
   on the top-level message — walk the chain (see `messageChain` in
   `__tests__/db/planSchema.test.ts`).
+- **Assert database constraints by behaviour, not by error message.** Drizzle
+  wraps the driver error, and the `cause` chain is not reliably walkable across
+  Jest's per-file sandboxes — a message-matching version of the plan-days
+  uniqueness test passed in isolation and failed roughly one full run in ten.
+  Assert that the write was refused (row count unchanged) instead.
 - **Judge performance on release builds only.** Debug serves JS from Metro with no Hermes bytecode; measured on device, cold launch was 1348–2605 ms debug vs 470 ms release.
 
 ---

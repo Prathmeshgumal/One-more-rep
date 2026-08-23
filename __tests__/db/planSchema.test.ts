@@ -2,17 +2,6 @@ import {sql} from 'drizzle-orm';
 import {runMigrations} from '@/db/migrate';
 import {createTestDb} from '../helpers/testDb';
 
-/** Drizzle wraps driver errors, so the real reason is down the `cause` chain. */
-function messageChain(error: unknown): string {
-  const parts: string[] = [];
-  let current: unknown = error;
-  while (current instanceof Error) {
-    parts.push(current.message);
-    current = current.cause;
-  }
-  return parts.join(' | ');
-}
-
 describe('plan schema', () => {
   let ctx: ReturnType<typeof createTestDb>;
 
@@ -170,6 +159,15 @@ describe('plan schema', () => {
     );
 
     expect(error).not.toBeNull();
-    expect(messageChain(error)).toMatch(/UNIQUE constraint failed/);
+
+    // Asserted as behaviour rather than by matching the error message. Drizzle
+    // wraps the driver error and the `cause` chain is not reliably walkable
+    // across Jest's per-file sandboxes, which made an earlier message-matching
+    // version of this test fail intermittently. What matters is that the
+    // second row was refused, and that is what is checked.
+    const rows = await ctx.db.all<{n: number}>(
+      sql`SELECT COUNT(*) AS n FROM plan_days WHERE plan_version_id='v1'`,
+    );
+    expect(rows[0]?.n).toBe(1);
   });
 });
