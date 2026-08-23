@@ -75,6 +75,39 @@ must read below in ochre despite the heavier weight).
 
 Affects: `src/repositories/sessionRepo.ts`, `src/features/workout/`.
 
+### The Phase 4 device gate has not been walked
+**Added:** 2026-08-23, at the Phase 4 gate. **Open — no device was attached
+when the phase was built.**
+
+Everything testable in Jest is green: 498 tests, typecheck and lint clean, the
+Android bundle builds, and `git diff main -- src/db drizzle` is empty, so the
+phase added no migration and the device stays at `user_version` 5.
+
+**What has not been checked on hardware**, in the order it should be:
+
+1. **Browse.** History opens on the adherence card and the day timeline. Rest
+   days carry the hatch, missed days the dashed border, "Show earlier" extends
+   the window.
+2. **A day.** Tap a recorded day: date, name, duration, total volume, and one
+   ledger per exercise. A skipped set must show an em dash, not a zero.
+3. **One exercise.** Tap an exercise name in that ledger, then reach the same
+   screen from Exercises to an exercise to "View history".
+4. **The calendar.** Open it from the History heading. **Confirm seven cells
+   per row** — Jest renders no layout, so a broken grid keeps the suite green.
+   This is the same class of defect as Phase 2's row spacing, which shipped.
+   Step back a month and forward again; tap a date.
+5. **The invariant.** Rename the day you just looked at, or make it a rest day,
+   then return to History. The past day must be unchanged. This is success
+   criterion 9 and the whole reason `plan_versions` exists.
+6. **Live update.** Finish a workout, switch straight to History without
+   restarting. Today must appear immediately.
+
+Then read the device database (`user_version` still 5, two plan versions after
+the edit with the older one closed, `day_name_snapshot` unchanged) and
+`adb logcat -d ReactNativeJS:* *:S`.
+
+Affects: all of `src/features/history/`, `src/repositories/historyRepo.ts`.
+
 ## Design departures
 
 ### The workout screen has an "Add an exercise" control the design does not draw
@@ -90,6 +123,24 @@ rather than warned about (D3). If the design is ever revisited, this is the
 control to place properly rather than the one to remove.
 
 Affects: `src/features/workout/WorkoutScreen.tsx`.
+
+### Four small additions the history designs do not draw
+**Added:** 2026-08-23, during Phase 4.
+
+1. **A calendar button in the History heading.** Design 12 draws no way to
+   reach design 13. One `IconButton` in the timeline's app bar is the smallest
+   honest addition.
+2. **A previous-month button.** Design 13 draws only a next chevron. A month
+   view you cannot go back in is not usable.
+3. **"Bonus" rather than "unplanned" in the result column.** Design 14 writes
+   "unplanned"; Phase 3's finish summary already ships "Bonus", from the shared
+   `describeComparison`. Two words for one thing across two screens is worse
+   than one deviation from one mock, so the shared function wins.
+4. **A "View history" control on the exercise detail screen.** Design 19 does
+   not draw one, but §24 says an exercise's history is reached by selecting the
+   exercise, and the library is where you do that.
+
+Affects: `src/features/history/`, `src/features/exercises/ExerciseDetailScreen.tsx`.
 
 ## Phase 5 — Polish
 
