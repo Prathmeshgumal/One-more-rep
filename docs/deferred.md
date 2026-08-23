@@ -178,36 +178,26 @@ The inner screen is now `TodayHome`; the tab keeps the name the user sees.
 Nothing navigated to it by name — only `popToTop()` — so the rename touched
 two files. Confirmed gone from logcat on the bundled build.
 
-### Resume lands on the first exercise, not the first pending set
-**Added:** 2026-08-24, at the Phase 3 re-gate.
+### ~~Resume lands on the first exercise, not the first pending set~~ — CLOSED
+### ~~The exercise summary's "Next" button does not advance~~ — CLOSED
+### ~~An all-bonus exercise reads "0 of 0 sets recorded"~~ — CLOSED
+**Added:** 2026-08-24, at the Phase 3 re-gate. **Closed:** 2026-08-24.
 
-Spec 6.4 says an in-progress session resumes "at the first pending set". The
-Today screen gets this right — it said "Barbell Incline Bench Press · SET 2 OF
-3" — but tapping **Continue workout** opens the workout screen on exercise 1,
-which was already finished, so you have to tap "Next" to get where you were.
+The first two had one cause: the workout screen's exercise index was local
+state starting at zero and never re-synced. Gaining focus now realigns to the
+first exercise with a pending set, and the alignment is retried once the
+session arrives, because on a cold open the query has not resolved when focus
+fires. It runs once per focus, so recording a set never moves the screen out
+from under someone still working on that exercise — asserted directly, and
+both tests were checked by disabling the alignment and watching them fail.
 
-Cosmetic today, because both exercises are one tap apart. On a six-exercise
-day it would be four.
-
-Affects: `src/features/workout/WorkoutScreen.tsx`.
-
-### The exercise summary's "Next" button does not advance
-**Added:** 2026-08-24.
-
-"Next — Ab Crunch Machine" on the exercise summary returns to the workout
-screen still showing the finished exercise, where the same label has to be
-tapped again. The button names the destination it does not go to.
-
-Affects: `src/features/workout/ExerciseSummaryScreen.tsx`.
-
-### An all-bonus exercise reads "0 of 0 sets recorded · 1 bonus"
-**Added:** 2026-08-24.
-
-Accurate — nothing was planned and one bonus set was done — but "0 of 0" is an
-odd thing to read. When `plannedSets` is zero the line could simply say
+The third was copy: an exercise added on the day has nothing planned, so
+"0 of 0 sets recorded · 1 bonus" was accurate and read like a bug. It now says
 "1 bonus set".
 
-Affects: `src/features/workout/ExerciseSummaryScreen.tsx`.
+**Not re-verified on the device.** All three live on the workout screen, which
+needs an in-progress session, and both dates on this device already have a
+finished one. Closing them would mean another clock change.
 
 ## Deferred verification — Phase 5
 
