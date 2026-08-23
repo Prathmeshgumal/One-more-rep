@@ -6,6 +6,7 @@ import {
   gt,
   gte,
   inArray,
+  isNotNull,
   isNull,
   lte,
   or,
@@ -31,6 +32,11 @@ import {
   type ResolverSession,
   type VersionSpan,
 } from '@/domain/dayResolver';
+import {
+  summarizeProgress,
+  type ExerciseProgress,
+  type ProgressSession,
+} from '@/domain/exerciseProgress';
 import {startOfLocalDay, weekdayName} from '@/domain/weekday';
 
 export type DayRange = {from: number; to: number};
@@ -205,4 +211,131 @@ export async function getDay(
     opts.now ?? Date.now(),
   );
   return resolveDay(day, ctx);
+}
+
+export type ExerciseHistory = {
+  exerciseId: string;
+  name: string;
+  weightApplicable: boolean;
+  progress: ExerciseProgress;
+};
+
+/**
+ * Design 15 draws four steps of the working-weight run; a dozen sessions is
+ * plenty to build it from and keeps the screen a single scroll.
+ */
+const DEFAULT_SESSION_LIMIT = 12;
+
+/**
+ * One exercise's history, newest first (§24, §26).
+ *
+ * Three queries, none of them per-session. Only *completed* sets are returned:
+ * a skipped set is not a performance, and plotting it as one would put a hole
+ * in the progression that never happened. Bonus sets are included — they had
+ * no target, but they were lifted.
+ */
+export async function getExerciseHistory(
+  db: AppDatabase,
+  exerciseId: string,
+  opts: {limit?: number} = {},
+): Promise<ExerciseHistory | undefined> {
+  const limit = opts.limit ?? DEFAULT_SESSION_LIMIT;
+
+  const exerciseRows = await db
+    .select({
+      id: exercises.id,
+      name: exercises.name,
+      weightApplicable: exercises.weightApplicable,
+    })
+    .from(exercises)
+    .where(eq(exercises.id, exerciseId))
+    .limit(1);
+
+  const exercise = exerciseRows[0];
+  if (!exercise) {
+    return undefined;
+  }
+
+  // Sessions in which this exercise was actually performed. The set filter is
+  // in the join rather than applied afterwards, so a session where it was
+  // entirely skipped never takes up one of the `limit` slots.
+  const sessionRows = await db
+    .select({id: workoutSessions.id, date: workoutSessions.date})
+    .from(workoutSessions)
+    .innerJoin(
+      performedExercises,
+      eq(performedExercises.workoutSessionId, workoutSessions.id),
+    )
+    .innerJoin(
+      performedSets,
+      eq(performedSets.performedExerciseId, performedExercises.id),
+    )
+    .where(
+      and(
+        eq(performedExercises.exerciseId, exerciseId),
+        eq(performedSets.status, 'completed'),
+        isNotNull(performedSets.actualReps),
+      ),
+    )
+    .groupBy(workoutSessions.id)
+    .orderBy(desc(workoutSessions.date))
+    .limit(limit);
+
+  const sessionIds = sessionRows.map(s => s.id);
+
+  const setRows = sessionIds.length
+    ? await db
+        .select({
+          sessionId: performedExercises.workoutSessionId,
+          orderIndex: performedExercises.orderIndex,
+          setNumber: performedSets.setNumber,
+          reps: performedSets.actualReps,
+          weight: performedSets.actualWeight,
+        })
+        .from(performedSets)
+        .innerJoin(
+          performedExercises,
+          eq(performedExercises.id, performedSets.performedExerciseId),
+        )
+        .where(
+          and(
+            eq(performedExercises.exerciseId, exerciseId),
+            inArray(performedExercises.workoutSessionId, sessionIds),
+            eq(performedSets.status, 'completed'),
+            isNotNull(performedSets.actualReps),
+          ),
+        )
+        // The same movement twice in one session is allowed, so order by the
+        // position it was performed in before the set number within it.
+        .orderBy(
+          asc(performedExercises.orderIndex),
+          asc(performedSets.setNumber),
+        )
+    : [];
+
+  const setsBySession = new Map<
+    string,
+    {reps: number; weight: number | null}[]
+  >();
+  for (const row of setRows) {
+    if (row.reps === null) {
+      continue;
+    }
+    const list = setsBySession.get(row.sessionId) ?? [];
+    list.push({reps: row.reps, weight: row.weight});
+    setsBySession.set(row.sessionId, list);
+  }
+
+  const sessions: ProgressSession[] = sessionRows.map(row => ({
+    sessionId: row.id,
+    date: row.date,
+    sets: setsBySession.get(row.id) ?? [],
+  }));
+
+  return {
+    exerciseId: exercise.id,
+    name: exercise.name,
+    weightApplicable: exercise.weightApplicable,
+    progress: summarizeProgress(sessions, exercise.weightApplicable),
+  };
 }
