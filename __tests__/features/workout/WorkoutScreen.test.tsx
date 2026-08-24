@@ -111,8 +111,8 @@ describe('WorkoutScreen', () => {
   it('pre-fills the active set with the target', async () => {
     const view = await renderScreen();
     await view.findByText('Bench Press');
-    expect(view.getByLabelText('Weight').props.children).toBe('30.0');
-    expect(view.getByLabelText('Reps').props.children).toBe('10');
+    expect(view.getByLabelText('Weight').props.value).toBe('30.0');
+    expect(view.getByLabelText('Reps').props.value).toBe('10');
   });
 
   // Spec 6.2: pre-filled is not recorded. Until the set is completed the
@@ -142,11 +142,11 @@ describe('WorkoutScreen', () => {
     const view = await renderScreen();
     await view.findByText('Bench Press');
 
-    await fireEvent.press(view.getByLabelText('Increase weight'));
-    await fireEvent.press(view.getByLabelText('Increase reps'));
-    await fireEvent.press(view.getByLabelText('Increase reps'));
-    expect(view.getByLabelText('Weight').props.children).toBe('32.5');
-    expect(view.getByLabelText('Reps').props.children).toBe('12');
+    await fireEvent.press(view.getByLabelText('Increase Weight'));
+    await fireEvent.press(view.getByLabelText('Increase Reps'));
+    await fireEvent.press(view.getByLabelText('Increase Reps'));
+    expect(view.getByLabelText('Weight').props.value).toBe('32.5');
+    expect(view.getByLabelText('Reps').props.value).toBe('12');
 
     await fireEvent.press(view.getByLabelText('Complete set'));
     await waitFor(async () => {
@@ -160,11 +160,11 @@ describe('WorkoutScreen', () => {
     const view = await renderScreen();
     await view.findByText('Bench Press');
     for (let i = 0; i < 20; i++) {
-      await fireEvent.press(view.getByLabelText('Decrease reps'));
-      await fireEvent.press(view.getByLabelText('Decrease weight'));
+      await fireEvent.press(view.getByLabelText('Decrease Reps'));
+      await fireEvent.press(view.getByLabelText('Decrease Weight'));
     }
-    expect(view.getByLabelText('Reps').props.children).toBe('1');
-    expect(view.getByLabelText('Weight').props.children).toBe('0.0');
+    expect(view.getByLabelText('Reps').props.value).toBe('1');
+    expect(view.getByLabelText('Weight').props.value).toBe('0.0');
   });
 
   // Spec 6.3: completing a set auto-advances, so the next set is already
@@ -181,7 +181,7 @@ describe('WorkoutScreen', () => {
 
   it('shows a recorded set with its verdict', async () => {
     const view = await renderScreen();
-    await fireEvent.press(await view.findByLabelText('Increase reps'));
+    await fireEvent.press(await view.findByLabelText('Increase Reps'));
     await fireEvent.press(view.getByLabelText('Complete set'));
 
     await waitFor(() => {

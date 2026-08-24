@@ -4,6 +4,7 @@ import Svg, {Path} from 'react-native-svg';
 import {AppText} from '@/ui/Text';
 import {StatusChip} from '@/ui/StatusChip';
 import {useTheme, space, radius} from '@/theme';
+import {NumberField} from '@/ui/NumberField';
 import {compareSet, describeComparison} from '@/domain/setComparison';
 
 /**
@@ -25,8 +26,9 @@ export function SetRow({
   isActive,
   unit,
   increment,
-  onAdjustWeight,
-  onAdjustReps,
+  weightApplicable = true,
+  onSetWeight,
+  onSetReps,
   onComplete,
 }: {
   setNumber: number;
@@ -39,8 +41,10 @@ export function SetRow({
   isActive: boolean;
   unit: string;
   increment: number;
-  onAdjustWeight?: (delta: number) => void;
-  onAdjustReps?: (delta: number) => void;
+  /** A bodyweight movement gets no weight field at all, not a zero in one. */
+  weightApplicable?: boolean;
+  onSetWeight?: (value: number) => void;
+  onSetReps?: (value: number) => void;
   onComplete?: () => void;
 }) {
   const {colors} = useTheme();
@@ -87,48 +91,59 @@ export function SetRow({
       </View>
 
       <View style={styles.body}>
-        <View style={styles.field}>
-          <AppText
-            accessibilityLabel={isActive ? 'Weight' : undefined}
-            variant={isActive ? 'display' : 'inkNum'}
-            color={done || isActive ? 'ink' : 'faint'}>
-            {(isActive ? actualWeight : actualWeight) === null
-              ? '—'
-              : (actualWeight ?? 0).toFixed(1)}
-          </AppText>
-          <AppText variant="printed" color="muted">
-            {unit}
-          </AppText>
-          {isActive && onAdjustWeight ? (
-            <Stepper
-              onDown={() => onAdjustWeight(-increment)}
-              onUp={() => onAdjustWeight(increment)}
-              label="weight"
-            />
-          ) : null}
-        </View>
+        {weightApplicable ? (
+          <View style={styles.field}>
+            {isActive && onSetWeight ? (
+              <NumberField
+                label="Weight"
+                size="display"
+                value={actualWeight}
+                step={increment}
+                min={0}
+                decimals={1}
+                unit={unit}
+                onChange={onSetWeight}
+              />
+            ) : (
+              <>
+                <AppText variant="inkNum" color={done ? 'ink' : 'faint'}>
+                  {actualWeight === null ? '—' : actualWeight.toFixed(1)}
+                </AppText>
+                <AppText variant="printed" color="muted">
+                  {unit}
+                </AppText>
+              </>
+            )}
+          </View>
+        ) : null}
 
-        <AppText variant="printed" color="faint">
-          ×
-        </AppText>
+        {weightApplicable ? (
+          <AppText variant="printed" color="faint">
+            ×
+          </AppText>
+        ) : null}
 
         <View style={styles.field}>
-          <AppText
-            accessibilityLabel={isActive ? 'Reps' : undefined}
-            variant={isActive ? 'display' : 'inkNum'}
-            color={done || isActive ? 'ink' : 'faint'}>
-            {actualReps === null ? '—' : String(actualReps)}
-          </AppText>
-          <AppText variant="printed" color="muted">
-            reps
-          </AppText>
-          {isActive && onAdjustReps ? (
-            <Stepper
-              onDown={() => onAdjustReps(-1)}
-              onUp={() => onAdjustReps(1)}
-              label="reps"
+          {isActive && onSetReps ? (
+            <NumberField
+              label="Reps"
+              size="display"
+              value={actualReps}
+              step={1}
+              min={1}
+              unit="reps"
+              onChange={onSetReps}
             />
-          ) : null}
+          ) : (
+            <>
+              <AppText variant="inkNum" color={done ? 'ink' : 'faint'}>
+                {actualReps === null ? '—' : String(actualReps)}
+              </AppText>
+              <AppText variant="printed" color="muted">
+                reps
+              </AppText>
+            </>
+          )}
         </View>
 
         {isActive && onComplete ? (
@@ -164,41 +179,6 @@ export function SetRow({
   );
 }
 
-/** The design's −/+ shoulders. Big enough to hit with a chalked-up thumb. */
-function Stepper({
-  onDown,
-  onUp,
-  label,
-}: {
-  onDown: () => void;
-  onUp: () => void;
-  label: string;
-}) {
-  const {colors} = useTheme();
-  return (
-    <View style={styles.stepper}>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={`Decrease ${label}`}
-        onPress={onDown}
-        style={[styles.shoulder, {borderColor: colors.rule}]}>
-        <AppText variant="bodyStrong" color="ink2">
-          −
-        </AppText>
-      </Pressable>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={`Increase ${label}`}
-        onPress={onUp}
-        style={[styles.shoulder, {borderColor: colors.rule}]}>
-        <AppText variant="bodyStrong" color="ink2">
-          +
-        </AppText>
-      </Pressable>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   row: {
     borderWidth: 1,
@@ -222,13 +202,6 @@ const styles = StyleSheet.create({
     padding: space.md,
   },
   field: {flex: 1, alignItems: 'center', gap: 2},
-  stepper: {flexDirection: 'row', gap: space.sm, marginTop: space.sm},
-  shoulder: {
-    borderWidth: 1,
-    borderRadius: radius.sm,
-    paddingVertical: space.xs,
-    paddingHorizontal: space.md,
-  },
   check: {
     width: 56,
     height: 56,

@@ -215,8 +215,9 @@ export function WorkoutScreen() {
             isActive={activeSet?.id === set.id}
             unit={unit}
             increment={increment}
-            onAdjustWeight={active.adjustWeight}
-            onAdjustReps={active.adjustReps}
+            weightApplicable={exercise.weightApplicable}
+            onSetWeight={active.setWeight}
+            onSetReps={active.setReps}
             onComplete={onComplete}
           />
         ))}
