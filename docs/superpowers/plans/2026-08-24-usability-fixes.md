@@ -107,6 +107,20 @@ exercise you did not do is *skipped*, not erased — erasing it would quietly
 shrink the denominator of "% of plan". Deleting is offered only for an
 unplanned exercise with nothing recorded on it.
 
+**U10 — A set that has already been decided can be reopened.** Tapping a
+recorded or skipped set makes it the active one again, with its fields and its
+check. `completeSet` already overwrites, and §14 already says the actual is
+editable; the workout screen simply offered no way in. Raised from the device
+on 2026-08-24 — a set was skipped by accident and there was no way back.
+
+**U11 — Finishing an exercise is not the same as skipping it.** "Skip this
+exercise" marks the whole exercise skipped even when three of its four sets
+were recorded, which understates the work. The control now adapts: with
+nothing recorded it still says *Skip this exercise* and marks it skipped; with
+anything recorded it says *Finish this exercise*, skips only what is still
+pending, and lets the status derive — which reads as completed, because
+something was completed. Raised from the device on 2026-08-24.
+
 **U9 — The theme mode reaches the provider through a store, not the
 database.** `ThemeProvider` wraps `DatabaseGate` (`src/App.tsx:29`) and
 `DatabaseGate` calls `useTheme()` for its own loading and failure screens, so
@@ -1159,6 +1173,109 @@ git commit -m "feat(session): swap, remove, reorder and annotate an exercise mid
 
 ---
 
+### Task 10b: Reopen a decided set, and finish vs skip an exercise
+
+Both raised from the device at the R2 gate. **U10** and **U11**.
+
+**Files:**
+- Modify: `src/repositories/sessionRepo.ts`, `src/features/workout/WorkoutScreen.tsx`, `src/features/workout/SetRow.tsx`, `src/features/workout/WorkoutExerciseCard.tsx`
+- Test: `__tests__/repositories/sessionRepo.editing.test.ts`, `__tests__/features/workout/WorkoutScreen.test.tsx`
+
+**Interfaces:**
+- Produces:
+
+```ts
+/**
+ * U11. Skips whatever is still pending and lets the status derive, so an
+ * exercise that was three-quarters done reads as completed rather than
+ * skipped. Distinct from skipExercise, which writes 'skipped' explicitly
+ * because that is a decision the user made about the whole exercise.
+ */
+export async function finishExercise(
+  db: AppDatabase, performedExerciseId: string,
+): Promise<void>;
+```
+
+- [ ] **Step 1: Write the failing tests**
+
+```ts
+describe('finishExercise', () => {
+  it('reads as completed when something was recorded', async () => {
+    await completeSet(db, first.id, {actualReps: 10, actualWeight: 60});
+    await finishExercise(db, pex.id);
+    expect((await loadOne(db, pex.id)).status).toBe('completed');
+  });
+
+  it('reads as skipped when nothing was', async () => {
+    await finishExercise(db, pex.id);
+    expect((await loadOne(db, pex.id)).status).toBe('skipped');
+  });
+
+  it('leaves recorded sets exactly as they are', async () => {
+    await completeSet(db, first.id, {actualReps: 10, actualWeight: 60});
+    await finishExercise(db, pex.id);
+    const sets = await loadSets(db, pex.id);
+    expect(sets[0]).toMatchObject({status: 'completed', actualWeight: 60});
+    expect(sets.slice(1).every(s => s.status === 'skipped')).toBe(true);
+  });
+});
+```
+
+```tsx
+it('reopens a skipped set when it is tapped', async () => {
+  const view = await renderScreen();
+  await fireEvent.press(await view.findByText('Skip set'));
+  await waitFor(async () =>
+    expect((await sets())[0]!.status).toBe('skipped'),
+  );
+
+  await fireEvent.press(view.getByLabelText('Edit set 1'));
+  await waitFor(() =>
+    expect(view.getByLabelText('Weight')).toBeTruthy(),
+  );
+  await fireEvent.press(view.getByLabelText('Complete set'));
+  await waitFor(async () =>
+    expect((await sets())[0]!.status).toBe('completed'),
+  );
+});
+
+it('reopens a recorded set so a wrong number can be corrected', async () => {
+  /* complete set 1 at 60, reopen it, type 55, complete: expect 55 */
+});
+
+it('offers to finish rather than skip once something is recorded', async () => {
+  const view = await renderScreen();
+  expect(await view.findByText('Skip this exercise')).toBeTruthy();
+  await fireEvent.press(view.getByLabelText('Complete set'));
+  await waitFor(() =>
+    expect(view.getByText('Finish this exercise')).toBeTruthy(),
+  );
+});
+```
+
+- [ ] **Step 2: Run and watch fail.**
+
+- [ ] **Step 3: Implement**
+
+`SetRow` gains an `onEdit` handler on a set that is `completed` or `skipped`,
+labelled `Edit set N`, wrapping the row in a `Pressable`. It is **not** offered
+on a pending set — that one is either already active or is reached by finishing
+the ones before it.
+
+`WorkoutScreen` holds `editingSetId`. The active set becomes
+`editingSetId ?? first pending`, and completing clears it. The pre-fill effect
+loads the set's own recorded actuals when reopening, not the target — you are
+correcting a number, and the number you typed is the better starting point than
+the one you were aiming at.
+
+The exercise control reads `Finish this exercise` when any set on it is
+completed, `Skip this exercise` otherwise, and calls the matching repository
+function. Both stay ochre: neither is an error.
+
+- [ ] **Step 4:** `npm test && npm run typecheck && npm run lint`. **Commit.**
+
+---
+
 ### Task 11: The `⋯` menu and the notes field
 
 **Files:**
@@ -1692,10 +1809,9 @@ the target line, and the dim that hid future targets is removed in Task 6.
 
 **Known gaps, stated rather than hidden.**
 
-1. **Editing a set you already recorded** is possible at the repository level
-   (`completeSet` overwrites) but the workout screen offers no way to reopen a
-   finished set. Complaint 9 is about a wrong *exercise*, not a wrong *number*,
-   so this is out of scope — but it is the obvious next request.
+1. ~~**Editing a set you already recorded**~~ — **now in scope**, as Task 10b.
+   It was listed here as the obvious next request, and it was: it came back
+   from the device at the R2 gate within a day, from a set skipped by accident.
 2. **Reordering is one place at a time,** from the `⋯` menu. `ReorderableRows`
    exists and could be used later; inside a scrolling workout a long-press drag
    competes with the scroll gesture, so it is not a free swap.
