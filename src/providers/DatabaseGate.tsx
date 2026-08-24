@@ -4,8 +4,9 @@ import {getDatabase} from '@/db/client';
 import {runMigrations} from '@/db/migrate';
 import {seedExercises} from '@/db/seed/seedExercises';
 import {rollOverStaleSessions} from '@/repositories/sessionRepo';
+import {getSettings} from '@/repositories/settingsRepo';
 import type {AppDatabase} from '@/db/types';
-import {useTheme, type as typeScale, space, radius} from '@/theme';
+import {useTheme, useThemeMode, type as typeScale, space, radius} from '@/theme';
 
 const DatabaseContext = createContext<AppDatabase | null>(null);
 
@@ -51,6 +52,11 @@ export function DatabaseGate({
         // every set it recorded. Launch is the only moment this can happen —
         // there is no background job anywhere in this app.
         await rollOverStaleSessions(db);
+        // U9. The theme is settled before anything past this gate renders, so
+        // the app's first real frame is already in the right palette rather
+        // than flashing light and correcting itself. getSettings creates the
+        // row on a fresh install, so this doubles as the seed for it.
+        useThemeMode.getState().setMode((await getSettings(db)).themeMode);
         if (!cancelled) {
           setStatus({phase: 'ready', db});
         }

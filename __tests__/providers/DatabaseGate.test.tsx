@@ -5,6 +5,8 @@ import { ThemeProvider } from '@/theme';
 import { DatabaseGate } from '@/providers/DatabaseGate';
 import { sql } from 'drizzle-orm';
 import { runMigrations } from '@/db/migrate';
+import { updateSettings } from '@/repositories/settingsRepo';
+import { useThemeMode } from '@/theme';
 import { createTestDb } from '../helpers/testDb';
 
 // React Native Testing Library 14 made render async.
@@ -54,6 +56,26 @@ describe('DatabaseGate', () => {
       );
       expect(rows[0]?.status).toBe('abandoned');
     });
+  });
+
+  // U9: the provider sits above this gate, so the saved theme has to be pushed
+  // up into the store rather than read down through React Query. If this
+  // regresses, the app launches in the wrong palette and corrects itself a
+  // frame later, which reads as a flash of the wrong colour.
+  it('loads the saved theme before it renders its children', async () => {
+    const { db, close } = createTestDb();
+    open.push(close);
+    await runMigrations(db);
+    await updateSettings(db, { themeMode: 'dark' });
+    useThemeMode.setState({ mode: 'system' });
+
+    const view = await wrap(
+      <DatabaseGate getDb={() => db}>
+        <Text>ready</Text>
+      </DatabaseGate>,
+    );
+    expect(await view.findByText('ready')).toBeTruthy();
+    expect(useThemeMode.getState().mode).toBe('dark');
   });
 
   it('shows a blocking error screen instead of crashing when migrations fail', async () => {
