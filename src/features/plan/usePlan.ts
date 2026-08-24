@@ -1,6 +1,7 @@
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useDatabase} from '@/providers/DatabaseGate';
 import {historyKeys} from '@/features/history/useHistory';
+import {sessionKeys} from '@/features/workout/useSession';
 import {
   getActivePlan,
   createPlan,
@@ -50,6 +51,10 @@ export function useCreatePlan() {
       await client.invalidateQueries({queryKey: planKeys.all});
       // A plan edit changes which future days count as rest or training.
       await client.invalidateQueries({queryKey: historyKeys.all});
+      // The Today tab reads the plan through the session branch, not this one,
+      // and it caches forever. Without this it kept saying "No plan yet" after
+      // a plan was created, until the app was restarted.
+      await client.invalidateQueries({queryKey: sessionKeys.all});
     },
   });
 }
@@ -71,6 +76,10 @@ export function useEditPlan() {
       await client.invalidateQueries({queryKey: planKeys.all});
       // A plan edit changes which future days count as rest or training.
       await client.invalidateQueries({queryKey: historyKeys.all});
+      // Today previews the plan through the session branch (see above). An
+      // exercise added to today's plan has to appear there without a restart —
+      // this is half of complaint 4, found on the device at the R1 gate.
+      await client.invalidateQueries({queryKey: sessionKeys.all});
     },
   });
 }
