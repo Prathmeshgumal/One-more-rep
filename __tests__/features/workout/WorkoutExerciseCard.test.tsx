@@ -81,6 +81,41 @@ describe('WorkoutExerciseCard', () => {
     expect(view.getAllByText('target 10 × 60.0')).toHaveLength(3);
   });
 
+  // An em dash in the number's place reads as broken rather than as empty, and
+  // it wastes the one spot on the row where the target could be doing work.
+  it('ghosts the target into a set that has not happened yet', async () => {
+    const view = await renderCard({expanded: true});
+    // Three sets, each showing 60.0 and 10 in the actual's position, greyed.
+    expect(view.getAllByText('60.0')).toHaveLength(3);
+    expect(view.getAllByText('10')).toHaveLength(3);
+    expect(view.queryByText('—')).toBeNull();
+  });
+
+  it('leaves a bonus set blank, because it has nothing to aim at', async () => {
+    const view = await renderCard({
+      expanded: true,
+      exercise: exercise({
+        sets: [
+          set(1, {isUnplanned: true, targetReps: null, targetWeight: null}),
+        ],
+      }),
+    });
+    expect(view.getAllByText('—')).toHaveLength(2);
+  });
+
+  it('shows what was actually lifted once a set is recorded', async () => {
+    const view = await renderCard({
+      expanded: true,
+      exercise: exercise({
+        sets: [set(1, {status: 'completed', actualReps: 8, actualWeight: 55})],
+      }),
+    });
+    expect(view.getByText('55.0')).toBeTruthy();
+    expect(view.getByText('8')).toBeTruthy();
+    // Not the target — the recorded number wins its own row.
+    expect(view.queryByText('60.0')).toBeNull();
+  });
+
   it('expanded, puts the editable fields on the active set only', async () => {
     const view = await renderCard({
       expanded: true,

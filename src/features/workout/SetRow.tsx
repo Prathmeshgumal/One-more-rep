@@ -73,6 +73,21 @@ export function SetRow({
 
   const done = status !== 'pending';
 
+  /**
+   * A set that has not happened yet shows its **target**, greyed, rather than
+   * an em dash.
+   *
+   * The dash was accurate — nothing has been lifted — but it read as broken
+   * rather than as empty, and it wasted the one place on the row where the
+   * number you are about to aim for could be doing some work. A bonus set has
+   * no target, so it keeps the dash: there is genuinely nothing to show.
+   */
+  const ghostWeight = actualWeight === null && !isActive ? targetWeight : null;
+  const ghostReps = actualReps === null && !isActive ? targetReps : null;
+
+  const shownWeight = actualWeight ?? ghostWeight;
+  const shownReps = actualReps ?? ghostReps;
+
   return (
     <View
       style={[
@@ -112,8 +127,10 @@ export function SetRow({
               />
             ) : (
               <>
-                <AppText variant="inkNum" color={done ? 'ink' : 'faint'}>
-                  {actualWeight === null ? '—' : actualWeight.toFixed(1)}
+                <AppText
+                  variant="inkNum"
+                  color={actualWeight === null ? 'faint' : 'ink'}>
+                  {shownWeight === null ? '—' : shownWeight.toFixed(1)}
                 </AppText>
                 <AppText variant="printed" color="muted">
                   {unit}
@@ -142,8 +159,10 @@ export function SetRow({
             />
           ) : (
             <>
-              <AppText variant="inkNum" color={done ? 'ink' : 'faint'}>
-                {actualReps === null ? '—' : String(actualReps)}
+              <AppText
+                variant="inkNum"
+                color={actualReps === null ? 'faint' : 'ink'}>
+                {shownReps === null ? '—' : String(shownReps)}
               </AppText>
               <AppText variant="printed" color="muted">
                 reps
