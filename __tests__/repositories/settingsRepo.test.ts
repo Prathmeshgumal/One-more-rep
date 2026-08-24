@@ -30,6 +30,17 @@ describe('settingsRepo', () => {
     expect(row.defaultIncrement).toBe(DEFAULT_SETTINGS.defaultIncrement);
   });
 
+  it('defaults a fresh install to a 0.5 step and the system theme', async () => {
+    const row = await getSettings(ctx.db);
+    expect(row.defaultIncrement).toBe(0.5);
+    expect(row.themeMode).toBe('system');
+  });
+
+  it('stores a theme choice', async () => {
+    const row = await updateSettings(ctx.db, {themeMode: 'dark'});
+    expect(row.themeMode).toBe('dark');
+  });
+
   it('returns the same row on a second read rather than a duplicate', async () => {
     await getSettings(ctx.db);
     await getSettings(ctx.db);

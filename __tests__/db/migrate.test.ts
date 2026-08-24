@@ -73,4 +73,13 @@ describe('runMigrations', () => {
     expect(result.applied).toBeGreaterThan(0);
     expect(await tableNames(ctx.db)).toContain('settings');
   });
+
+  it('lands on version 6 with a theme column on settings', async () => {
+    await runMigrations(ctx.db);
+    expect(await getSchemaVersion(ctx.db)).toBe(6);
+    const columns = await ctx.db.all<{name: string}>(
+      sql`PRAGMA table_info(settings)`,
+    );
+    expect(columns.map(c => c.name)).toContain('theme_mode');
+  });
 });

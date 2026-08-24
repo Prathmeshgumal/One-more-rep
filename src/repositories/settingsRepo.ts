@@ -5,11 +5,15 @@ import type {AppDatabase} from '@/db/types';
 export const DEFAULT_SETTINGS = {
   unit: 'kg',
   weekStartDay: 1, // Monday
-  defaultIncrement: 2.5,
+  // U4: 0.5 is the smallest plate most gyms have, and typing beats stepping
+  // for anything larger. A fresh install starts here; an existing one keeps
+  // whatever it had, and can change it in Settings.
+  defaultIncrement: 0.5,
+  themeMode: 'system',
 } as const;
 
 export type SettingsPatch = Partial<
-  Pick<SettingsRow, 'unit' | 'weekStartDay' | 'defaultIncrement'>
+  Pick<SettingsRow, 'unit' | 'weekStartDay' | 'defaultIncrement' | 'themeMode'>
 >;
 
 async function readRow(db: AppDatabase): Promise<SettingsRow | undefined> {

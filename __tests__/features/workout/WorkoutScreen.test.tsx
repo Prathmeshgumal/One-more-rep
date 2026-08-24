@@ -11,6 +11,7 @@ import {
   getActiveSession,
   completeSet,
 } from '@/repositories/sessionRepo';
+import {updateSettings} from '@/repositories/settingsRepo';
 import {ThemeProvider} from '@/theme';
 import {DatabaseContextTestProvider} from '@/providers/DatabaseGate';
 import {WorkoutScreen} from '@/features/workout/WorkoutScreen';
@@ -134,6 +135,10 @@ describe('WorkoutScreen', () => {
   });
 
   it('steps the weight by the configured increment and the reps by one', async () => {
+    // Set explicitly rather than leaning on DEFAULT_SETTINGS: this test is
+    // named after the configured increment, so it should configure one. It
+    // passed by accident while the default happened to be 2.5.
+    await updateSettings(ctx.db, {defaultIncrement: 2.5});
     const view = await renderScreen();
     await view.findByText('Bench Press');
 
@@ -151,6 +156,7 @@ describe('WorkoutScreen', () => {
   });
 
   it('will not step reps below one or weight below zero', async () => {
+    await updateSettings(ctx.db, {defaultIncrement: 2.5});
     const view = await renderScreen();
     await view.findByText('Bench Press');
     for (let i = 0; i < 20; i++) {
