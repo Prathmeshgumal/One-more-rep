@@ -134,8 +134,15 @@ export function WorkoutExerciseCard({
             </AppText>
           ) : null}
 
-          {exercise.sets.map(set => {
+          {exercise.sets.map((set, index) => {
             const isActive = activeSetId === set.id;
+            // The most recent weight recorded *before* this set, so a ghost
+            // never suggests a number from further down the exercise.
+            const fallbackWeight =
+              [...exercise.sets.slice(0, index)]
+                .reverse()
+                .find(s => s.status === 'completed' && s.actualWeight !== null)
+                ?.actualWeight ?? null;
             return (
               <SetRow
                 key={set.id}
@@ -152,6 +159,7 @@ export function WorkoutExerciseCard({
                 unit={unit}
                 increment={increment}
                 weightApplicable={exercise.weightApplicable}
+                fallbackWeight={fallbackWeight}
                 onSetWeight={isActive ? onSetWeight : undefined}
                 onSetReps={isActive ? onSetReps : undefined}
                 onComplete={isActive ? onCompleteSet : undefined}

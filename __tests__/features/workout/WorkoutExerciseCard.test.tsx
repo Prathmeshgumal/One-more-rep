@@ -100,7 +100,46 @@ describe('WorkoutExerciseCard', () => {
         ],
       }),
     });
-    expect(view.getAllByText('—')).toHaveLength(2);
+    // No target, nothing lifted before it — so nothing is suggested, and the
+    // KG and REPS labels carry the meaning on their own.
+    expect(view.queryByText('—')).toBeNull();
+    expect(view.getByText('bonus set')).toBeTruthy();
+  });
+
+  // Reported from the device: a weight-bearing exercise planned without a
+  // target weight still showed a dash, because there was no target to ghost.
+  // The last weight actually lifted on this exercise is the better guess, and
+  // it is the same rule the active set's pre-fill already uses (section 35).
+  it('ghosts the last weight lifted when there is no target weight', async () => {
+    const view = await renderCard({
+      expanded: true,
+      exercise: exercise({
+        sets: [
+          set(1, {
+            targetWeight: null,
+            status: 'completed',
+            actualReps: 10,
+            actualWeight: 40,
+          }),
+          set(2, {targetWeight: null}),
+          set(3, {targetWeight: null}),
+        ],
+      }),
+    });
+    // Set 1 recorded at 40; sets 2 and 3 carry it forward, greyed.
+    expect(view.getAllByText('40.0')).toHaveLength(3);
+  });
+
+  it('shows no dash when there is nothing at all to suggest', async () => {
+    const view = await renderCard({
+      expanded: true,
+      exercise: exercise({
+        sets: [set(1, {targetWeight: null}), set(2, {targetWeight: null})],
+      }),
+    });
+    // Nothing planned and nothing lifted yet. The KG label carries the meaning;
+    // an em dash in the number's place just reads as broken.
+    expect(view.queryByText('—')).toBeNull();
   });
 
   it('shows what was actually lifted once a set is recorded', async () => {
