@@ -68,15 +68,36 @@ export function NumberField({
   const [draft, setDraft] = useState<string | null>(null);
   const committed = useRef(printed);
 
+  /**
+   * The last number this field handed upwards.
+   *
+   * A controlled parent feeds every keystroke straight back, so `value` changes
+   * *because of* the typing as well as independently of it, and the two cases
+   * need opposite handling. Without this ref they are indistinguishable, and
+   * the field renormalises its own draft mid-word: typing 57.5 over 62.5 gave
+   * 5.1.5 in a test and 7.5 on the phone, because "5" came back as 5, printed
+   * as "5.0", and the next character appended to that.
+   */
+  const emitted = useRef<number | null>(null);
+
+  const emit = (next: number) => {
+    emitted.current = next;
+    onChange(next);
+  };
+
   // A new active set hands this field a different number, and it has to follow
   // — otherwise the next set opens still showing the previous set's weight.
-  // Any draft in flight belongs to the old value and is dropped with it.
+  // A draft in flight belongs to the old value and is dropped with it, unless
+  // the "change" is only this field's own keystroke coming back around.
   useEffect(() => {
-    if (committed.current !== printed) {
-      committed.current = printed;
+    if (committed.current === printed) {
+      return;
+    }
+    committed.current = printed;
+    if (value !== emitted.current) {
       setDraft(null);
     }
-  }, [printed]);
+  }, [printed, value]);
 
   const clamp = (n: number): number => {
     if (min !== undefined && n < min) {
@@ -100,7 +121,7 @@ export function NumberField({
       return;
     }
     setDraft(null);
-    onChange(next);
+    emit(next);
   };
 
   const type = (text: string) => {
@@ -115,11 +136,18 @@ export function NumberField({
     // A typed number is clamped rather than dropped. Someone who types 0 into
     // a field with a floor of 1 meant "as low as it goes", and rejecting the
     // keystroke outright leaves them staring at a field that will not take it.
-    onChange(clamp(round(parsed)));
+    emit(clamp(round(parsed)));
   };
 
-  /** Whatever was half-typed is discarded; the real value is redrawn. */
-  const settle = () => setDraft(null);
+  /**
+   * Whatever was half-typed is discarded and the real value redrawn — which is
+   * also where the number is finally normalised, so 57.50 becomes 57.5 on the
+   * way out rather than under the thumb.
+   */
+  const settle = () => {
+    emitted.current = null;
+    setDraft(null);
+  };
 
   return (
     <View style={styles.field}>

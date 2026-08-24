@@ -1,4 +1,5 @@
 import React from 'react';
+import {Pressable, Text} from 'react-native';
 import {render, fireEvent} from '@testing-library/react-native';
 import {ThemeProvider} from '@/theme';
 import {NumberField} from '@/ui/NumberField';
@@ -56,6 +57,68 @@ describe('NumberField', () => {
     // props of the current one.
     expect(view.getByLabelText('Weight').props.value).toBe('37.');
     expect(onChange).toHaveBeenNthCalledWith(3, 37);
+  });
+
+  // The test above uses a jest.fn() parent, which never feeds the value back.
+  // A real parent does, on every keystroke, and that is what broke on the
+  // device: typing "57.5" into a field showing 62.5 produced 7.5, because the
+  // first "5" round-tripped as 5 -> "5.0" and the sync effect threw away the
+  // draft mid-word.
+  it('survives a parent that echoes every keystroke back', async () => {
+    function Controlled() {
+      const [value, setValue] = React.useState<number | null>(62.5);
+      return (
+        <ThemeProvider>
+          <NumberField
+            label="Weight"
+            value={value}
+            step={0.5}
+            decimals={1}
+            onChange={setValue}
+          />
+        </ThemeProvider>
+      );
+    }
+    const view = await render(<Controlled />);
+    const field = () => view.getByLabelText('Weight');
+
+    // Typed the way a keyboard types: each character is appended to whatever
+    // the field is actually showing at that moment, not to the string the test
+    // wishes were there. Dictating the whole value each time hides the bug,
+    // because it papers over any redraw the component did in between.
+    //
+    // selectTextOnFocus means the first character replaces the old value; the
+    // rest append.
+    let text = '5';
+    await fireEvent.changeText(field(), text);
+    for (const ch of ['7', '.', '5']) {
+      text = field().props.value + ch;
+      await fireEvent.changeText(field(), text);
+    }
+
+    expect(field().props.value).toBe('57.5');
+    await fireEvent(field(), 'blur');
+    expect(field().props.value).toBe('57.5');
+  });
+
+  it('still follows a value the field did not type', async () => {
+    // The other half: when the parent changes the value for its own reasons —
+    // the active set moving on — the draft must be dropped, not defended.
+    function Controlled() {
+      const [value, setValue] = React.useState<number | null>(20);
+      return (
+        <ThemeProvider>
+          <NumberField label="Weight" value={value} step={0.5} decimals={1} onChange={setValue} />
+          <Pressable accessibilityLabel="jump" onPress={() => setValue(80)}>
+            <Text>jump</Text>
+          </Pressable>
+        </ThemeProvider>
+      );
+    }
+    const view = await render(<Controlled />);
+    await fireEvent.changeText(view.getByLabelText('Weight'), '3');
+    await fireEvent.press(view.getByLabelText('jump'));
+    expect(view.getByLabelText('Weight').props.value).toBe('80.0');
   });
 
   it('does not commit while the field is empty', async () => {
