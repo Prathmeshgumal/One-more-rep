@@ -219,11 +219,38 @@ describe('WorkoutScreen', () => {
     });
   });
 
-  it('moves to the next exercise on request', async () => {
+  // U1: every exercise is on screen at once, so "move to the next one" is no
+  // longer a button — it is scrolling, and opening the card you land on.
+  it('shows every exercise in the session at once', async () => {
     const view = await renderScreen();
-    await fireEvent.press(await view.findByText(/Next — Cable Fly/));
+    expect(await view.findByText('Bench Press')).toBeTruthy();
+    expect(view.getByText('Cable Fly')).toBeTruthy();
+  });
+
+  it('opens a different exercise when its header is tapped', async () => {
+    const view = await renderScreen();
+    await fireEvent.press(await view.findByLabelText('Cable Fly'));
+
     await waitFor(() => {
-      expect(view.getByText('Cable Fly')).toBeTruthy();
+      expect(
+        view.getByLabelText('Cable Fly').props.accessibilityState.expanded,
+      ).toBe(true);
+    });
+    // U2: opening one closes the other, so there is never a second set that
+    // also looks active.
+    expect(
+      view.getByLabelText('Bench Press').props.accessibilityState.expanded,
+    ).toBe(false);
+    expect(view.getAllByLabelText('Complete set')).toHaveLength(1);
+  });
+
+  it('closes the open card when its own header is tapped', async () => {
+    const view = await renderScreen();
+    await fireEvent.press(await view.findByLabelText('Bench Press'));
+    await waitFor(() => {
+      expect(
+        view.getByLabelText('Bench Press').props.accessibilityState.expanded,
+      ).toBe(false);
     });
   });
 
@@ -251,16 +278,38 @@ describe('WorkoutScreen', () => {
     expect(view.getByText(/27.5×10/)).toBeTruthy();
   });
 
-  it('opens the exercise summary when an exercise is finished', async () => {
+  // Spec 6.3 still auto-advances, but no longer by pushing a screen over the
+  // workout. Finishing an exercise opens the next one that still has work.
+  // Recorded as a design departure in docs/deferred.md.
+  it('opens the next exercise when one is finished', async () => {
     const view = await renderScreen();
     for (let i = 0; i < 3; i++) {
       await fireEvent.press(await view.findByLabelText('Complete set'));
     }
     await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith('ExerciseSummary', {
-        exerciseIndex: 0,
-      });
+      expect(
+        view.getByLabelText('Cable Fly').props.accessibilityState.expanded,
+      ).toBe(true);
     });
+    expect(mockNavigate).not.toHaveBeenCalledWith(
+      'ExerciseSummary',
+      expect.anything(),
+    );
+  });
+
+  it('does not move the open card out from under a recorded set', async () => {
+    // The bug found on the device in Phase 3. It must not come back through
+    // the rewrite: two of three sets left means you are still on this exercise.
+    const view = await renderScreen();
+    await fireEvent.press(await view.findByLabelText('Complete set'));
+
+    await waitFor(async () => {
+      expect((await sets())[0]!.status).toBe('completed');
+    });
+    expect(
+      view.getByLabelText('Bench Press').props.accessibilityState.expanded,
+    ).toBe(true);
+    expect(view.getAllByLabelText('Complete set')).toHaveLength(1);
   });
 
   it('leaves the workout when closed', async () => {
@@ -281,8 +330,17 @@ describe('WorkoutScreen', () => {
     }
 
     const view = await renderScreen();
-    expect(await view.findByText('Cable Fly')).toBeTruthy();
-    expect(view.queryByText('Bench Press')).toBeNull();
+    await view.findByText('Cable Fly');
+    await waitFor(() => {
+      expect(
+        view.getByLabelText('Cable Fly').props.accessibilityState.expanded,
+      ).toBe(true);
+    });
+    // The finished exercise has not vanished — it is on screen, collapsed,
+    // still showing what it asked for and how it went.
+    expect(
+      view.getByLabelText('Bench Press').props.accessibilityState.expanded,
+    ).toBe(false);
   });
 
   // Coming back from an exercise summary does not change the session, so an
@@ -291,27 +349,27 @@ describe('WorkoutScreen', () => {
     const view = await renderScreen();
     await view.findByText('Bench Press');
 
-    // Finish the first exercise through the UI, so the query invalidates the
-    // way it does in the app.
-    for (let i = 0; i < 3; i += 1) {
-      await fireEvent.press(await view.findByLabelText('Complete set'));
-    }
+    // Open the second exercise by hand, then come back to it having done
+    // nothing — focus must realign to where the work actually is.
+    await fireEvent.press(view.getByLabelText('Cable Fly'));
     await waitFor(() =>
-      expect(mockNavigate).toHaveBeenCalledWith('ExerciseSummary', {
-        exerciseIndex: 0,
-      }),
+      expect(
+        view.getByLabelText('Cable Fly').props.accessibilityState.expanded,
+      ).toBe(true),
     );
 
-    // Still on the finished exercise: recording sets must not move the screen
-    // out from under someone who is still working on it.
-    expect(view.getByText('Bench Press')).toBeTruthy();
-
-    // Now the summary hands focus back.
     await act(async () => {
       for (const focus of mockFocus) {
         focus();
       }
     });
-    await waitFor(() => expect(view.getByText('Cable Fly')).toBeTruthy());
+
+    // Bench Press still has all three sets pending, so that is where focus
+    // puts you — not on whatever happened to be open when you left.
+    await waitFor(() =>
+      expect(
+        view.getByLabelText('Bench Press').props.accessibilityState.expanded,
+      ).toBe(true),
+    );
   });
 });

@@ -108,6 +108,24 @@ control to place properly rather than the one to remove.
 
 Affects: `src/features/workout/WorkoutScreen.tsx`.
 
+### Finishing an exercise no longer pushes the summary screen
+**Added:** 2026-08-24, during R2.
+
+Spec 6.3 auto-advances when the last set of an exercise is recorded, and Phase
+3 implemented that by pushing `ExerciseSummary` over the workout. With the
+workout now a single list (U1), a forced screen push between exercises is a
+wall to walk through rather than a place to go and look — and it fights the
+whole point of being able to see the session at once.
+
+The advance is kept: the next exercise with work left opens and the list
+scrolls to it. `ExerciseSummaryScreen` stays in the stack and keeps its tests;
+R3 puts it behind the exercise's own menu, so it is reached deliberately.
+
+If this turns out to be wrong, the thing to restore is the push, not the
+screen — the screen never went anywhere.
+
+Affects: `src/features/workout/WorkoutScreen.tsx`.
+
 ### Four small additions the history designs do not draw
 **Added:** 2026-08-23, during Phase 4.
 
