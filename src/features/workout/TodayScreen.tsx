@@ -9,7 +9,8 @@ import {Card} from '@/ui/Card';
 import {ProgressBar} from '@/ui/ProgressBar';
 import {useTheme, space, radius} from '@/theme';
 import {WEEKDAY_NAMES, weekdayIndex} from '@/domain/weekday';
-import type {PlanDayView} from '@/repositories/planRepo';
+import {targetLine} from '@/domain/format';
+import {useSettingsQuery} from '@/features/settings/useSettings';
 import type {TodayStackParamList} from '@/navigation/types';
 import {
   useTodaySessionQuery,
@@ -28,26 +29,6 @@ const longDate = (ms: number) =>
     month: 'long',
   });
 
-/** "3 × 10 · 30.0 kg", or "3 sets · varied" when the sets differ. */
-function targetLine(exercise: PlanDayView['exercises'][number]): string {
-  const [first, ...rest] = exercise.sets;
-  if (!first) {
-    return 'No sets';
-  }
-  const uniform = rest.every(
-    s =>
-      s.targetReps === first.targetReps &&
-      s.targetWeight === first.targetWeight,
-  );
-  if (!uniform) {
-    return `${exercise.sets.length} sets · varied`;
-  }
-  const base = `${exercise.sets.length} × ${first.targetReps}`;
-  return first.targetWeight === null
-    ? base
-    : `${base} · ${first.targetWeight.toFixed(1)} kg`;
-}
-
 export function TodayScreen() {
   const {colors} = useTheme();
   const insets = useSafeAreaInsets();
@@ -56,6 +37,8 @@ export function TodayScreen() {
 
   const {data: session, isPending: sessionPending} = useTodaySessionQuery();
   const {data: plan, isPending: planPending} = useTodayPlanQuery();
+  const {data: settings} = useSettingsQuery();
+  const unit = settings?.unit ?? 'kg';
   const start = useStartWorkout();
   const finish = useFinishWorkout();
 
@@ -269,7 +252,7 @@ export function TodayScreen() {
             <AppText variant="bodyStrong">{exercise.name}</AppText>
             {/* Printed type, because nothing has happened yet. */}
             <AppText variant="printed" color="muted">
-              {`target ${targetLine(exercise)}`}
+              {`target ${targetLine(exercise.sets, unit)}`}
             </AppText>
           </Card>
         ))}

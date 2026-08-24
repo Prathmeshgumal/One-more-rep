@@ -10,33 +10,16 @@ import {ReorderableRows} from '@/ui/ReorderableRows';
 import {BackButton} from '@/ui/BackButton';
 import {useTheme, type as typeScale, space, radius} from '@/theme';
 import {WEEKDAY_NAMES} from '@/domain/weekday';
+import {targetLine} from '@/domain/format';
+import {useSettingsQuery} from '@/features/settings/useSettings';
 import {
   renameDay,
   setRestDay,
   removeExercise,
   moveExercise,
 } from '@/domain/planDraft';
-import type {PlanExercise} from '@/repositories/planRepo';
 import type {PlanStackParamList} from '@/navigation/types';
 import {usePlanQuery, useEditPlan} from './usePlan';
-
-/** "3 × 10 · 30.0 kg", or "3 × 10" when the sets are not uniform or unweighted. */
-function targetLine(exercise: PlanExercise): string {
-  const [first, ...rest] = exercise.sets;
-  if (!first) {
-    return 'No sets';
-  }
-  const uniform = rest.every(
-    s => s.targetReps === first.targetReps && s.targetWeight === first.targetWeight,
-  );
-  if (!uniform) {
-    return `${exercise.sets.length} sets · varied`;
-  }
-  const base = `${exercise.sets.length} × ${first.targetReps}`;
-  return first.targetWeight === null
-    ? base
-    : `${base} · ${first.targetWeight.toFixed(1)} kg`;
-}
 
 export function PlanDayScreen() {
   const {colors} = useTheme();
@@ -46,8 +29,10 @@ export function PlanDayScreen() {
   const {weekday} = useRoute().params as {weekday: number};
 
   const {data: plan} = usePlanQuery();
+  const {data: settings} = useSettingsQuery();
   const edit = useEditPlan();
   const day = plan?.days[weekday];
+  const unit = settings?.unit ?? 'kg';
 
   const weekdayName = WEEKDAY_NAMES[weekday]!;
   const [name, setName] = useState('');
@@ -198,7 +183,7 @@ export function PlanDayScreen() {
                       <View style={styles.grow}>
                         <AppText variant="bodyStrong">{exercise.name}</AppText>
                         <AppText variant="small" color="muted">
-                          {targetLine(exercise)}
+                          {targetLine(exercise.sets, unit)}
                         </AppText>
                       </View>
                       <Pressable

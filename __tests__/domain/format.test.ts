@@ -1,4 +1,4 @@
-import {formatDuration, groupDigits} from '@/domain/format';
+import {formatDuration, groupDigits, targetLine} from '@/domain/format';
 
 describe('groupDigits', () => {
   it.each([
@@ -32,5 +32,42 @@ describe('formatDuration', () => {
 
   it('never reports a negative duration', () => {
     expect(formatDuration(-5000)).toBe('0 min');
+  });
+});
+
+describe('targetLine', () => {
+  const set = (targetReps: number, targetWeight: number | null) => ({
+    targetReps,
+    targetWeight,
+  });
+
+  it('collapses uniform sets', () => {
+    expect(targetLine([set(10, 60), set(10, 60), set(10, 60)], 'kg')).toBe(
+      '3 × 10 · 60.0 kg',
+    );
+  });
+
+  it('drops the weight for a bodyweight movement', () => {
+    expect(targetLine([set(12, null), set(12, null)], 'kg')).toBe('2 × 12');
+  });
+
+  it('says varied rather than lying about a ramp', () => {
+    expect(targetLine([set(12, 20), set(10, 25), set(8, 30)], 'kg')).toBe(
+      '3 sets · varied',
+    );
+  });
+
+  it('notices a difference in weight alone', () => {
+    expect(targetLine([set(10, 20), set(10, 25)], 'kg')).toBe('2 sets · varied');
+  });
+
+  it('has something to say about no sets at all', () => {
+    expect(targetLine([], 'kg')).toBe('No sets');
+  });
+
+  // The Today screen hard-coded "kg" here, which was simply wrong for anyone
+  // training in pounds.
+  it('uses the unit it is given', () => {
+    expect(targetLine([set(10, 135)], 'lb')).toBe('1 × 10 · 135.0 lb');
   });
 });
