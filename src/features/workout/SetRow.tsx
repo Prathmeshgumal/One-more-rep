@@ -12,8 +12,15 @@ import {compareSet, describeComparison} from '@/domain/setComparison';
  *
  * The target is printed across the head strip; the actual is written large
  * beneath it. A recorded row shrinks and carries its verdict; the active row
- * gets the steppers and the check; anything further down is dimmed, because it
- * has not happened yet and should not compete for attention.
+ * gets the fields and the check.
+ *
+ * A set further down used to have the whole row drawn at 55% opacity, on the
+ * reasoning that it had not happened yet and should not compete for attention.
+ * On a phone at arm's length that read as absent, and it is the whole of
+ * complaint 6: "I didn't see the weight and reps target for the next sets."
+ * The head strip now keeps full contrast — the target is what you are working
+ * towards, and you need it *before* you lift, not after — and only the empty
+ * actual is drawn faint, which is honest, because there is nothing there yet.
  */
 export function SetRow({
   setNumber,
@@ -72,7 +79,6 @@ export function SetRow({
         styles.row,
         {borderColor: isActive ? colors.plate : colors.ruleSoft},
         {backgroundColor: colors.surface},
-        !done && !isActive && styles.dim,
       ]}>
       <View
         style={[
@@ -186,7 +192,6 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     marginBottom: space.sm,
   },
-  dim: {opacity: 0.55},
   head: {
     flexDirection: 'row',
     alignItems: 'center',
