@@ -440,6 +440,194 @@ export async function finishExercise(
   await refreshExerciseStatus(db, performedExerciseId);
 }
 
+/** Loads one performed exercise, or explains that it is not there. */
+async function requireExercise(
+  db: AppDatabase,
+  performedExerciseId: string,
+): Promise<typeof performedExercises.$inferSelect> {
+  const rows = await db
+    .select()
+    .from(performedExercises)
+    .where(eq(performedExercises.id, performedExerciseId))
+    .limit(1);
+  const row = rows[0];
+  if (!row) {
+    throw new Error(`Exercise ${performedExerciseId} does not exist.`);
+  }
+  return row;
+}
+
+/** True once any set on this exercise has been completed or skipped. */
+async function anySetDecided(
+  db: AppDatabase,
+  performedExerciseId: string,
+): Promise<boolean> {
+  const sets = await db
+    .select({status: performedSets.status})
+    .from(performedSets)
+    .where(eq(performedSets.performedExerciseId, performedExerciseId));
+  return sets.some(set => set.status !== 'pending');
+}
+
+/** What happened on this exercise today, in the user's own words. */
+export async function setExerciseNotes(
+  db: AppDatabase,
+  performedExerciseId: string,
+  notes: string | null,
+): Promise<void> {
+  const trimmed = notes?.trim() ?? '';
+  await db
+    .update(performedExercises)
+    // Empty is NULL, never '': a note nobody wrote and a note somebody erased
+    // are the same thing, and two representations of it would mean two code
+    // paths everywhere it is read.
+    .set({notes: trimmed === '' ? null : trimmed})
+    .where(eq(performedExercises.id, performedExerciseId));
+}
+
+/**
+ * Substitutes a different movement into this slot (U6).
+ *
+ * The plan link and the rep targets are kept, because the slot is still being
+ * served — a dumbbell press done because the rack was busy is the bench press
+ * slot, not bonus work, and "% of plan" should say so. What changes is which
+ * movement it was, and `substituted_from_exercise_id` is what lets history
+ * report that rather than silently claiming the planned exercise happened.
+ *
+ * U7: refused once any set has been decided. Those sets belong to the old
+ * movement and re-attributing them would be a lie. The honest move at that
+ * point is to finish this exercise and add the new one separately, and the UI
+ * says so.
+ */
+export async function swapExercise(
+  db: AppDatabase,
+  performedExerciseId: string,
+  newExerciseId: string,
+): Promise<void> {
+  const current = await requireExercise(db, performedExerciseId);
+
+  if (await anySetDecided(db, performedExerciseId)) {
+    throw new Error(
+      'This exercise already recorded a set. Finish it and add the new one instead.',
+    );
+  }
+
+  const rows = await db
+    .select({weightApplicable: exercises.weightApplicable})
+    .from(exercises)
+    .where(eq(exercises.id, newExerciseId))
+    .limit(1);
+  const replacement = rows[0];
+  if (!replacement) {
+    throw new Error(`Exercise ${newExerciseId} does not exist.`);
+  }
+
+  await db.run(sql.raw('BEGIN'));
+  try {
+    await db
+      .update(performedExercises)
+      .set({
+        exerciseId: newExerciseId,
+        // Only on the first swap: the slot originally asked for the bench
+        // press, and it still did after a second change of mind.
+        substitutedFromExerciseId:
+          current.substitutedFromExerciseId ?? current.exerciseId,
+      })
+      .where(eq(performedExercises.id, performedExerciseId));
+
+    if (!replacement.weightApplicable) {
+      // A kilogram target means nothing on a pull-up, and leaving one there
+      // would score the set against a number that cannot be lifted.
+      await db
+        .update(performedSets)
+        .set({targetWeight: null})
+        .where(eq(performedSets.performedExerciseId, performedExerciseId));
+    }
+    await db.run(sql.raw('COMMIT'));
+  } catch (error) {
+    await db.run(sql.raw('ROLLBACK'));
+    throw error instanceof Error ? error : new Error(String(error));
+  }
+}
+
+/**
+ * Deletes an exercise from the session entirely (U8).
+ *
+ * Only ever an exercise added during the workout, with nothing recorded on it —
+ * something added by mistake a minute ago. A planned exercise you did not do is
+ * *skipped*, not erased: removing it would quietly shrink the denominator of
+ * "% of plan" and flatter the workout.
+ */
+export async function removeExercise(
+  db: AppDatabase,
+  performedExerciseId: string,
+): Promise<void> {
+  const current = await requireExercise(db, performedExerciseId);
+
+  if (current.plannedExerciseId !== null) {
+    throw new Error(
+      'This exercise is part of the plan. Skip it rather than removing it.',
+    );
+  }
+  if (await anySetDecided(db, performedExerciseId)) {
+    throw new Error(
+      'This exercise already recorded a set, so it is part of the workout now.',
+    );
+  }
+
+  // performed_sets cascades on this delete; the schema declares it and a test
+  // asserts the cascade actually fires.
+  await db
+    .delete(performedExercises)
+    .where(eq(performedExercises.id, performedExerciseId));
+}
+
+/**
+ * Moves an exercise one place up or down the session.
+ *
+ * One place at a time, from a menu, rather than a drag: inside a scrolling
+ * workout a long-press drag competes with the scroll gesture. Both rows are
+ * written in one transaction, so no two exercises can ever be seen sharing a
+ * position.
+ */
+export async function moveExercise(
+  db: AppDatabase,
+  performedExerciseId: string,
+  direction: -1 | 1,
+): Promise<void> {
+  const current = await requireExercise(db, performedExerciseId);
+
+  const siblings = await db
+    .select({id: performedExercises.id, orderIndex: performedExercises.orderIndex})
+    .from(performedExercises)
+    .where(eq(performedExercises.workoutSessionId, current.workoutSessionId))
+    .orderBy(asc(performedExercises.orderIndex));
+
+  const at = siblings.findIndex(e => e.id === performedExerciseId);
+  const neighbour = siblings[at + direction];
+  // Already at the end. A no-op rather than an error: the control is simply
+  // disabled there, and a thrown error would be noise.
+  if (!neighbour) {
+    return;
+  }
+
+  await db.run(sql.raw('BEGIN'));
+  try {
+    await db
+      .update(performedExercises)
+      .set({orderIndex: neighbour.orderIndex})
+      .where(eq(performedExercises.id, performedExerciseId));
+    await db
+      .update(performedExercises)
+      .set({orderIndex: siblings[at]!.orderIndex})
+      .where(eq(performedExercises.id, neighbour.id));
+    await db.run(sql.raw('COMMIT'));
+  } catch (error) {
+    await db.run(sql.raw('ROLLBACK'));
+    throw error instanceof Error ? error : new Error(String(error));
+  }
+}
+
 /** An extra set beyond the plan (D3). No target, because there was none. */
 export async function addSet(
   db: AppDatabase,
