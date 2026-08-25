@@ -318,6 +318,83 @@ and `adb reverse --remove-all`, on a database left empty by the reinstall.
   gates: dismiss the keyboard, re-dump, then tap — and never trust a dump taken
   before the keyboard state changed.**
 
+## R2–R6 are written but only half walked
+
+**Added:** 2026-08-26, at the end of the usability-fixes plan.
+
+Everything in `docs/superpowers/plans/2026-08-24-usability-fixes.md` is
+implemented, 681 tests pass, and the whole thing is installed on the device.
+What follows is the honest split between what a thumb has actually touched and
+what has only been asserted in Jest.
+
+**Walked on the device:**
+
+- R1 in full — see the R1 gate above.
+- R2's list layout, by the user: all exercises visible at once, tapping a
+  header opens one and closes the others, recording a set does not move the
+  open card. This is also where U10 and U11 were reported.
+- The app launches with both R6 native libraries loaded. `SoLoader` initialises,
+  `ReactNativeJS: Running "OneMoreRep"`, no FATAL and no AndroidRuntime entry
+  in logcat. That rules out the failure mode that would have mattered most:
+  a native module bringing the app down on startup.
+
+**Not walked, and each is a real gap:**
+
+1. **R3 — reopening a decided set (U10), Finish vs Skip (U11), the `⋯` menu,
+   swap, remove, reorder, and notes.** The largest untested surface. The
+   repository rules are covered by 25 tests, but nothing has proved the sheet
+   opens over a scrolling list on a real screen, or that the note field
+   survives the keyboard the way `PlanDayScreen`'s rename did not.
+2. **R4 — creating a custom exercise from either picker.** Specifically: that
+   back from the editor returns to the *picker* rather than the Exercises tab,
+   which is the whole reason the screen is registered in three stacks. Jest
+   renders one screen at a time and cannot see it.
+3. **R5 — Today's inline summary**, and the cross-tab jump to History.
+   `getParent()` is mocked in the tests; on the device it is a real tab
+   navigator.
+4. **R6 — the image itself.** Every part that matters is mocked in Jest:
+   `captureRef` returns a fixed path and `CameraRoll.save` returns a fixed
+   URI. Nothing has produced an actual PNG, or checked it is legible, or
+   confirmed it lands in the gallery. The one-shot capture — mount, wait for
+   `onLayout`, rasterise, unmount — is exactly the kind of timing that works in
+   a test renderer and fails on hardware.
+
+**Why this is written down rather than assumed fine:** the R1 gate found two
+bugs that ~600 tests had missed — `NumberField` renormalising its own draft
+mid-word, and the Today tab never refreshing after a plan edit. Neither was
+visible from Jest. The same is likely true of something above.
+
+## Design departures — R6
+
+### The day image ignores the theme
+
+**Added:** 2026-08-26.
+
+`DayImageCard` always renders the light palette, and is the only place in the
+app that reaches past `useTheme` to `palettes.light` directly.
+
+The image leaves the app. A dark PNG dropped onto somebody else's white chat
+background reads as a bug rather than as a style, and the person receiving it
+has no idea the sender's app was in dark mode. If this is ever revisited, the
+thing to add is a choice, not a switch to following the theme.
+
+Affects: `src/features/history/DayImageCard.tsx`.
+
+### Skipped sets are left out of the image
+
+**Added:** 2026-08-26.
+
+Inside the app a skipped set is load-bearing: it is the difference between a
+workout done and a workout claimed, and §21 exists to keep it visible. In an
+image you send to a friend it is noise, and an exercise with nothing recorded
+on it drops out of the picture entirely.
+
+This is a deliberate divergence between what history says and what the picture
+says, and it is only defensible because the picture is not a record — the
+ledger behind it still holds every skip.
+
+Affects: `src/features/history/DayImageCard.tsx`.
+
 ## Phase 5 — Polish
 
 ### ~~No visible back control on pushed screens~~ — CLOSED
