@@ -1,8 +1,9 @@
 import React, {useState} from 'react';
 import {FlatList, StyleSheet, View} from 'react-native';
-import {useNavigation} from '@react-navigation/native';
+import {useNavigation, useRoute} from '@react-navigation/native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {AppText} from '@/ui/Text';
+import {Toggle} from '@/ui/Toggle';
 import {Card} from '@/ui/Card';
 import {Chip} from '@/ui/Chip';
 import {SearchField} from '@/ui/SearchField';
@@ -11,7 +12,11 @@ import {useTheme, space} from '@/theme';
 import {MUSCLE_FILTERS} from '@/features/exercises/muscles';
 import {useDebounced} from '@/features/exercises/useDebounced';
 import {useExerciseListQuery} from '@/features/exercises/useExercises';
+import {weekdayIndex} from '@/domain/weekday';
+import {addExercises} from '@/domain/planDraft';
+import {useEditPlan} from '@/features/plan/usePlan';
 import {useTodaySessionQuery, useAddExercise} from './useSession';
+import {useSwapExercise} from './useSessionEditing';
 
 /**
  * Adding one exercise mid-workout (§21, D3).
@@ -25,8 +30,28 @@ export function WorkoutExercisePickerScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
 
+  const params = useRoute().params as
+    | {mode?: 'add' | 'swap'; performedExerciseId?: string}
+    | undefined;
+  const isSwap = params?.mode === 'swap';
+
   const {data: session} = useTodaySessionQuery();
   const add = useAddExercise();
+  const swap = useSwapExercise();
+  const editPlan = useEditPlan();
+
+  /**
+   * U3. Adding an exercise mid-workout can also put it on the weekly plan, so
+   * you never have to leave the workout to change next week — which is what
+   * complaint 4 was actually reaching for.
+   *
+   * Off by default: today's decision is usually about today.
+   */
+  const [alsoPlan, setAlsoPlan] = useState(false);
+
+  const swapping = isSwap
+    ? session?.exercises.find(e => e.id === params?.performedExerciseId)
+    : undefined;
 
   const [search, setSearch] = useState('');
   const [group, setGroup] = useState('All');
@@ -43,17 +68,29 @@ export function WorkoutExercisePickerScreen() {
     <View style={styles.header}>
       <BackButton />
       <AppText variant="eyebrow" color="muted">
-        Add to this workout
+        {isSwap ? 'Substitute' : 'Add to this workout'}
       </AppText>
-      <AppText variant="h1">Pick an exercise</AppText>
+      <AppText variant="h1">
+        {swapping ? `Swap ${swapping.name} for…` : 'Pick an exercise'}
+      </AppText>
       <AppText variant="small" color="muted">
-        Added as bonus work — it never counts against your plan.
+        {isSwap
+          ? 'Keeps this slot and its target, so it still counts against your plan.'
+          : 'Added as bonus work — it never counts against your plan.'}
       </AppText>
       <SearchField
         value={search}
         onChangeText={setSearch}
         placeholder="Search exercises"
       />
+      {!isSwap ? (
+        <Toggle
+          label="Also add to the plan"
+          hint="Puts it on this weekday for future weeks too"
+          value={alsoPlan}
+          onValueChange={setAlsoPlan}
+        />
+      ) : null}
       <View style={styles.chips}>
         {MUSCLE_FILTERS.map(f => (
           <Chip
@@ -81,12 +118,40 @@ export function WorkoutExercisePickerScreen() {
         renderItem={({item}) => (
           <Card
             onPress={() => {
-              if (!session || add.isPending) {
+              if (!session || add.isPending || swap.isPending) {
+                return;
+              }
+              if (isSwap && params?.performedExerciseId) {
+                swap.mutate(
+                  {
+                    performedExerciseId: params.performedExerciseId,
+                    newExerciseId: item.id,
+                  },
+                  {onSuccess: () => navigation.goBack()},
+                );
                 return;
               }
               add.mutate(
                 {sessionId: session.id, exerciseId: item.id},
-                {onSuccess: () => navigation.goBack()},
+                {
+                  onSuccess: () => {
+                    if (!alsoPlan) {
+                      navigation.goBack();
+                      return;
+                    }
+                    // This forks a new plan version, because canEditInPlace
+                    // refuses an in-place edit once a workout exists against
+                    // one. That is correct: the running session keeps pointing
+                    // at the old, now-closed version, which is exactly what
+                    // stops today's workout from changing under §39. Anyone
+                    // reading two rows in plan_versions later — that is why.
+                    editPlan.mutate(
+                      draft =>
+                        addExercises(draft, weekdayIndex(new Date()), [item.id]),
+                      {onSuccess: () => navigation.goBack()},
+                    );
+                  },
+                },
               );
             }}>
             <AppText variant="bodyStrong">{item.name}</AppText>
