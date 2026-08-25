@@ -1,5 +1,6 @@
-import React from 'react';
+import React, {useCallback, useRef, useState} from 'react';
 import {Pressable, StyleSheet, View} from 'react-native';
+import {Button} from '@/ui/Button';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {Screen} from '@/ui/Screen';
@@ -16,6 +17,8 @@ import type {Session} from '@/repositories/sessionRepo';
 import {useSettingsQuery} from '@/features/settings/useSettings';
 import type {HistoryStackParamList} from '@/navigation/types';
 import {useDayQuery, useDaySessionQuery} from './useHistory';
+import {DayImageCard, IMAGE_WIDTH} from './DayImageCard';
+import {useSaveDayImage} from './useSaveDayImage';
 
 /** "10 × 30.0", or an em dash where nothing was recorded (design 14). */
 const pair = (reps: number | null, weight: number | null): string => {
@@ -62,6 +65,37 @@ export function DayDetailScreen() {
   const {data: session, isPending} = useDaySessionQuery(date);
   const {data: settings} = useSettingsQuery();
   const unit = settings?.unit ?? 'kg';
+
+  const shot = useRef<React.ComponentRef<typeof View>>(null);
+  const image = useSaveDayImage();
+
+  /**
+   * The card is mounted only while a save is in flight.
+   *
+   * Keeping it mounted always would lay out a 1080px-wide copy of the day
+   * behind every visit to this screen, and would put a second copy of every
+   * exercise name into the tree — which is a real cost and, incidentally, what
+   * made half the tests here start matching two elements.
+   *
+   * `onLayout` is the signal that it has been measured and is safe to
+   * rasterise; the ref guard is because layout can fire more than once.
+   */
+  const [capturing, setCapturing] = useState(false);
+  const captured = useRef(false);
+
+  const startCapture = () => {
+    captured.current = false;
+    setCapturing(true);
+  };
+
+  const onCardLaidOut = useCallback(async () => {
+    if (captured.current) {
+      return;
+    }
+    captured.current = true;
+    await image.save(shot);
+    setCapturing(false);
+  }, [image]);
 
   // A rest day names itself, rather than showing the bare weekday the plan
   // stores when the day was never given a custom name.
@@ -148,12 +182,41 @@ export function DayDetailScreen() {
           </View>
         );
       })}
+
+      <Button
+        label={capturing ? 'Saving…' : 'Save image'}
+        variant="secondary"
+        disabled={capturing}
+        onPress={startCapture}
+      />
+      {image.message ? (
+        <AppText
+          variant="small"
+          color={image.status === 'failed' ? 'short' : 'muted'}>
+          {image.message}
+        </AppText>
+      ) : null}
+
+      {/* Laid out for real so the capture has something measured to work from,
+          and parked off-screen so nobody ever sees it. */}
+      {capturing ? (
+        <View style={styles.offscreen} pointerEvents="none">
+          <View
+            testID="day-image"
+            ref={shot}
+            collapsable={false}
+            onLayout={onCardLaidOut}>
+            <DayImageCard session={session} unit={unit} />
+          </View>
+        </View>
+      ) : null}
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   block: {gap: space.sm},
+  offscreen: {position: 'absolute', left: -IMAGE_WIDTH * 2, top: 0},
   label: {
     flexDirection: 'row',
     alignItems: 'center',

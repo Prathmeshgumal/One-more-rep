@@ -51,3 +51,14 @@ jest.mock('react-native-reorderable-list', () => {
     },
   };
 });
+
+// Two native modules with no Node implementation, added in R6. The image
+// itself is asserted as a rendered card; what these mocks stand in for is the
+// rasterising and the write to the gallery, neither of which exists off-device.
+jest.mock('react-native-view-shot', () => ({
+  captureRef: jest.fn(async () => '/tmp/shot.png'),
+}));
+
+jest.mock('@react-native-camera-roll/camera-roll', () => ({
+  CameraRoll: {save: jest.fn(async () => 'content://media/1')},
+}));

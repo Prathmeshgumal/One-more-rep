@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useCallback, useRef, useState} from 'react';
 import {ScrollView, StyleSheet, View} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
@@ -7,6 +7,8 @@ import {AppText} from '@/ui/Text';
 import {Button} from '@/ui/Button';
 import {useTheme, space} from '@/theme';
 import {SessionSummary} from './SessionSummary';
+import {DayImageCard, IMAGE_WIDTH} from '@/features/history/DayImageCard';
+import {useSaveDayImage} from '@/features/history/useSaveDayImage';
 import {useSettingsQuery} from '@/features/settings/useSettings';
 import type {TodayStackParamList} from '@/navigation/types';
 import {useTodaySessionQuery, useFinishWorkout} from './useSession';
@@ -29,6 +31,27 @@ export function WorkoutCompleteScreen() {
   const {data: session} = useTodaySessionQuery();
   const {data: settings} = useSettingsQuery();
   const finish = useFinishWorkout();
+
+  // Same one-shot capture as the day-detail screen: mounted only while a save
+  // is running, rasterised once its layout lands.
+  //
+  // Above the early return, not below it: this screen renders a placeholder
+  // while the session loads, and hooks declared after that guard run on some
+  // renders and not others. React caught it immediately -- "rendered more
+  // hooks than during the previous render" -- and so did every test here.
+  const shot = useRef<React.ComponentRef<typeof View>>(null);
+  const image = useSaveDayImage();
+  const [capturing, setCapturing] = useState(false);
+  const captured = useRef(false);
+
+  const onCardLaidOut = useCallback(async () => {
+    if (captured.current) {
+      return;
+    }
+    captured.current = true;
+    await image.save(shot);
+    setCapturing(false);
+  }, [image]);
 
   if (!session) {
     return <View style={[styles.root, {backgroundColor: colors.paper}]} />;
@@ -65,6 +88,41 @@ export function WorkoutCompleteScreen() {
         </AppText>
       ) : null}
 
+      {/* Offered only once the workout is saved: an image of a session still
+          being recorded would be out of date the moment it was taken. */}
+      {!isOpen ? (
+        <>
+          <Button
+            label={capturing ? 'Saving…' : 'Save image'}
+            variant="secondary"
+            disabled={capturing}
+            onPress={() => {
+              captured.current = false;
+              setCapturing(true);
+            }}
+          />
+          {image.message ? (
+            <AppText
+              variant="small"
+              color={image.status === 'failed' ? 'short' : 'muted'}>
+              {image.message}
+            </AppText>
+          ) : null}
+        </>
+      ) : null}
+
+      {capturing ? (
+        <View style={styles.offscreen} pointerEvents="none">
+          <View
+            testID="day-image"
+            ref={shot}
+            collapsable={false}
+            onLayout={onCardLaidOut}>
+            <DayImageCard session={session} unit={unit} />
+          </View>
+        </View>
+      ) : null}
+
       <Button
         label={isOpen ? 'Save workout' : 'Done'}
         disabled={finish.isPending}
@@ -88,4 +146,5 @@ const styles = StyleSheet.create({
     gap: space.md,
   },
   headerBlock: {gap: 2},
+  offscreen: {position: 'absolute', left: -IMAGE_WIDTH * 2, top: 0},
 });
