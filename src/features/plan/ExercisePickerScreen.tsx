@@ -1,6 +1,7 @@
 import React, {useState} from 'react';
 import {FlatList, StyleSheet, View} from 'react-native';
-import {useNavigation, useRoute} from '@react-navigation/native';
+import {useNavigation, useRoute, useFocusEffect} from '@react-navigation/native';
+import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {AppText} from '@/ui/Text';
 import {Card} from '@/ui/Card';
@@ -14,12 +15,15 @@ import {addExercises} from '@/domain/planDraft';
 import {MUSCLE_FILTERS} from '@/features/exercises/muscles';
 import {useDebounced} from '@/features/exercises/useDebounced';
 import {useExerciseListQuery} from '@/features/exercises/useExercises';
+import {useLastCreatedExercise} from '@/features/exercises/useLastCreatedExercise';
+import type {PlanStackParamList} from '@/navigation/types';
 import {usePlanQuery, useEditPlan} from './usePlan';
 
 export function ExercisePickerScreen() {
   const {colors} = useTheme();
   const insets = useSafeAreaInsets();
-  const navigation = useNavigation();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<PlanStackParamList>>();
   const {weekday} = useRoute().params as {weekday: number};
 
   const {data: plan} = usePlanQuery();
@@ -41,10 +45,28 @@ export function ExercisePickerScreen() {
   const dayName =
     plan?.days[weekday]?.customName ?? WEEKDAY_NAMES[weekday] ?? '';
 
+  // An exercise created from here arrives already chosen, so making one is not
+  // followed by having to find it.
+  useFocusEffect(
+    React.useCallback(() => {
+      const created = useLastCreatedExercise.getState().claim();
+      if (created) {
+        setSelected(current =>
+          current.includes(created) ? current : [...current, created],
+        );
+      }
+    }, []),
+  );
+
   const toggle = (id: string) =>
     setSelected(current =>
       current.includes(id) ? current.filter(x => x !== id) : [...current, id],
     );
+
+  const openEditor = () =>
+    navigation.navigate('ExerciseEditor', {
+      initialName: search.trim() || undefined,
+    });
 
   const add = () => {
     if (selected.length === 0) {
@@ -88,7 +110,21 @@ export function ExercisePickerScreen() {
       <FlatList
         data={exercises ?? []}
         keyExtractor={item => item.id}
-        ListHeaderComponent={header}
+        ListHeaderComponent={
+          <>
+            {header}
+            {(exercises?.length ?? 0) === 0 ? (
+              <CreateExerciseCard search={search} onPress={openEditor} />
+            ) : null}
+          </>
+        }
+        ListFooterComponent={
+          (exercises?.length ?? 0) === 0 ? (
+            <View />
+          ) : (
+            <CreateExerciseCard search={search} onPress={openEditor} />
+          )
+        }
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={[
           styles.content,
@@ -163,3 +199,31 @@ const styles = StyleSheet.create({
   },
   centred: {textAlign: 'center'},
 });
+
+/**
+ * The way out of "it is not in the library" (complaint 5).
+ *
+ * Sits at the top when the search found nothing — that is the moment you know
+ * you need it — and at the foot otherwise, where it is available without
+ * competing with the results.
+ */
+function CreateExerciseCard({
+  search,
+  onPress,
+}: {
+  search: string;
+  onPress: () => void;
+}) {
+  return (
+    <Card onPress={onPress}>
+      <AppText variant="bodyStrong" color="plate">
+        {search.trim() === ''
+          ? 'Create a new exercise'
+          : `Create "${search.trim()}"`}
+      </AppText>
+      <AppText variant="small" color="muted">
+        Adds it to your library, and to this list
+      </AppText>
+    </Card>
+  );
+}

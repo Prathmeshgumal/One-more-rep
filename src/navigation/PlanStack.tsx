@@ -6,6 +6,7 @@ import {ExercisePickerScreen} from '@/features/plan/ExercisePickerScreen';
 import {TargetEditorScreen} from '@/features/plan/TargetEditorScreen';
 import {CopyDayScreen} from '@/features/plan/CopyDayScreen';
 import {PlanHistoryScreen} from '@/features/plan/PlanHistoryScreen';
+import {ExerciseEditorScreen} from '@/features/exercises/ExerciseEditorScreen';
 import type {PlanStackParamList} from './types';
 
 const Stack = createNativeStackNavigator<PlanStackParamList>();
@@ -23,6 +24,7 @@ export function PlanStack() {
       <Stack.Screen name="PlanTargetEditor" component={TargetEditorScreen} />
       <Stack.Screen name="PlanCopyDay" component={CopyDayScreen} />
       <Stack.Screen name="PlanHistory" component={PlanHistoryScreen} />
+      <Stack.Screen name="ExerciseEditor" component={ExerciseEditorScreen} />
     </Stack.Navigator>
   );
 }

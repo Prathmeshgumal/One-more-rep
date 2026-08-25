@@ -10,6 +10,7 @@ import {Button} from '@/ui/Button';
 import {BackButton} from '@/ui/BackButton';
 import {useTheme, type as typeScale, space, radius} from '@/theme';
 import {useExerciseQuery} from './useExercises';
+import {useLastCreatedExercise} from './useLastCreatedExercise';
 import {useCreateExercise, useUpdateExercise} from './useExerciseMutations';
 
 /**
@@ -42,13 +43,18 @@ export function ExerciseEditorScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const route = useRoute();
-  const editingId = (route.params as {id?: string} | undefined)?.id;
+  const params = route.params as
+    | {id?: string; initialName?: string}
+    | undefined;
+  const editingId = params?.id;
 
   const {data: existing} = useExerciseQuery(editingId ?? '');
   const create = useCreateExercise();
   const update = useUpdateExercise();
 
-  const [name, setName] = useState('');
+  // Seeded from whatever was searched for and not found, so "create Zercher
+  // Squat" does not then ask you to type it a second time.
+  const [name, setName] = useState(params?.initialName ?? '');
   const [primaryMuscle, setPrimaryMuscle] = useState<string | null>(null);
   const [equipment, setEquipment] = useState<string | null>(null);
   const [weightApplicable, setWeightApplicable] = useState(true);
@@ -94,12 +100,21 @@ export function ExerciseEditorScreen() {
       instructions: instructions.trim() || null,
     };
 
-    const done = {onSuccess: () => navigation.goBack()};
     if (editingId) {
-      update.mutate({id: editingId, patch: input}, done);
-    } else {
-      create.mutate(input, done);
+      update.mutate(
+        {id: editingId, patch: input},
+        {onSuccess: () => navigation.goBack()},
+      );
+      return;
     }
+    create.mutate(input, {
+      onSuccess: created => {
+        // Left for whichever picker pushed this screen; see
+        // useLastCreatedExercise for why it is a store and not a param.
+        useLastCreatedExercise.getState().set(created.id);
+        navigation.goBack();
+      },
+    });
   };
 
   const inputStyle = [

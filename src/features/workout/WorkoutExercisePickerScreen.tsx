@@ -1,6 +1,7 @@
 import React, {useState} from 'react';
 import {FlatList, StyleSheet, View} from 'react-native';
-import {useNavigation, useRoute} from '@react-navigation/native';
+import {useNavigation, useRoute, useFocusEffect} from '@react-navigation/native';
+import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {AppText} from '@/ui/Text';
 import {Toggle} from '@/ui/Toggle';
@@ -15,6 +16,8 @@ import {useExerciseListQuery} from '@/features/exercises/useExercises';
 import {weekdayIndex} from '@/domain/weekday';
 import {addExercises} from '@/domain/planDraft';
 import {useEditPlan} from '@/features/plan/usePlan';
+import {useLastCreatedExercise} from '@/features/exercises/useLastCreatedExercise';
+import type {TodayStackParamList} from '@/navigation/types';
 import {useTodaySessionQuery, useAddExercise} from './useSession';
 import {useSwapExercise} from './useSessionEditing';
 
@@ -28,7 +31,8 @@ import {useSwapExercise} from './useSessionEditing';
 export function WorkoutExercisePickerScreen() {
   const {colors} = useTheme();
   const insets = useSafeAreaInsets();
-  const navigation = useNavigation();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<TodayStackParamList>>();
 
   const params = useRoute().params as
     | {mode?: 'add' | 'swap'; performedExerciseId?: string}
@@ -53,6 +57,11 @@ export function WorkoutExercisePickerScreen() {
     ? session?.exercises.find(e => e.id === params?.performedExerciseId)
     : undefined;
 
+  const openEditor = () =>
+    navigation.navigate('ExerciseEditor', {
+      initialName: search.trim() || undefined,
+    });
+
   const [search, setSearch] = useState('');
   const [group, setGroup] = useState('All');
   const settledSearch = useDebounced(search, 250);
@@ -63,6 +72,38 @@ export function WorkoutExercisePickerScreen() {
     search: settledSearch || undefined,
     muscles: filter.values.length ? filter.values : undefined,
   });
+
+  /**
+   * Unlike the plan's picker this one is single-select and immediate, so a
+   * newly created exercise is used straight away rather than ticked — which
+   * is the behaviour this screen already has for every other tap.
+   */
+  useFocusEffect(
+    React.useCallback(() => {
+      const created = useLastCreatedExercise.getState().claim();
+      if (!created || !session) {
+        return;
+      }
+      if (isSwap && params?.performedExerciseId) {
+        swap.mutate(
+          {
+            performedExerciseId: params.performedExerciseId,
+            newExerciseId: created,
+          },
+          {onSuccess: () => navigation.goBack()},
+        );
+        return;
+      }
+      add.mutate(
+        {sessionId: session.id, exerciseId: created},
+        {onSuccess: () => navigation.goBack()},
+      );
+      // Intentionally not reactive: this runs on the focus that follows the
+      // editor closing, and re-running it when the session refetches would
+      // add the same exercise twice.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [session?.id]),
+  );
 
   const header = (
     <View style={styles.header}>
@@ -115,6 +156,9 @@ export function WorkoutExercisePickerScreen() {
           styles.content,
           {paddingTop: insets.top + space.xl},
         ]}
+        ListFooterComponent={
+          <CreateExerciseCard search={search} onPress={openEditor} />
+        }
         renderItem={({item}) => (
           <Card
             onPress={() => {
@@ -180,3 +224,25 @@ const styles = StyleSheet.create({
   header: {gap: space.md, marginBottom: space.xs},
   chips: {flexDirection: 'row', flexWrap: 'wrap', gap: space.sm},
 });
+
+/** The same escape hatch the plan's picker offers (complaint 5). */
+function CreateExerciseCard({
+  search,
+  onPress,
+}: {
+  search: string;
+  onPress: () => void;
+}) {
+  return (
+    <Card onPress={onPress}>
+      <AppText variant="bodyStrong" color="plate">
+        {search.trim() === ''
+          ? 'Create a new exercise'
+          : `Create "${search.trim()}"`}
+      </AppText>
+      <AppText variant="small" color="muted">
+        Adds it to your library, and to this workout
+      </AppText>
+    </Card>
+  );
+}

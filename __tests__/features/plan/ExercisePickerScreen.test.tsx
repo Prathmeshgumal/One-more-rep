@@ -8,6 +8,7 @@ import {createPlan, getActivePlan} from '@/repositories/planRepo';
 import {ThemeProvider} from '@/theme';
 import {DatabaseContextTestProvider} from '@/providers/DatabaseGate';
 import {ExercisePickerScreen} from '@/features/plan/ExercisePickerScreen';
+import {useLastCreatedExercise} from '@/features/exercises/useLastCreatedExercise';
 import {createTestDb} from '../../helpers/testDb';
 
 const mockGoBack = jest.fn();
@@ -149,5 +150,50 @@ describe('ExercisePickerScreen', () => {
       expect(view.queryByText('Bench Press')).toBeNull();
     });
     expect(view.getByText('1 selected')).toBeTruthy();
+  });
+
+  // Complaint 5: you had to leave, go to the Exercises tab, create it, come
+  // back and find it again.
+  it('offers to create the exercise that was searched for and not found', async () => {
+    const view = await renderScreen();
+    await view.findByText('Bench Press');
+    await fireEvent.changeText(
+      view.getByPlaceholderText('Search exercises'),
+      'Zercher Squat',
+    );
+    await waitFor(() =>
+      expect(view.getByText('Create "Zercher Squat"')).toBeTruthy(),
+    );
+  });
+
+  it('offers it without a search too, just less prominently', async () => {
+    const view = await renderScreen();
+    await view.findByText('Bench Press');
+    expect(view.getByText('Create a new exercise')).toBeTruthy();
+  });
+
+  it('carries the search text into the editor', async () => {
+    const view = await renderScreen();
+    await view.findByText('Bench Press');
+    await fireEvent.changeText(
+      view.getByPlaceholderText('Search exercises'),
+      'Zercher Squat',
+    );
+    await waitFor(() =>
+      expect(view.getByText('Create "Zercher Squat"')).toBeTruthy(),
+    );
+    await fireEvent.press(view.getByText('Create "Zercher Squat"'));
+
+    expect(mockNavigate).toHaveBeenCalledWith('ExerciseEditor', {
+      initialName: 'Zercher Squat',
+    });
+  });
+
+  it('pre-selects an exercise created from here', async () => {
+    useLastCreatedExercise.getState().set('bench');
+    const view = await renderScreen();
+    await waitFor(() => expect(view.getByText('1 selected')).toBeTruthy());
+    // Consumed, so coming back later does not select it all over again.
+    expect(useLastCreatedExercise.getState().id).toBeNull();
   });
 });
