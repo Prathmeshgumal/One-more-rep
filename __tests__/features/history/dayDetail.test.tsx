@@ -18,6 +18,8 @@ import {
   addExercise,
   finishWorkout,
   getSessionForDate,
+  setExerciseNotes,
+  swapExercise,
 } from '@/repositories/sessionRepo';
 import {addLocalDays, startOfLocalDay, weekdayIndex} from '@/domain/weekday';
 import {ThemeProvider} from '@/theme';
@@ -204,5 +206,38 @@ describe('DayDetailScreen', () => {
     mockParams.date = daysAgo(14);
     const view = await renderScreen();
     expect(await view.findByText(/nothing was recorded/i)).toBeTruthy();
+  });
+
+  // U6 and the notes column. Without these two lines history quietly reports
+  // the planned movement as the one performed, and loses what was said about
+  // the day entirely.
+  it('prints the note under the exercise it belongs to', async () => {
+    const session = await startWorkout(ctx.db, {now: TRAINED + 9 * 3600_000});
+    await setExerciseNotes(
+      ctx.db,
+      session.exercises[0]!.id,
+      'Shoulder felt off.',
+    );
+    await finishWorkout(ctx.db, session.id, {now: TRAINED + 10 * 3600_000});
+
+    const view = await renderScreen();
+    expect(await view.findByText('Shoulder felt off.')).toBeTruthy();
+  });
+
+  it('says where a swapped exercise came from', async () => {
+    const session = await startWorkout(ctx.db, {now: TRAINED + 9 * 3600_000});
+    await swapExercise(ctx.db, session.exercises[0]!.id, 'fly');
+    await finishWorkout(ctx.db, session.id, {now: TRAINED + 10 * 3600_000});
+
+    const view = await renderScreen();
+    expect(await view.findByText(/swapped from Machine Chest Press/)).toBeTruthy();
+    expect(view.getByText('Cable Fly')).toBeTruthy();
+  });
+
+  it('draws no note at all when none was written', async () => {
+    await trainWithAGap();
+    const view = await renderScreen();
+    await view.findByText('Machine Chest Press');
+    expect(view.queryByTestId('exercise-note')).toBeNull();
   });
 });

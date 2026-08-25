@@ -127,8 +127,24 @@ export function DayDetailScreen() {
                   · added on the day
                 </AppText>
               ) : null}
+              {exercise.substitutedFromName ? (
+                // U6: the slot was served by a different movement, and saying
+                // so is the whole reason the column exists. Without this line
+                // history quietly reports the planned exercise as performed.
+                <AppText variant="printed" color="plate">
+                  {`· swapped from ${exercise.substitutedFromName}`}
+                </AppText>
+              ) : null}
             </View>
             <LedgerTable rows={rows} />
+            {exercise.notes ? (
+              <AppText
+                testID="exercise-note"
+                variant="printed"
+                color="muted">
+                {exercise.notes}
+              </AppText>
+            ) : null}
           </View>
         );
       })}
