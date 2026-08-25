@@ -11,6 +11,7 @@ import {useTheme, space} from '@/theme';
 import {useSettingsQuery} from '@/features/settings/useSettings';
 import type {TodayStackParamList} from '@/navigation/types';
 import {WorkoutExerciseCard} from './WorkoutExerciseCard';
+import {ExerciseActions} from './ExerciseActions';
 import {useActiveSet} from './useActiveSet';
 import {
   useTodaySessionQuery,
@@ -21,6 +22,11 @@ import {
   useAddSet,
   useFinishExercise,
 } from './useSession';
+import {
+  useSetExerciseNotes,
+  useRemoveExercise,
+  useMoveExercise,
+} from './useSessionEditing';
 
 export function WorkoutScreen() {
   const {colors} = useTheme();
@@ -35,6 +41,9 @@ export function WorkoutScreen() {
   const skipExercise = useSkipExercise();
   const finishExercise = useFinishExercise();
   const addSet = useAddSet();
+  const setNotes = useSetExerciseNotes();
+  const removeExercise = useRemoveExercise();
+  const moveExercise = useMoveExercise();
 
   // U1/U2: every exercise is on screen; exactly one is open. Keyed by
   // `performed_exercises.id` rather than by position, because reordering an
@@ -46,6 +55,8 @@ export function WorkoutScreen() {
    * skip recoverable.
    */
   const [editingSetId, setEditingSetId] = useState<string | null>(null);
+  /** Which exercise's menu is open, if any. */
+  const [menuFor, setMenuFor] = useState<string | null>(null);
   const active = useActiveSet();
 
   const scroller = useRef<React.ComponentRef<typeof ScrollView>>(null);
@@ -199,6 +210,9 @@ export function WorkoutScreen() {
 
   const allDone = allSets.every(s => s.status !== 'pending');
 
+  const menuIndex = session.exercises.findIndex(e => e.id === menuFor);
+  const menuExercise = menuIndex >= 0 ? session.exercises[menuIndex] : null;
+
   return (
     <ScrollView
       ref={scroller}
@@ -254,6 +268,10 @@ export function WorkoutScreen() {
               previous={isOpen ? previous : null}
               activeSetId={isOpen ? (activeSet?.id ?? null) : null}
               onEditSet={setEditingSetId}
+              onMore={() => setMenuFor(exercise.id)}
+              onNote={notes =>
+                setNotes.mutate({performedExerciseId: exercise.id, notes})
+              }
               activeWeight={active.weight}
               activeReps={active.reps}
               onSetWeight={active.setWeight}
@@ -313,6 +331,40 @@ export function WorkoutScreen() {
         size="sm"
         onPress={() => navigation.navigate('WorkoutExercisePicker')}
       />
+
+      {menuExercise ? (
+        <ExerciseActions
+          visible
+          exercise={menuExercise}
+          isFirst={menuIndex === 0}
+          isLast={menuIndex === session.exercises.length - 1}
+          onClose={() => setMenuFor(null)}
+          onSwap={() =>
+            navigation.navigate('WorkoutExercisePicker', {
+              mode: 'swap',
+              performedExerciseId: menuExercise.id,
+            })
+          }
+          onRemove={() =>
+            removeExercise.mutate(menuExercise.id, {
+              onSuccess: () => {
+                if (openId === menuExercise.id) {
+                  setOpenId(null);
+                }
+              },
+            })
+          }
+          onMove={direction =>
+            moveExercise.mutate({
+              performedExerciseId: menuExercise.id,
+              direction,
+            })
+          }
+          onSummary={() =>
+            navigation.navigate('ExerciseSummary', {exerciseIndex: menuIndex})
+          }
+        />
+      ) : null}
 
       <Button
         label="Finish workout"

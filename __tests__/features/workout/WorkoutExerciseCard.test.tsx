@@ -243,3 +243,63 @@ describe('WorkoutExerciseCard', () => {
     expect(view.queryByText('Add set')).toBeNull();
   });
 });
+
+describe('WorkoutExerciseCard controls', () => {
+  it('offers a menu on the header', async () => {
+    const onMore = jest.fn();
+    const view = await renderCard({onMore});
+    await fireEvent.press(view.getByLabelText('More for Bench Press'));
+    expect(onMore).toHaveBeenCalled();
+  });
+
+  it('keeps the menu out of the way when there is nothing to open', async () => {
+    const view = await renderCard();
+    expect(view.queryByLabelText('More for Bench Press')).toBeNull();
+  });
+
+  it('takes a note while the exercise is open', async () => {
+    const onNote = jest.fn();
+    const view = await renderCard({expanded: true, onNote});
+    const field = view.getByLabelText('Note for Bench Press');
+    await fireEvent.changeText(field, 'Shoulder felt off.');
+    await fireEvent(field, 'blur');
+    expect(onNote).toHaveBeenCalledWith('Shoulder felt off.');
+  });
+
+  it('shows a note that was written earlier', async () => {
+    const view = await renderCard({
+      expanded: true,
+      onNote: jest.fn(),
+      exercise: exercise({notes: 'Rack was busy.'}),
+    });
+    expect(view.getByLabelText('Note for Bench Press').props.value).toBe(
+      'Rack was busy.',
+    );
+  });
+
+  it('does not write a note that has not changed', async () => {
+    const onNote = jest.fn();
+    const view = await renderCard({
+      expanded: true,
+      onNote,
+      exercise: exercise({notes: 'Rack was busy.'}),
+    });
+    await fireEvent(view.getByLabelText('Note for Bench Press'), 'blur');
+    expect(onNote).not.toHaveBeenCalled();
+  });
+
+  it('says where a swapped exercise came from', async () => {
+    const view = await renderCard({
+      exercise: exercise({
+        name: 'Dumbbell Press',
+        substitutedFromName: 'Bench Press',
+      }),
+    });
+    expect(view.getByText('swapped from Bench Press')).toBeTruthy();
+  });
+
+  it('says nothing about swaps when there was none', async () => {
+    const view = await renderCard();
+    expect(view.queryByText(/swapped from/)).toBeNull();
+  });
+});

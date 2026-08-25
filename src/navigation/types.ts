@@ -37,5 +37,12 @@ export type TodayStackParamList = {
   Workout: undefined;
   ExerciseSummary: {exerciseIndex: number};
   WorkoutComplete: undefined;
-  WorkoutExercisePicker: undefined;
+  /**
+   * `swap` replaces the movement in one slot rather than appending a new
+   * exercise (U6); `performedExerciseId` names the slot.
+   */
+  WorkoutExercisePicker:
+    | {mode?: 'add'}
+    | {mode: 'swap'; performedExerciseId: string}
+    | undefined;
 };

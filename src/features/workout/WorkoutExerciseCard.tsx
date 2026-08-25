@@ -1,8 +1,8 @@
-import React from 'react';
-import {Pressable, StyleSheet, View} from 'react-native';
+import React, {useEffect, useRef, useState} from 'react';
+import {Pressable, StyleSheet, TextInput, View} from 'react-native';
 import {AppText} from '@/ui/Text';
 import {StatusChip} from '@/ui/StatusChip';
-import {useTheme, space, radius} from '@/theme';
+import {useTheme, type as typeScale, space, radius} from '@/theme';
 import {targetLine} from '@/domain/format';
 import {aggregateExercise} from '@/domain/sessionProgress';
 import type {
@@ -40,6 +40,8 @@ export function WorkoutExerciseCard({
   onSetReps,
   onCompleteSet,
   onEditSet,
+  onMore,
+  onNote,
   children,
 }: {
   exercise: SessionExercise;
@@ -58,6 +60,10 @@ export function WorkoutExerciseCard({
   onCompleteSet?: () => void;
   /** U10: reopens a set that has already been recorded or skipped. */
   onEditSet?: (setId: string) => void;
+  /** Opens this exercise's menu. Absent means the card has no menu. */
+  onMore?: () => void;
+  /** Commits what was written in the note field. */
+  onNote?: (notes: string | null) => void;
   /** The action row — add set, skip, notes. Only drawn when open. */
   children?: React.ReactNode;
 }) {
@@ -108,6 +114,13 @@ export function WorkoutExerciseCard({
           <AppText variant="bodyStrong" color={finished ? 'muted' : 'ink'}>
             {exercise.name}
           </AppText>
+          {exercise.substitutedFromName ? (
+            // U6: the slot was served by something else, and history should
+            // say so rather than quietly report the planned movement.
+            <AppText variant="printed" color="plate">
+              {`swapped from ${exercise.substitutedFromName}`}
+            </AppText>
+          ) : null}
           {/* Full contrast, open or shut: this is the number you are working
               towards, not decoration. */}
           <AppText variant="printed" color="muted">
@@ -121,6 +134,20 @@ export function WorkoutExerciseCard({
           {verdict ? <StatusChip status={verdict} /> : null}
         </View>
       </Pressable>
+
+      {onMore ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`More for ${exercise.name}`}
+          accessibilityHint="Swap, move, remove or summarise this exercise"
+          hitSlop={space.sm}
+          onPress={onMore}
+          style={styles.more}>
+          <AppText variant="bodyStrong" color="muted">
+            ⋯
+          </AppText>
+        </Pressable>
+      ) : null}
 
       {expanded ? (
         <View style={styles.body}>
@@ -175,10 +202,80 @@ export function WorkoutExerciseCard({
             );
           })}
 
+          {onNote ? (
+            <NoteField
+              name={exercise.name}
+              value={exercise.notes}
+              onCommit={onNote}
+            />
+          ) : null}
+
           {children}
         </View>
       ) : null}
     </View>
+  );
+}
+
+/**
+ * What happened on this exercise today, in the user's own words.
+ *
+ * Committed on blur rather than on every keystroke, so a note is one write
+ * instead of forty. The draft is seeded once and then left alone: `exercise`
+ * is a fresh object on every refetch, and an unguarded effect would overwrite
+ * whatever was being typed — the same trap `PlanDayScreen` documents, and the
+ * one that already ate a rename on this device.
+ */
+function NoteField({
+  name,
+  value,
+  onCommit,
+}: {
+  name: string;
+  value: string | null;
+  onCommit: (notes: string | null) => void;
+}) {
+  const {colors} = useTheme();
+  const [text, setText] = useState(value ?? '');
+  const saved = useRef(value ?? '');
+
+  useEffect(() => {
+    // Only when the note changed underneath us — a different exercise, or a
+    // write that landed elsewhere. Never mid-typing.
+    if ((value ?? '') !== saved.current) {
+      saved.current = value ?? '';
+      setText(value ?? '');
+    }
+  }, [value]);
+
+  const commit = () => {
+    const trimmed = text.trim();
+    if (trimmed === saved.current) {
+      return;
+    }
+    saved.current = trimmed;
+    onCommit(trimmed === '' ? null : trimmed);
+  };
+
+  return (
+    <TextInput
+      accessibilityLabel={`Note for ${name}`}
+      value={text}
+      onChangeText={setText}
+      onBlur={commit}
+      placeholder="How did it feel?"
+      placeholderTextColor={colors.faint}
+      multiline
+      style={[
+        typeScale.body,
+        styles.note,
+        {
+          color: colors.ink,
+          backgroundColor: colors.surface2,
+          borderColor: colors.ruleSoft,
+        },
+      ]}
+    />
   );
 }
 
@@ -201,4 +298,13 @@ const styles = StyleSheet.create({
   headerText: {flex: 1, gap: 2},
   headerMeta: {alignItems: 'flex-end', gap: space.xs},
   body: {paddingHorizontal: space.md, paddingBottom: space.md, gap: space.sm},
+  more: {position: 'absolute', top: space.sm, right: space.sm, padding: space.sm},
+  note: {
+    borderWidth: 1,
+    borderRadius: radius.sm,
+    paddingHorizontal: space.md,
+    paddingVertical: space.sm,
+    minHeight: 44,
+    textAlignVertical: 'top',
+  },
 });

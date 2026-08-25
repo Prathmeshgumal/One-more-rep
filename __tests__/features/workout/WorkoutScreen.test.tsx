@@ -463,4 +463,54 @@ describe('WorkoutScreen', () => {
       ).toBe(true),
     );
   });
+
+  // Deliberately thin: ExerciseActions owns which rows are offered and why,
+  // and sessionRepo owns what each one does. These only prove the screen
+  // actually joins the two together.
+  it('opens the menu for the exercise whose control was pressed', async () => {
+    const view = await renderScreen();
+    await fireEvent.press(await view.findByLabelText('More for Bench Press'));
+    await waitFor(() =>
+      expect(view.getByLabelText('Swap this exercise')).toBeTruthy(),
+    );
+  });
+
+  it('reorders the session from the menu', async () => {
+    const view = await renderScreen();
+    await fireEvent.press(await view.findByLabelText('More for Bench Press'));
+    await fireEvent.press(view.getByLabelText('Move down'));
+
+    await waitFor(async () => {
+      const session = (await getActiveSession(ctx.db))!;
+      expect(session.exercises.map(e => e.name)).toEqual([
+        'Cable Fly',
+        'Bench Press',
+      ]);
+    });
+  });
+
+  it('writes a note to the database when the field is left', async () => {
+    const view = await renderScreen();
+    const field = await view.findByLabelText('Note for Bench Press');
+    await fireEvent.changeText(field, 'Shoulder felt off.');
+    await fireEvent(field, 'blur');
+
+    await waitFor(async () => {
+      const session = (await getActiveSession(ctx.db))!;
+      expect(session.exercises[0]!.notes).toBe('Shoulder felt off.');
+    });
+  });
+
+  it('sends a swap to the picker rather than doing it blind', async () => {
+    const view = await renderScreen();
+    await fireEvent.press(await view.findByLabelText('More for Bench Press'));
+    await fireEvent.press(view.getByLabelText('Swap this exercise'));
+
+    await waitFor(() =>
+      expect(mockNavigate).toHaveBeenCalledWith('WorkoutExercisePicker', {
+        mode: 'swap',
+        performedExerciseId: expect.any(String),
+      }),
+    );
+  });
 });
