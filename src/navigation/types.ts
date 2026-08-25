@@ -1,8 +1,16 @@
+import type {NavigatorScreenParams} from '@react-navigation/native';
+
+/**
+ * `NavigatorScreenParams` rather than `undefined` on the stacks that get
+ * navigated into from another tab — Today's "All exercises" opens the History
+ * stack at a specific day. Typed here rather than cast at the call site, so a
+ * wrong screen name or a missing date is a compile error.
+ */
 export type RootTabParamList = {
-  Today: undefined;
-  Plan: undefined;
-  History: undefined;
-  Exercises: undefined;
+  Today: NavigatorScreenParams<TodayStackParamList> | undefined;
+  Plan: NavigatorScreenParams<PlanStackParamList> | undefined;
+  History: NavigatorScreenParams<HistoryStackParamList> | undefined;
+  Exercises: NavigatorScreenParams<ExercisesStackParamList> | undefined;
   Settings: undefined;
 };
 
