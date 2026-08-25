@@ -17,6 +17,12 @@ half of 10 in one change.
 TanStack Query, zustand, react-native-svg. Two new native dependencies, in R6
 only.
 
+**Status (2026-08-26):** every task below is implemented and 681 tests pass.
+The four device gates left unchecked — Tasks 14, 16, 19 and 22 — are the ones
+nobody has walked. `docs/deferred.md` records what that leaves unverified, and
+why it is worth writing down: the R1 gate found two bugs that ~600 tests had
+missed.
+
 **Source:** the ten complaints, verbatim, in `docs/notes.md` (appended by
 Task 0). Four design forks were settled by the user before this plan was
 written; each is recorded at the head of the phase it governs.
@@ -162,12 +168,12 @@ from inside the gate and read from above it.
 
 **Files:** Modify `docs/notes.md`
 
-- [ ] **Step 1:** Append a dated section to `docs/notes.md` containing all ten
+- [x] **Step 1:** Append a dated section to `docs/notes.md` containing all ten
       complaints verbatim, the four questions that were asked, and the four
       answers. A plan that argues from requirements has to keep those
       requirements next to it.
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add docs/notes.md docs/superpowers/plans/2026-08-24-usability-fixes.md
@@ -193,7 +199,7 @@ Closes complaints **1** and **2**. Depends on nothing.
   gains `themeMode` and `defaultIncrement`; `DEFAULT_SETTINGS.defaultIncrement`
   becomes `0.5`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 In `__tests__/repositories/settingsRepo.test.ts`:
 
@@ -212,14 +218,14 @@ it('stores a theme choice', async () => {
 });
 ```
 
-- [ ] **Step 2: Run it and watch it fail**
+- [x] **Step 2: Run it and watch it fail**
 
 ```bash
 npx jest __tests__/repositories/settingsRepo.test.ts
 ```
 Expected: FAIL — `themeMode` is not a property of the settings row.
 
-- [ ] **Step 3: Add the column to the schema**
+- [x] **Step 3: Add the column to the schema**
 
 In `src/db/schema/settings.ts`, inside `sqliteTable('settings', {...})`:
 
@@ -239,7 +245,7 @@ And below the existing exports:
 export type ThemeMode = SettingsRow['themeMode'];
 ```
 
-- [ ] **Step 4: Generate the migration**
+- [x] **Step 4: Generate the migration**
 
 ```bash
 npm run db:generate
@@ -252,7 +258,7 @@ default on an added `NOT NULL` column, so the generated statement must read
 If it does not, fix the schema and regenerate — never hand-edit a generated
 migration.
 
-- [ ] **Step 5: Widen the repository**
+- [x] **Step 5: Widen the repository**
 
 In `src/repositories/settingsRepo.ts`:
 
@@ -272,7 +278,7 @@ export type SettingsPatch = Partial<
 >;
 ```
 
-- [ ] **Step 6: Assert the migration**
+- [x] **Step 6: Assert the migration**
 
 Add to `__tests__/db/migrate.test.ts`, beside the existing version assertions:
 
@@ -290,14 +296,14 @@ it('lands on user_version 6 with a theme column', async () => {
 });
 ```
 
-- [ ] **Step 7: Run the suite**
+- [x] **Step 7: Run the suite**
 
 ```bash
 npm test && npm run typecheck
 ```
 Expected: PASS.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add src/db src/repositories/settingsRepo.ts drizzle __tests__
@@ -319,7 +325,7 @@ git commit -m "feat(settings): add a theme mode column and a 0.5 default step"
 - Produces: `useThemeMode()` — `{mode, setMode}`. `useTheme()` keeps its shape
   (`{colors, scheme}`), so no existing call site changes.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `__tests__/theme/themeMode.test.tsx`:
 
@@ -364,14 +370,14 @@ describe('theme mode', () => {
 });
 ```
 
-- [ ] **Step 2: Run it and watch it fail**
+- [x] **Step 2: Run it and watch it fail**
 
 ```bash
 npx jest __tests__/theme/themeMode.test.tsx
 ```
 Expected: FAIL — `@/theme/useThemeMode` does not exist.
 
-- [ ] **Step 3: Write the store**
+- [x] **Step 3: Write the store**
 
 `src/theme/useThemeMode.ts`:
 
@@ -396,7 +402,7 @@ export const useThemeMode = create<ThemeModeState>(set => ({
 }));
 ```
 
-- [ ] **Step 4: Read it in the provider**
+- [x] **Step 4: Read it in the provider**
 
 In `src/theme/ThemeProvider.tsx`:
 
@@ -419,7 +425,7 @@ Add to `src/theme/index.ts`:
 export {useThemeMode} from './useThemeMode';
 ```
 
-- [ ] **Step 5: Hydrate it when the database opens**
+- [x] **Step 5: Hydrate it when the database opens**
 
 In `src/providers/DatabaseGate.tsx`, inside the existing async IIFE, after
 `rollOverStaleSessions(db)` and before `setStatus`:
@@ -435,14 +441,14 @@ In `src/providers/DatabaseGate.tsx`, inside the existing async IIFE, after
 with `import {getSettings} from '@/repositories/settingsRepo';` and
 `import {useThemeMode} from '@/theme';`.
 
-- [ ] **Step 6: Run the tests**
+- [x] **Step 6: Run the tests**
 
 ```bash
 npx jest __tests__/theme && npm run typecheck
 ```
 Expected: PASS.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add src/theme src/providers/DatabaseGate.tsx __tests__/theme
@@ -457,7 +463,7 @@ git commit -m "feat(theme): honour a saved light/dark/system choice"
 - Modify: `src/features/settings/SettingsScreen.tsx`
 - Test: `__tests__/features/settings/SettingsScreen.test.tsx`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```tsx
 it('writes a theme choice and applies it immediately', async () => {
@@ -475,14 +481,14 @@ it('writes a weight step choice', async () => {
 });
 ```
 
-- [ ] **Step 2: Run and watch fail**
+- [x] **Step 2: Run and watch fail**
 
 ```bash
 npx jest __tests__/features/settings
 ```
 Expected: FAIL — no such labels.
 
-- [ ] **Step 3: Add both rows**
+- [x] **Step 3: Add both rows**
 
 Above the weight-unit block, a Theme row using the same `Pressable` option
 pattern already in this file:
@@ -516,14 +522,14 @@ The − and + buttons move weight by this much. You can always tap a number and
 type it instead.
 ```
 
-- [ ] **Step 4: Run**
+- [x] **Step 4: Run**
 
 ```bash
 npx jest __tests__/features/settings && npm run typecheck && npm run lint
 ```
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/features/settings __tests__/features/settings
@@ -557,7 +563,7 @@ export function NumberField(props: {
 }): JSX.Element;
 ```
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```tsx
 it('commits a typed value on blur', () => {
@@ -606,14 +612,14 @@ it('does not drift on repeated 0.5 steps', () => {
 });
 ```
 
-- [ ] **Step 2: Run and watch fail**
+- [x] **Step 2: Run and watch fail**
 
 ```bash
 npx jest __tests__/ui/NumberField.test.tsx
 ```
 Expected: FAIL — module not found.
 
-- [ ] **Step 3: Implement it**
+- [x] **Step 3: Implement it**
 
 Each behaviour below has a test above.
 
@@ -635,14 +641,14 @@ Each behaviour below has a test above.
 - `size="display"` renders at `type.display` for the active set; `"field"` at
   `type.inkNum` for the plan editor.
 
-- [ ] **Step 4: Run the tests**
+- [x] **Step 4: Run the tests**
 
 ```bash
 npx jest __tests__/ui/NumberField.test.tsx
 ```
 Expected: PASS.
 
-- [ ] **Step 5: Route every existing number input through it**
+- [x] **Step 5: Route every existing number input through it**
 
 - `src/ui/Stepper.tsx` becomes a `NumberField` with `size="field"`, keeping its
   current props so `TargetEditorScreen` does not change shape.
@@ -659,7 +665,7 @@ const step = settings?.defaultIncrement ?? 0.5;
 const unit = settings?.unit ?? 'kg';
 ```
 
-- [ ] **Step 6: Run everything**
+- [x] **Step 6: Run everything**
 
 ```bash
 npm test && npm run typecheck && npm run lint
@@ -668,7 +674,7 @@ Expected: PASS. Existing `SetRow` and target-editor tests may need their
 queries moved from text to `getByLabelText('Weight')`. Update the tests; do not
 weaken the assertions.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add src/ui src/features/workout/SetRow.tsx src/features/plan/TargetEditorScreen.tsx __tests__
@@ -679,7 +685,7 @@ git commit -m "feat(ui): tap any weight or rep count and type it"
 
 ### Task 5: R1 device gate
 
-- [ ] **Step 1: Build a bundled APK and install it**
+- [x] **Step 1: Build a bundled APK and install it**
 
 ```bash
 npx react-native bundle --platform android --dev false --entry-file index.js \
@@ -690,7 +696,7 @@ adb reverse --remove-all
 adb install -r android/app/build/outputs/apk/debug/app-debug.apk
 ```
 
-- [ ] **Step 2: Walk it by hand on the phone**
+- [x] **Step 2: Walk it by hand on the phone**
 
 1. Settings → Dark. The screen repaints **immediately**, without a relaunch.
 2. Force-stop, reopen. Still dark, and the **first frame** is dark — no white
@@ -706,9 +712,9 @@ adb exec-out run-as com.onemorerep sqlite3 databases/onemorerep.db \
   "SELECT actual_weight, actual_reps FROM performed_sets WHERE status='completed' ORDER BY completed_at DESC LIMIT 3;"
 ```
 
-- [ ] **Step 3:** Record in `docs/deferred.md` what was walked and what was not.
+- [x] **Step 3:** Record in `docs/deferred.md` what was walked and what was not.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add docs/deferred.md
@@ -753,7 +759,7 @@ Also produces, moved into `src/domain/format.ts`:
 export function targetLine(sets: readonly {targetReps: number; targetWeight: number | null}[], unit: string): string;
 ```
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```tsx
 it('collapsed, shows the name and how far through it is', () => {
@@ -790,13 +796,13 @@ it('a finished exercise carries its verdict in the collapsed header', () => {
 });
 ```
 
-- [ ] **Step 2: Run and watch fail**
+- [x] **Step 2: Run and watch fail**
 
 ```bash
 npx jest __tests__/features/workout/WorkoutExerciseCard.test.tsx
 ```
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 Collapsed header, always present:
 
@@ -824,13 +830,13 @@ targets were not there. Change it so the **head strip keeps full contrast** —
 the target is information you need *before* you lift — and only the empty
 actual is drawn in `faint`. Delete `styles.dim`.
 
-- [ ] **Step 4: Run**
+- [x] **Step 4: Run**
 
 ```bash
 npx jest __tests__/features/workout && npm run typecheck
 ```
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/features/workout src/domain/format.ts src/features/plan __tests__
@@ -845,7 +851,7 @@ git commit -m "feat(workout): an exercise card that reads whether it is open or 
 - Modify: `src/features/workout/WorkoutScreen.tsx`
 - Test: `__tests__/features/workout/WorkoutScreen.test.tsx`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```tsx
 it('shows every exercise in the session at once', async () => {
@@ -885,13 +891,13 @@ it('moves on when the last set of an exercise is recorded', async () => {
 });
 ```
 
-- [ ] **Step 2: Run and watch fail**
+- [x] **Step 2: Run and watch fail**
 
 ```bash
 npx jest __tests__/features/workout/WorkoutScreen.test.tsx
 ```
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 Replace `const [index, setIndex] = useState(0)` with
 `const [openId, setOpenId] = useState<string | null>(null)`, keyed by
@@ -920,13 +926,13 @@ move to the foot of the list. `Add set`, `Skip set` and `Skip this exercise`
 move **inside** the expanded card, where they belong to one exercise rather
 than to whatever happens to be on screen.
 
-- [ ] **Step 4: Run**
+- [x] **Step 4: Run**
 
 ```bash
 npm test && npm run typecheck && npm run lint
 ```
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/features/workout __tests__/features/workout
@@ -937,9 +943,9 @@ git commit -m "feat(workout): show the whole workout in one list"
 
 ### Task 8: R2 device gate
 
-- [ ] **Step 1:** Rebuild and install the bundled APK (Task 5, Step 1).
+- [x] **Step 1:** Rebuild and install the bundled APK (Task 5, Step 1).
 
-- [ ] **Step 2: Walk it**
+- [x] **Step 2: Walk it**
 
 1. Start a workout with **at least four** exercises. All four are reachable by
    scrolling; each shows its target line while collapsed.
@@ -949,7 +955,7 @@ git commit -m "feat(workout): show the whole workout in one list"
 5. Force-stop mid-workout, reopen. Right exercise, right set, nothing lost.
 6. `adb logcat` is clean of React errors.
 
-- [ ] **Step 3:** Record in `docs/deferred.md`, including the auto-advance
+- [x] **Step 3:** Record in `docs/deferred.md`, including the auto-advance
       departure. **Commit.**
 
 ---
@@ -966,7 +972,7 @@ Governed by **U3**, **U6**, **U7**, **U8**.
 - Create (generated): `src/db/migrations/0006_exercise_notes.ts`
 - Test: `__tests__/db/sessionSchema.test.ts`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```ts
 it('carries a note and a substitution origin on a performed exercise', async () => {
@@ -983,9 +989,9 @@ it('carries a note and a substitution origin on a performed exercise', async () 
 });
 ```
 
-- [ ] **Step 2: Run and watch fail.**
+- [x] **Step 2: Run and watch fail.**
 
-- [ ] **Step 3: Add both columns**
+- [x] **Step 3: Add both columns**
 
 In `src/db/schema/session.ts`, inside `performedExercises`:
 
@@ -1007,14 +1013,14 @@ In `src/db/schema/session.ts`, inside `performedExercises`:
     ),
 ```
 
-- [ ] **Step 4: Generate**
+- [x] **Step 4: Generate**
 
 ```bash
 npm run db:generate
 ```
 Confirm `version` is `7` and that `index.ts` lists it.
 
-- [ ] **Step 5: Widen `SessionExercise`**
+- [x] **Step 5: Widen `SessionExercise`**
 
 Add `notes: string | null` and `substitutedFromName: string | null` to
 `SessionExercise` in `src/repositories/sessionRepo.ts`. Get the name with a
@@ -1022,7 +1028,7 @@ second `leftJoin` on an **alias** of `exercises` inside `loadSession`'s
 existing exercise query — not a query per exercise. The three-query budget in
 that function's doc comment is deliberate; keep it true.
 
-- [ ] **Step 6:** `npm test && npm run typecheck`. **Commit.**
+- [x] **Step 6:** `npm test && npm run typecheck`. **Commit.**
 
 ```bash
 git add src/db src/repositories/sessionRepo.ts drizzle __tests__
@@ -1065,7 +1071,7 @@ export async function moveExercise(
 it. Its awaited double invalidation — session branch, then history branch — is
 the thing that must not be copied and allowed to drift.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```ts
 describe('swapExercise', () => {
@@ -1155,16 +1161,16 @@ describe('setExerciseNotes', () => {
 });
 ```
 
-- [ ] **Step 2: Run and watch fail.**
+- [x] **Step 2: Run and watch fail.**
 
-- [ ] **Step 3: Implement.** Each operation is its own committed transaction,
+- [x] **Step 3: Implement.** Each operation is its own committed transaction,
       matching this file's existing convention. `moveExercise` reads both rows
       and writes both `order_index` values inside one `BEGIN`/`COMMIT`.
 
-- [ ] **Step 4: Wire the mutations** in `useSessionEditing.ts` on top of the
+- [x] **Step 4: Wire the mutations** in `useSessionEditing.ts` on top of the
       exported `useSessionMutation`.
 
-- [ ] **Step 5:** `npm test && npm run typecheck`. **Commit.**
+- [x] **Step 5:** `npm test && npm run typecheck`. **Commit.**
 
 ```bash
 git add src/repositories/sessionRepo.ts src/features/workout __tests__
@@ -1196,7 +1202,7 @@ export async function finishExercise(
 ): Promise<void>;
 ```
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```ts
 describe('finishExercise', () => {
@@ -1253,9 +1259,9 @@ it('offers to finish rather than skip once something is recorded', async () => {
 });
 ```
 
-- [ ] **Step 2: Run and watch fail.**
+- [x] **Step 2: Run and watch fail.**
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 `SetRow` gains an `onEdit` handler on a set that is `completed` or `skipped`,
 labelled `Edit set N`, wrapping the row in a `Pressable`. It is **not** offered
@@ -1272,7 +1278,7 @@ The exercise control reads `Finish this exercise` when any set on it is
 completed, `Skip this exercise` otherwise, and calls the matching repository
 function. Both stay ochre: neither is an error.
 
-- [ ] **Step 4:** `npm test && npm run typecheck && npm run lint`. **Commit.**
+- [x] **Step 4:** `npm test && npm run typecheck && npm run lint`. **Commit.**
 
 ---
 
@@ -1283,7 +1289,7 @@ function. Both stay ochre: neither is an error.
 - Modify: `src/features/workout/WorkoutExerciseCard.tsx`, `WorkoutScreen.tsx`
 - Test: `__tests__/ui/ActionSheet.test.tsx`, `__tests__/features/workout/ExerciseActions.test.tsx`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```tsx
 it('offers swap, move and summary on a planned exercise', () => {
@@ -1317,9 +1323,9 @@ it('saves a note when the field is blurred', async () => {
 });
 ```
 
-- [ ] **Step 2: Run and watch fail.**
+- [x] **Step 2: Run and watch fail.**
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 `ActionSheet` is RN's `Modal` with `transparent`, `animationType="slide"`, a
 scrim that dismisses on press, and rows each carrying
@@ -1348,7 +1354,7 @@ documents: Android's hardware back dismisses the keyboard without firing
 
 Swapping opens the exercise picker with `mode: 'swap'`; see Task 12.
 
-- [ ] **Step 4:** `npm test && npm run typecheck && npm run lint`. **Commit.**
+- [x] **Step 4:** `npm test && npm run typecheck && npm run lint`. **Commit.**
 
 ---
 
@@ -1361,7 +1367,7 @@ Swapping opens the exercise picker with `mode: 'swap'`; see Task 12.
 `WorkoutExercisePicker` params become
 `{mode?: 'add' | 'swap'; performedExerciseId?: string}`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```tsx
 it('adds to the session only, by default', async () => {
@@ -1404,9 +1410,9 @@ it('in swap mode, replaces rather than appends', async () => {
 });
 ```
 
-- [ ] **Step 2: Run and watch fail.**
+- [x] **Step 2: Run and watch fail.**
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 A checkbox above the list, **off** by default:
 
@@ -1425,7 +1431,7 @@ somebody will read those two rows one day and wonder.
 `mode: 'swap'` changes the heading to "Swap Bench Press for…" and calls
 `swapExercise` instead of `addExercise`.
 
-- [ ] **Step 4:** `npm test`. **Commit.**
+- [x] **Step 4:** `npm test`. **Commit.**
 
 ---
 
@@ -1435,7 +1441,7 @@ somebody will read those two rows one day and wonder.
 - Modify: `src/features/history/DayDetailScreen.tsx`, `src/features/workout/ExerciseSummaryScreen.tsx`
 - Test: `__tests__/features/history/DayDetailScreen.test.tsx`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```tsx
 it('prints the note under the exercise it belongs to', async () => {
@@ -1454,11 +1460,11 @@ it('draws nothing at all when there is no note', async () => {
 });
 ```
 
-- [ ] **Step 2: Run, fail, implement, pass.** The note renders in `printed`
+- [x] **Step 2: Run, fail, implement, pass.** The note renders in `printed`
       type below the ledger table. The substitution renders beside the name in
       `plate`, next to the existing "· added on the day" badge.
 
-- [ ] **Step 3: Commit.**
+- [x] **Step 3: Commit.**
 
 ---
 
@@ -1508,7 +1514,7 @@ Closes complaint **5**. Independent of R2 and R3.
   so one creation cannot be consumed twice by two screens.
 - `ExerciseEditor` params widen to `{id?: string; initialName?: string}`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```tsx
 it('offers to create the exercise you searched for and could not find', async () => {
@@ -1534,9 +1540,9 @@ it('consumes the creation exactly once', () => {
 added to a stack without being classified for the back control. It must stay
 green for both new registrations — classify them, do not exempt them.
 
-- [ ] **Step 2: Run and watch fail.**
+- [x] **Step 2: Run and watch fail.**
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 Register `ExerciseEditor` in `PlanStack` and `TodayStack` as well as
 `ExercisesStack`. React Navigation resolves a route name within the current
@@ -1554,7 +1560,7 @@ A **Create "…"** row sits at the top of the list when the search returns
 nothing, and at the foot otherwise, carrying the typed text through as
 `initialName`.
 
-- [ ] **Step 4:** `npm test && npm run typecheck && npm run lint`. **Commit.**
+- [x] **Step 4:** `npm test && npm run typecheck && npm run lint`. **Commit.**
 
 ---
 
@@ -1580,20 +1586,20 @@ Closes complaint **10**. Depends on R2 for the all-exercises view.
 - Modify: `src/features/workout/WorkoutCompleteScreen.tsx`
 - Test: `__tests__/features/workout/SessionSummary.test.tsx`
 
-- [ ] **Step 1: Write the failing test** — the block renders the percentage,
+- [x] **Step 1: Write the failing test** — the block renders the percentage,
       the exercise and set counts, the four verdict rows and total volume from
       a `Session` alone, with no navigation and no queries of its own.
 
-- [ ] **Step 2: Run, fail.**
+- [x] **Step 2: Run, fail.**
 
-- [ ] **Step 3: Implement.** Lift the existing markup out of
+- [x] **Step 3: Implement.** Lift the existing markup out of
       `WorkoutCompleteScreen` unchanged — the percentage logic, the "Nothing
       was planned" branch and the `sessionVolume` call all move as they are.
       `WorkoutCompleteScreen` keeps only the heading, the pending-set warning
       and the Save button. That last part must not be duplicated anywhere: it
       remains the one place a workout is saved.
 
-- [ ] **Step 4:** `npm test`. **Commit.**
+- [x] **Step 4:** `npm test`. **Commit.**
 
 ---
 
@@ -1603,7 +1609,7 @@ Closes complaint **10**. Depends on R2 for the all-exercises view.
 - Modify: `src/features/workout/TodayScreen.tsx`
 - Test: `__tests__/features/workout/TodayScreen.test.tsx`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```tsx
 it('shows the summary without needing a button pressed', async () => {
@@ -1625,9 +1631,9 @@ it('offers the full exercise-by-exercise view', async () => {
 });
 ```
 
-- [ ] **Step 2: Run, fail.**
+- [x] **Step 2: Run, fail.**
 
-- [ ] **Step 3: Implement.** The done branch of `TodayScreen` renders
+- [x] **Step 3: Implement.** The done branch of `TodayScreen` renders
       `<SessionSummary>` followed by a `LedgerTable` per exercise — the same
       component `DayDetailScreen` already uses, so there is one table in this
       app rather than two. "See the summary" goes. An **All exercises** button
@@ -1638,7 +1644,7 @@ it('offers the full exercise-by-exercise view', async () => {
       list underneath, so the shape of the day is visible before you tap
       Continue.
 
-- [ ] **Step 4:** `npm test && npm run typecheck && npm run lint`. **Commit.**
+- [x] **Step 4:** `npm test && npm run typecheck && npm run lint`. **Commit.**
 
 ---
 
@@ -1660,13 +1666,13 @@ build for reasons unrelated to this app's own code.
 
 **Files:** Modify `package.json`, `android/app/src/main/AndroidManifest.xml`
 
-- [ ] **Step 1: Install**
+- [x] **Step 1: Install**
 
 ```bash
 npm install react-native-view-shot @react-native-camera-roll/camera-roll
 ```
 
-- [ ] **Step 2: Verify both build under the new architecture.** This project
+- [x] **Step 2: Verify both build under the new architecture.** This project
       runs `newArchEnabled=true`. Before writing a line of feature code:
 
 ```bash
@@ -1681,7 +1687,7 @@ around it, and do not proceed to Task 21 — falling back to a "Copy as text"
 button is far preferable to turning off an architecture the rest of the app
 depends on.
 
-- [ ] **Step 3: Permission for old Android**
+- [x] **Step 3: Permission for old Android**
 
 `CameraRoll.save` needs no permission from API 29 up, but this app's
 `minSdkVersion` is 24. Add to `AndroidManifest.xml`, above `<application>`:
@@ -1694,7 +1700,7 @@ depends on.
         android:maxSdkVersion="28" />
 ```
 
-- [ ] **Step 4:** `npm test` — nothing should change. **Commit.**
+- [x] **Step 4:** `npm test` — nothing should change. **Commit.**
 
 ---
 
@@ -1705,7 +1711,7 @@ depends on.
 - Modify: `src/features/history/DayDetailScreen.tsx`, `src/features/workout/WorkoutCompleteScreen.tsx`, `jest.setup.js`
 - Test: `__tests__/features/history/DayImageCard.test.tsx`, `__tests__/features/history/useSaveDayImage.test.ts`
 
-- [ ] **Step 1: Mock the native modules in `jest.setup.js`**
+- [x] **Step 1: Mock the native modules in `jest.setup.js`**
 
 ```js
 jest.mock('react-native-view-shot', () => ({
@@ -1716,7 +1722,7 @@ jest.mock('@react-native-camera-roll/camera-roll', () => ({
 }));
 ```
 
-- [ ] **Step 2: Write the failing tests**
+- [x] **Step 2: Write the failing tests**
 
 ```tsx
 it('draws every exercise and every completed set', () => {
@@ -1751,9 +1757,9 @@ it('reports a failure rather than claiming success', async () => {
 });
 ```
 
-- [ ] **Step 3: Run, fail.**
+- [x] **Step 3: Run, fail.**
 
-- [ ] **Step 4: Implement**
+- [x] **Step 4: Implement**
 
 `DayImageCard` is a plain themed `View` at a fixed 1080-wide layout, rendered
 off-screen (`position: 'absolute', left: -9999`) inside the day screen so its
@@ -1777,7 +1783,7 @@ and of `WorkoutCompleteScreen`, and reports either "Saved to your gallery" or
 the failure. A share sheet is deliberately **not** built here: the user asked
 for download now and sharing later.
 
-- [ ] **Step 5:** `npm test && npm run typecheck && npm run lint`. **Commit.**
+- [x] **Step 5:** `npm test && npm run typecheck && npm run lint`. **Commit.**
 
 ---
 
