@@ -19,6 +19,7 @@ import {
   useSkipSet,
   useSkipExercise,
   useAddSet,
+  useFinishExercise,
 } from './useSession';
 
 export function WorkoutScreen() {
@@ -32,12 +33,19 @@ export function WorkoutScreen() {
   const complete = useCompleteSet();
   const skip = useSkipSet();
   const skipExercise = useSkipExercise();
+  const finishExercise = useFinishExercise();
   const addSet = useAddSet();
 
   // U1/U2: every exercise is on screen; exactly one is open. Keyed by
   // `performed_exercises.id` rather than by position, because reordering an
   // exercise mid-workout (R3) makes a position meaningless.
   const [openId, setOpenId] = useState<string | null>(null);
+  /**
+   * U10. A set already decided, reopened for correction. It outranks "the
+   * first pending set" until it is saved, which is what makes an accidental
+   * skip recoverable.
+   */
+  const [editingSetId, setEditingSetId] = useState<string | null>(null);
   const active = useActiveSet();
 
   const scroller = useRef<React.ComponentRef<typeof ScrollView>>(null);
@@ -88,8 +96,11 @@ export function WorkoutScreen() {
     openExercise?.exerciseId ?? '',
   );
 
-  // The first set still pending on the open exercise is the one being worked.
-  const activeSet = openExercise?.sets.find(s => s.status === 'pending');
+  // Normally the first set still pending on the open exercise; while a decided
+  // set is being corrected, that one instead.
+  const activeSet = editingSetId
+    ? openExercise?.sets.find(s => s.id === editingSetId)
+    : openExercise?.sets.find(s => s.status === 'pending');
 
   // §35: the inputs arrive holding the target. For a bonus set there is no
   // target, so the last thing actually lifted on this exercise is the better
@@ -103,11 +114,19 @@ export function WorkoutScreen() {
       .find(s => s.status === 'completed');
     active.load({
       setId: activeSet.id,
+      // A set being corrected opens on what was recorded, not on the target:
+      // you are fixing a number, so the number that was typed is a better
+      // starting point than the one it was aiming at.
       weight:
+        activeSet.actualWeight ??
         activeSet.targetWeight ??
         lastRecorded?.actualWeight ??
         (openExercise?.weightApplicable ? 0 : null),
-      reps: activeSet.targetReps ?? lastRecorded?.actualReps ?? 10,
+      reps:
+        activeSet.actualReps ??
+        activeSet.targetReps ??
+        lastRecorded?.actualReps ??
+        10,
     });
   }, [activeSet, active, openExercise]);
 
@@ -145,7 +164,10 @@ export function WorkoutScreen() {
     if (!activeSet || !openExercise) {
       return;
     }
+    // Correcting an old set never counts as finishing the exercise, however
+    // few sets remain -- nothing new was reached.
     const wasLast =
+      editingSetId === null &&
       openExercise.sets.filter(s => s.status === 'pending').length === 1;
     const finishing = openExercise.id;
 
@@ -158,6 +180,9 @@ export function WorkoutScreen() {
       {
         onSuccess: () => {
           active.reset();
+          // A correction ends the moment it is saved; the screen returns to
+          // whatever is genuinely next.
+          setEditingSetId(null);
           // Spec 6.3 still auto-advances, but no longer by pushing a screen.
           // The next exercise opens under the finished one and the list scrolls
           // to it — see the design departure recorded in docs/deferred.md.
@@ -228,6 +253,7 @@ export function WorkoutScreen() {
               increment={increment}
               previous={isOpen ? previous : null}
               activeSetId={isOpen ? (activeSet?.id ?? null) : null}
+              onEditSet={setEditingSetId}
               activeWeight={active.weight}
               activeReps={active.reps}
               onSetWeight={active.setWeight}
@@ -254,25 +280,28 @@ export function WorkoutScreen() {
                   />
                 </View>
               </View>
-              <Pressable
-                accessibilityRole="button"
+              <ExerciseCloser
+                anyRecorded={exercise.sets.some(s => s.status === 'completed')}
+                pending={skipExercise.isPending || finishExercise.isPending}
                 onPress={() => {
-                  skipExercise.mutate(exercise.id, {
-                    onSuccess: () => {
-                      active.reset();
-                      const next = nextPendingAfter(exercise.id);
-                      if (next) {
-                        reveal(next.id);
-                      }
-                    },
-                  });
+                  const settled = () => {
+                    active.reset();
+                    setEditingSetId(null);
+                    const next = nextPendingAfter(exercise.id);
+                    if (next) {
+                      reveal(next.id);
+                    }
+                  };
+                  const anyRecorded = exercise.sets.some(
+                    s => s.status === 'completed',
+                  );
+                  if (anyRecorded) {
+                    finishExercise.mutate(exercise.id, {onSuccess: settled});
+                  } else {
+                    skipExercise.mutate(exercise.id, {onSuccess: settled});
+                  }
                 }}
-                style={styles.quiet}>
-                {/* Ochre, never red: skipping is a decision, not an error. */}
-                <AppText variant="small" color="short">
-                  Skip this exercise
-                </AppText>
-              </Pressable>
+              />
             </WorkoutExerciseCard>
           );
         })}
@@ -291,6 +320,41 @@ export function WorkoutScreen() {
         onPress={() => navigation.navigate('WorkoutComplete')}
       />
     </ScrollView>
+  );
+}
+
+/**
+ * U11. Finishing and skipping are different acts, and the difference is
+ * whether anything actually happened.
+ *
+ * The control used to say "Skip this exercise" always, and marked the whole
+ * exercise skipped even when three of its four sets were recorded — which
+ * understates the work, and was reported from the device. Once something has
+ * been recorded the honest close is to finish: skip only what is still
+ * pending and let the status derive, which reads as completed.
+ *
+ * Ochre in both states, never red. Neither is an error.
+ */
+function ExerciseCloser({
+  anyRecorded,
+  pending,
+  onPress,
+}: {
+  anyRecorded: boolean;
+  pending: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityState={{disabled: pending}}
+      disabled={pending}
+      onPress={onPress}
+      style={styles.quiet}>
+      <AppText variant="small" color="short">
+        {anyRecorded ? 'Finish this exercise' : 'Skip this exercise'}
+      </AppText>
+    </Pressable>
   );
 }
 

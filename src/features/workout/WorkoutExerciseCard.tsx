@@ -39,6 +39,7 @@ export function WorkoutExerciseCard({
   onSetWeight,
   onSetReps,
   onCompleteSet,
+  onEditSet,
   children,
 }: {
   exercise: SessionExercise;
@@ -55,6 +56,8 @@ export function WorkoutExerciseCard({
   onSetWeight?: (value: number) => void;
   onSetReps?: (value: number) => void;
   onCompleteSet?: () => void;
+  /** U10: reopens a set that has already been recorded or skipped. */
+  onEditSet?: (setId: string) => void;
   /** The action row — add set, skip, notes. Only drawn when open. */
   children?: React.ReactNode;
 }) {
@@ -163,6 +166,11 @@ export function WorkoutExerciseCard({
                 onSetWeight={isActive ? onSetWeight : undefined}
                 onSetReps={isActive ? onSetReps : undefined}
                 onComplete={isActive ? onCompleteSet : undefined}
+                onEdit={
+                  !isActive && set.status !== 'pending' && onEditSet
+                    ? () => onEditSet(set.id)
+                    : undefined
+                }
               />
             );
           })}

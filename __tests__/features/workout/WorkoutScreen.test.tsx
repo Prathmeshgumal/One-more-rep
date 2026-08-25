@@ -312,6 +312,97 @@ describe('WorkoutScreen', () => {
     expect(view.getAllByLabelText('Complete set')).toHaveLength(1);
   });
 
+  // U10, reported from the device: a set was skipped by accident and there was
+  // no way back to it. completeSet already overwrites and section 14 already
+  // says the actual is editable -- the screen simply offered no way in.
+  it('reopens a skipped set when it is tapped', async () => {
+    const view = await renderScreen();
+    await fireEvent.press(await view.findByText('Skip set'));
+    await waitFor(async () => expect((await sets())[0]!.status).toBe('skipped'));
+
+    await fireEvent.press(view.getByLabelText('Edit set 1'));
+    await waitFor(() =>
+      expect(view.getByLabelText('Complete set')).toBeTruthy(),
+    );
+    await fireEvent.press(view.getByLabelText('Complete set'));
+
+    await waitFor(async () =>
+      expect((await sets())[0]!.status).toBe('completed'),
+    );
+  });
+
+  it('reopens a recorded set so a wrong number can be corrected', async () => {
+    const view = await renderScreen();
+    await fireEvent.press(await view.findByLabelText('Complete set'));
+    await waitFor(async () =>
+      expect((await sets())[0]!.actualWeight).toBe(30),
+    );
+
+    await fireEvent.press(view.getByLabelText('Edit set 1'));
+    await waitFor(() => expect(view.getByLabelText('Weight')).toBeTruthy());
+    // Reopening loads what was recorded, not the target -- you are correcting
+    // a number, so the number you typed is the better starting point.
+    expect(view.getByLabelText('Weight').props.value).toBe('30.0');
+
+    await fireEvent.changeText(view.getByLabelText('Weight'), '55');
+    await fireEvent.press(view.getByLabelText('Complete set'));
+
+    await waitFor(async () => expect((await sets())[0]!.actualWeight).toBe(55));
+    expect((await sets())[0]!.status).toBe('completed');
+  });
+
+  it('goes back to the first pending set once the correction is saved', async () => {
+    const view = await renderScreen();
+    await fireEvent.press(await view.findByLabelText('Complete set'));
+    await waitFor(async () => expect((await sets())[0]!.status).toBe('completed'));
+
+    await fireEvent.press(view.getByLabelText('Edit set 1'));
+    await waitFor(() => expect(view.queryByLabelText('Edit set 1')).toBeNull());
+    await fireEvent.press(view.getByLabelText('Complete set'));
+
+    // Set 2 is active again, not set 1 forever.
+    await waitFor(() =>
+      expect(view.getByLabelText('Edit set 1')).toBeTruthy(),
+    );
+    expect(view.getAllByLabelText('Complete set')).toHaveLength(1);
+  });
+
+  it('offers no edit on a set that has not happened yet', async () => {
+    const view = await renderScreen();
+    await view.findByText('Bench Press');
+    // Set 1 is active, sets 2 and 3 are pending -- none of them is editable
+    // by tapping, because there is nothing yet to correct.
+    expect(view.queryByLabelText('Edit set 2')).toBeNull();
+    expect(view.queryByLabelText('Edit set 3')).toBeNull();
+  });
+
+  // U11, also from the device: skipping understated an exercise that was
+  // mostly done.
+  it('offers to finish rather than skip once something is recorded', async () => {
+    const view = await renderScreen();
+    expect(await view.findByText('Skip this exercise')).toBeTruthy();
+
+    await fireEvent.press(view.getByLabelText('Complete set'));
+
+    await waitFor(() =>
+      expect(view.getByText('Finish this exercise')).toBeTruthy(),
+    );
+    expect(view.queryByText('Skip this exercise')).toBeNull();
+  });
+
+  it('finishing a part-done exercise records it as completed', async () => {
+    const view = await renderScreen();
+    await fireEvent.press(await view.findByLabelText('Complete set'));
+    await waitFor(() => expect(view.getByText('Finish this exercise')).toBeTruthy());
+
+    await fireEvent.press(view.getByText('Finish this exercise'));
+
+    await waitFor(async () => {
+      const session = (await getActiveSession(ctx.db))!;
+      expect(session.exercises[0]!.status).toBe('completed');
+    });
+  });
+
   it('leaves the workout when closed', async () => {
     const view = await renderScreen();
     await fireEvent.press(await view.findByLabelText('Close workout'));

@@ -42,6 +42,7 @@ export function SetRow({
   onSetWeight,
   onSetReps,
   onComplete,
+  onEdit,
 }: {
   setNumber: number;
   targetReps: number | null;
@@ -64,6 +65,12 @@ export function SetRow({
   onSetWeight?: (value: number) => void;
   onSetReps?: (value: number) => void;
   onComplete?: () => void;
+  /**
+   * U10. Offered only on a set that has already been decided — completed or
+   * skipped. A pending set is either already the active one or is reached by
+   * finishing the sets before it, so there is nothing there to correct yet.
+   */
+  onEdit?: () => void;
 }) {
   const {colors} = useTheme();
 
@@ -103,8 +110,20 @@ export function SetRow({
     actualWeight ?? (ghosting ? (targetWeight ?? fallbackWeight ?? null) : null);
   const shownReps = actualReps ?? (ghosting ? targetReps : null);
 
+  const editable = done && onEdit !== undefined;
+
+  const Row = editable ? Pressable : View;
+
   return (
-    <View
+    <Row
+      {...(editable
+        ? {
+            accessibilityRole: 'button' as const,
+            accessibilityLabel: `Edit set ${setNumber}`,
+            accessibilityHint: 'Reopens this set so it can be corrected',
+            onPress: onEdit,
+          }
+        : {})}
       style={[
         styles.row,
         {borderColor: isActive ? colors.plate : colors.ruleSoft},
@@ -215,7 +234,7 @@ export function SetRow({
           />
         ) : null}
       </View>
-    </View>
+    </Row>
   );
 }
 

@@ -371,6 +371,34 @@ export async function skipExercise(
     .where(eq(performedExercises.id, performedExerciseId));
 }
 
+/**
+ * Closes an exercise off, keeping what was done (U11).
+ *
+ * Everything still pending is skipped and the status is then **derived**, so
+ * an exercise that was three-quarters done reads as completed rather than as
+ * skipped. That is the whole difference from `skipExercise`, which writes
+ * 'skipped' outright because it is a decision the user made about the exercise
+ * as a whole rather than a summary of what happened in it.
+ *
+ * Reported from the device: "I cannot mark exercise 4 as done, the only option
+ * I have is to skip."
+ */
+export async function finishExercise(
+  db: AppDatabase,
+  performedExerciseId: string,
+): Promise<void> {
+  await db
+    .update(performedSets)
+    .set({status: 'skipped', actualReps: null, actualWeight: null})
+    .where(
+      and(
+        eq(performedSets.performedExerciseId, performedExerciseId),
+        eq(performedSets.status, 'pending'),
+      ),
+    );
+  await refreshExerciseStatus(db, performedExerciseId);
+}
+
 /** An extra set beyond the plan (D3). No target, because there was none. */
 export async function addSet(
   db: AppDatabase,
