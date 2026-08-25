@@ -34,6 +34,13 @@ export type SessionExercise = {
   plannedExerciseId: string | null;
   orderIndex: number;
   status: ItemStatus;
+  /** What happened on this exercise today, in the user's own words. */
+  notes: string | null;
+  /**
+   * The movement this slot originally asked for, when it was swapped
+   * mid-workout (U6). NULL for every exercise that was not.
+   */
+  substitutedFromName: string | null;
   sets: SessionSet[];
 };
 
@@ -55,7 +62,15 @@ function newId(prefix: string): string {
     .slice(2, 10)}`;
 }
 
-/** Loads a session's whole tree in three queries, not one per exercise. */
+/**
+ * Loads a session's whole tree in three queries, not one per exercise.
+ *
+ * A swap adds a fourth, and only when one actually happened — the names of
+ * substituted-from movements are fetched in a single batch rather than per
+ * row. An aliased self-join would have kept it at three, but `AppDatabase` is
+ * a `'sync' | 'async'` union and a second join collapses the inferred row type
+ * to `never`; a small extra query is a better trade than defeating the types.
+ */
 async function loadSession(
   db: AppDatabase,
   row: typeof workoutSessions.$inferSelect,
@@ -70,6 +85,8 @@ async function loadSession(
       name: exercises.name,
       equipment: exercises.equipment,
       weightApplicable: exercises.weightApplicable,
+      notes: performedExercises.notes,
+      substitutedFromExerciseId: performedExercises.substitutedFromExerciseId,
     })
     .from(performedExercises)
     .innerJoin(exercises, eq(exercises.id, performedExercises.exerciseId))
@@ -88,6 +105,25 @@ async function loadSession(
         )
         .orderBy(asc(performedSets.setNumber))
     : [];
+
+  // Only when something was actually swapped, which is almost never.
+  const swappedIds = [
+    ...new Set(
+      exerciseRows
+        .map(e => e.substitutedFromExerciseId)
+        .filter((id): id is string => id !== null),
+    ),
+  ];
+  const swappedNames = new Map<string, string>();
+  if (swappedIds.length > 0) {
+    const rows = await db
+      .select({id: exercises.id, name: exercises.name})
+      .from(exercises)
+      .where(inArray(exercises.id, swappedIds));
+    for (const r of rows) {
+      swappedNames.set(r.id, r.name);
+    }
+  }
 
   const setsByExercise = new Map<string, SessionSet[]>();
   for (const set of setRows) {
@@ -124,6 +160,11 @@ async function loadSession(
       plannedExerciseId: e.plannedExerciseId,
       orderIndex: e.orderIndex,
       status: e.status,
+      notes: e.notes,
+      substitutedFromName:
+        e.substitutedFromExerciseId === null
+          ? null
+          : (swappedNames.get(e.substitutedFromExerciseId) ?? null),
       sets: setsByExercise.get(e.id) ?? [],
     })),
   };

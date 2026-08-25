@@ -30,6 +30,8 @@ const exercise = (over: Partial<SessionExercise> = {}): SessionExercise => ({
   plannedExerciseId: 'pe1',
   orderIndex: 0,
   status: 'pending',
+  notes: null,
+  substitutedFromName: null,
   sets: [set(1), set(2), set(3)],
   ...over,
 });

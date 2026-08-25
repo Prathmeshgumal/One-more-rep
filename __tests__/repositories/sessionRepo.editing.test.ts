@@ -120,3 +120,62 @@ describe('finishing an exercise, as opposed to skipping it', () => {
     expect((await first()).status).toBe('completed');
   });
 });
+
+/**
+ * The two columns migration 0006 adds. Asserted through `getActiveSession`
+ * rather than by reading the table, because the point is that they reach the
+ * screens — and the substituted-from *name* is resolved by a separate batched
+ * query that a raw column read would not exercise.
+ */
+describe('notes and substitutions on a performed exercise', () => {
+  let ctx: ReturnType<typeof createTestDb>;
+  const reload = async () => (await getActiveSession(ctx.db, {now: MONDAY}))!;
+
+  beforeEach(async () => {
+    ctx = createTestDb();
+    await runMigrations(ctx.db);
+    await ctx.db.run(
+      sql`INSERT INTO exercises (id,name,primary_muscle,secondary_muscles,
+            equipment,exercise_type,weight_applicable,is_custom,updated_at)
+          VALUES ('bench','Bench Press','chest','[]','barbell','strength',1,0,0),
+                 ('fly','Cable Fly','chest','[]','cable','strength',1,0,0)`,
+    );
+    await createPlan(ctx.db, {now: MONDAY});
+    await editPlan(
+      ctx.db,
+      d => addExercises(renameDay(d, 0, 'Push Day'), 0, ['bench']),
+      MONDAY,
+    );
+    await startWorkout(ctx.db, {now: MONDAY});
+  });
+  afterEach(() => ctx.close());
+
+  it('carries both as null when nothing has been said or swapped', async () => {
+    const exercise = (await reload()).exercises[0]!;
+    expect(exercise.notes).toBeNull();
+    expect(exercise.substitutedFromName).toBeNull();
+  });
+
+  it('surfaces a note', async () => {
+    const exercise = (await reload()).exercises[0]!;
+    await ctx.db.run(
+      sql`UPDATE performed_exercises SET notes = 'Shoulder felt off.'
+          WHERE id = ${exercise.id}`,
+    );
+    expect((await reload()).exercises[0]!.notes).toBe('Shoulder felt off.');
+  });
+
+  it('resolves the name of the movement a slot was swapped away from', async () => {
+    const exercise = (await reload()).exercises[0]!;
+    await ctx.db.run(
+      sql`UPDATE performed_exercises
+          SET exercise_id = 'fly', substituted_from_exercise_id = 'bench'
+          WHERE id = ${exercise.id}`,
+    );
+    const after = (await reload()).exercises[0]!;
+    expect(after.name).toBe('Cable Fly');
+    expect(after.substitutedFromName).toBe('Bench Press');
+    // U6: the slot is kept, so the exercise still counts against the plan.
+    expect(after.plannedExerciseId).not.toBeNull();
+  });
+});

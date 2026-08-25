@@ -74,12 +74,20 @@ describe('runMigrations', () => {
     expect(await tableNames(ctx.db)).toContain('settings');
   });
 
-  it('lands on version 6 with a theme column on settings', async () => {
+  it('lands on version 7 with every column the app expects', async () => {
     await runMigrations(ctx.db);
-    expect(await getSchemaVersion(ctx.db)).toBe(6);
-    const columns = await ctx.db.all<{name: string}>(
-      sql`PRAGMA table_info(settings)`,
+    expect(await getSchemaVersion(ctx.db)).toBe(7);
+
+    const columnsOf = async (table: string) =>
+      (
+        await ctx.db.all<{name: string}>(
+          sql.raw(`PRAGMA table_info(${table})`),
+        )
+      ).map(c => c.name);
+
+    expect(await columnsOf('settings')).toContain('theme_mode');
+    expect(await columnsOf('performed_exercises')).toEqual(
+      expect.arrayContaining(['notes', 'substituted_from_exercise_id']),
     );
-    expect(columns.map(c => c.name)).toContain('theme_mode');
   });
 });

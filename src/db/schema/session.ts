@@ -75,6 +75,21 @@ export const performedExercises = sqliteTable(
     status: text('status', {
       enum: ['pending', 'completed', 'skipped'],
     }).notNull(),
+    /**
+     * What happened on this exercise today, in the user's own words. Per
+     * session, not per exercise: "shoulder felt off" is about a Tuesday, not
+     * about the overhead press.
+     */
+    notes: text('notes'),
+    /**
+     * Set when this slot was swapped for a different movement mid-workout
+     * (U6). The plan link and the target are kept — the slot was served — and
+     * this is what lets history say so, rather than silently claiming the
+     * planned exercise was the one performed.
+     */
+    substitutedFromExerciseId: text('substituted_from_exercise_id').references(
+      () => exercises.id,
+    ),
   },
   table => [
     index('performed_exercises_session_idx').on(table.workoutSessionId),
