@@ -1,5 +1,5 @@
 import React from 'react';
-import {render, fireEvent} from '@testing-library/react-native';
+import {render, fireEvent, waitFor} from '@testing-library/react-native';
 import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
 import {NavigationContainer} from '@react-navigation/native';
 import {sql} from 'drizzle-orm';
@@ -18,11 +18,14 @@ import {
   addExercise,
   finishWorkout,
   getSessionForDate,
+  setExerciseNotes,
+  swapExercise,
 } from '@/repositories/sessionRepo';
 import {addLocalDays, startOfLocalDay, weekdayIndex} from '@/domain/weekday';
 import {ThemeProvider} from '@/theme';
 import {DatabaseContextTestProvider} from '@/providers/DatabaseGate';
 import {DayDetailScreen} from '@/features/history/DayDetailScreen';
+import {CameraRoll} from '@react-native-camera-roll/camera-roll';
 import {createTestDb} from '../../helpers/testDb';
 
 const mockNavigate = jest.fn();
@@ -204,5 +207,69 @@ describe('DayDetailScreen', () => {
     mockParams.date = daysAgo(14);
     const view = await renderScreen();
     expect(await view.findByText(/nothing was recorded/i)).toBeTruthy();
+  });
+
+  // U6 and the notes column. Without these two lines history quietly reports
+  // the planned movement as the one performed, and loses what was said about
+  // the day entirely.
+  it('prints the note under the exercise it belongs to', async () => {
+    const session = await startWorkout(ctx.db, {now: TRAINED + 9 * 3600_000});
+    await setExerciseNotes(
+      ctx.db,
+      session.exercises[0]!.id,
+      'Shoulder felt off.',
+    );
+    await finishWorkout(ctx.db, session.id, {now: TRAINED + 10 * 3600_000});
+
+    const view = await renderScreen();
+    expect(await view.findByText('Shoulder felt off.')).toBeTruthy();
+  });
+
+  it('says where a swapped exercise came from', async () => {
+    const session = await startWorkout(ctx.db, {now: TRAINED + 9 * 3600_000});
+    await swapExercise(ctx.db, session.exercises[0]!.id, 'fly');
+    await finishWorkout(ctx.db, session.id, {now: TRAINED + 10 * 3600_000});
+
+    const view = await renderScreen();
+    expect(await view.findByText(/swapped from Machine Chest Press/)).toBeTruthy();
+    expect(view.getByText('Cable Fly')).toBeTruthy();
+  });
+
+  it('draws no note at all when none was written', async () => {
+    await trainWithAGap();
+    const view = await renderScreen();
+    await view.findByText('Machine Chest Press');
+    expect(view.queryByTestId('exercise-note')).toBeNull();
+  });
+
+  // Complaint 8. The card is mounted only while a save is running, so the day
+  // view does not carry a second copy of itself around.
+  it('does not lay out the image until a save is asked for', async () => {
+    await trainWithAGap();
+    const view = await renderScreen();
+    await view.findByText('Machine Chest Press');
+    // One of each -- the screen's own, and no shadow copy behind it.
+    expect(view.getAllByText('Machine Chest Press')).toHaveLength(1);
+    expect(view.queryByText('ONE MORE REP')).toBeNull();
+  });
+
+  it('captures the card and files it in the gallery', async () => {
+    (CameraRoll.save as jest.Mock).mockClear();
+    await trainWithAGap();
+    const view = await renderScreen();
+    await fireEvent.press(await view.findByText('Save image'));
+
+    // The card mounts, and its layout is what triggers the capture.
+    await waitFor(() => expect(view.getByTestId('day-image')).toBeTruthy());
+    await fireEvent(view.getByTestId('day-image'), 'layout', {
+      nativeEvent: {layout: {width: 1080, height: 800}},
+    });
+
+    await waitFor(() =>
+      expect(CameraRoll.save).toHaveBeenCalledWith('/tmp/shot.png', {
+        type: 'photo',
+        album: 'One More Rep',
+      }),
+    );
   });
 });

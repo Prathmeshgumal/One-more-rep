@@ -5,6 +5,7 @@ import {WorkoutScreen} from '@/features/workout/WorkoutScreen';
 import {ExerciseSummaryScreen} from '@/features/workout/ExerciseSummaryScreen';
 import {WorkoutCompleteScreen} from '@/features/workout/WorkoutCompleteScreen';
 import {WorkoutExercisePickerScreen} from '@/features/workout/WorkoutExercisePickerScreen';
+import {ExerciseEditorScreen} from '@/features/exercises/ExerciseEditorScreen';
 import type {TodayStackParamList} from './types';
 
 const Stack = createNativeStackNavigator<TodayStackParamList>();
@@ -21,6 +22,7 @@ export function TodayStack() {
         name="WorkoutExercisePicker"
         component={WorkoutExercisePickerScreen}
       />
+      <Stack.Screen name="ExerciseEditor" component={ExerciseEditorScreen} />
     </Stack.Navigator>
   );
 }

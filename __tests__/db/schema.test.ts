@@ -17,6 +17,7 @@ describe('settings schema', () => {
     expect(names).toEqual([
       'default_increment',
       'id',
+      'theme_mode',
       'unit',
       'updated_at',
       'week_start_day',

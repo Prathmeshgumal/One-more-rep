@@ -1,20 +1,14 @@
-import React from 'react';
+import React, {useCallback, useRef, useState} from 'react';
 import {ScrollView, StyleSheet, View} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {AppText} from '@/ui/Text';
 import {Button} from '@/ui/Button';
-import {Card} from '@/ui/Card';
-import {BigNumber} from '@/ui/BigNumber';
-import {StatusChip} from '@/ui/StatusChip';
-import {ProgressBar} from '@/ui/ProgressBar';
 import {useTheme, space} from '@/theme';
-import {
-  completionPercent,
-  countByStatus,
-  sessionVolume,
-} from '@/domain/sessionProgress';
+import {SessionSummary} from './SessionSummary';
+import {DayImageCard, CARD_WIDTH} from '@/features/history/DayImageCard';
+import {useSaveDayImage} from '@/features/history/useSaveDayImage';
 import {useSettingsQuery} from '@/features/settings/useSettings';
 import type {TodayStackParamList} from '@/navigation/types';
 import {useTodaySessionQuery, useFinishWorkout} from './useSession';
@@ -38,22 +32,35 @@ export function WorkoutCompleteScreen() {
   const {data: settings} = useSettingsQuery();
   const finish = useFinishWorkout();
 
+  // Same one-shot capture as the day-detail screen: mounted only while a save
+  // is running, rasterised once its layout lands.
+  //
+  // Above the early return, not below it: this screen renders a placeholder
+  // while the session loads, and hooks declared after that guard run on some
+  // renders and not others. React caught it immediately -- "rendered more
+  // hooks than during the previous render" -- and so did every test here.
+  const shot = useRef<React.ComponentRef<typeof View>>(null);
+  const image = useSaveDayImage();
+  const [capturing, setCapturing] = useState(false);
+  const captured = useRef(false);
+
+  const onCardLaidOut = useCallback(async () => {
+    if (captured.current) {
+      return;
+    }
+    captured.current = true;
+    await image.save(shot);
+    setCapturing(false);
+  }, [image]);
+
   if (!session) {
     return <View style={[styles.root, {backgroundColor: colors.paper}]} />;
   }
 
   const unit = settings?.unit ?? 'kg';
-  const allSets = session.exercises.flatMap(e => e.sets);
-  const plannedSets = allSets.filter(s => !s.isUnplanned);
-  const doneSets = allSets.filter(s => s.status === 'completed');
-  const pendingSets = allSets.filter(s => s.status === 'pending');
-
-  const percent = completionPercent(allSets);
-  const counts = countByStatus(allSets);
-  const volume = sessionVolume(session.exercises);
-  const doneExercises = session.exercises.filter(
-    e => e.status === 'completed',
-  ).length;
+  const pendingSets = session.exercises
+    .flatMap(e => e.sets)
+    .filter(s => s.status === 'pending');
 
   const isOpen = session.status === 'in_progress';
 
@@ -71,69 +78,7 @@ export function WorkoutCompleteScreen() {
         <AppText variant="h1">{`${session.dayName} done`}</AppText>
       </View>
 
-      {percent === null ? (
-        <AppText variant="body" color="muted">
-          Nothing was planned for this session, so there is no percentage to
-          report — just what you actually did.
-        </AppText>
-      ) : (
-        <>
-          <BigNumber value={String(percent)} suffix="% of plan" />
-          <ProgressBar
-            value={doneSets.filter(s => !s.isUnplanned).length}
-            total={plannedSets.length}
-            variant="gain"
-            label="Completion"
-          />
-        </>
-      )}
-
-      <View style={styles.stats}>
-        <Card>
-          <AppText variant="eyebrow" color="muted">
-            Exercises
-          </AppText>
-          <AppText variant="inkNum">
-            {`${doneExercises} / ${session.exercises.length}`}
-          </AppText>
-        </Card>
-        <Card>
-          <AppText variant="eyebrow" color="muted">
-            Sets
-          </AppText>
-          <AppText variant="inkNum">
-            {`${doneSets.filter(s => !s.isUnplanned).length} / ${
-              plannedSets.length
-            }`}
-          </AppText>
-        </Card>
-      </View>
-
-      <Card>
-        <AppText variant="eyebrow" color="muted">
-          Against target
-        </AppText>
-        {(
-          [
-            ['achieved', counts.achieved],
-            ['exceeded', counts.exceeded],
-            ['below', counts.below],
-            ['skipped', counts.skipped],
-          ] as const
-        ).map(([status, count]) => (
-          <View key={status} style={styles.row}>
-            <StatusChip status={status} />
-            <AppText variant="inkNum">{String(count)}</AppText>
-          </View>
-        ))}
-        <View style={[styles.divider, {backgroundColor: colors.ruleSoft}]} />
-        <View style={styles.row}>
-          <AppText variant="printed" color="muted">
-            total volume
-          </AppText>
-          <AppText variant="inkNum">{`${volume} ${unit}`}</AppText>
-        </View>
-      </Card>
+      <SessionSummary session={session} unit={unit} />
 
       {isOpen && pendingSets.length > 0 ? (
         <AppText variant="small" color="short">
@@ -141,6 +86,41 @@ export function WorkoutCompleteScreen() {
             pendingSets.length === 1 ? 'set' : 'sets'
           } not recorded. Saving marks them skipped.`}
         </AppText>
+      ) : null}
+
+      {/* Offered only once the workout is saved: an image of a session still
+          being recorded would be out of date the moment it was taken. */}
+      {!isOpen ? (
+        <>
+          <Button
+            label={capturing ? 'Saving…' : 'Save image'}
+            variant="secondary"
+            disabled={capturing}
+            onPress={() => {
+              captured.current = false;
+              setCapturing(true);
+            }}
+          />
+          {image.message ? (
+            <AppText
+              variant="small"
+              color={image.status === 'failed' ? 'short' : 'muted'}>
+              {image.message}
+            </AppText>
+          ) : null}
+        </>
+      ) : null}
+
+      {capturing ? (
+        <View style={styles.offscreen} pointerEvents="none">
+          <View
+            testID="day-image"
+            ref={shot}
+            collapsable={false}
+            onLayout={onCardLaidOut}>
+            <DayImageCard session={session} unit={unit} />
+          </View>
+        </View>
       ) : null}
 
       <Button
@@ -166,12 +146,5 @@ const styles = StyleSheet.create({
     gap: space.md,
   },
   headerBlock: {gap: 2},
-  stats: {flexDirection: 'row', gap: space.sm},
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: space.sm,
-  },
-  divider: {height: 1, marginVertical: space.md},
+  offscreen: {position: 'absolute', left: -CARD_WIDTH * 2, top: 0},
 });

@@ -4,6 +4,7 @@ import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
 import {NavigationContainer} from '@react-navigation/native';
 import {sql} from 'drizzle-orm';
 import {runMigrations} from '@/db/migrate';
+import {updateSettings} from '@/repositories/settingsRepo';
 import {createPlan, editPlan, getActivePlan} from '@/repositories/planRepo';
 import {addExercises} from '@/domain/planDraft';
 import {ThemeProvider} from '@/theme';
@@ -84,6 +85,10 @@ describe('TargetEditorScreen', () => {
   });
 
   it('applies one target to every set while the toggle is on', async () => {
+    // The step used to be hard-coded 2.5 on this screen; it now comes from
+    // settings, so a test that asserts a specific weight has to say which
+    // step it means rather than inherit whatever the default happens to be.
+    await updateSettings(ctx.db, {defaultIncrement: 2.5});
     const view = await renderScreen();
     await fireEvent.press(await view.findByLabelText('Increase Reps'));
     await fireEvent.press(view.getByLabelText('Increase Weight'));

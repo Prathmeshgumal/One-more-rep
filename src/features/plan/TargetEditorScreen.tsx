@@ -10,6 +10,7 @@ import {Stepper} from '@/ui/Stepper';
 import {BackButton} from '@/ui/BackButton';
 import {useTheme, space} from '@/theme';
 import {setTargets, type DraftSet} from '@/domain/planDraft';
+import {useSettingsQuery} from '@/features/settings/useSettings';
 import {usePlanQuery, useEditPlan} from './usePlan';
 
 /** 0 is a real weight nobody lifts; the field's empty state is NULL (section 9). */
@@ -26,7 +27,14 @@ export function TargetEditorScreen() {
   };
 
   const {data: plan} = usePlanQuery();
+  const {data: settings} = useSettingsQuery();
   const edit = useEditPlan();
+
+  // Both were hard-coded here. The unit one was a real bug for anyone training
+  // in pounds: the field said kg while the ledger row beside it said kg too,
+  // and neither was what the rest of the app was using.
+  const step = settings?.defaultIncrement ?? 0.5;
+  const unit = settings?.unit ?? 'kg';
   const exercise = plan?.days[weekday]?.exercises[exerciseIndex];
 
   const [uniform, setUniform] = useState(true);
@@ -163,7 +171,7 @@ export function TargetEditorScreen() {
               <AppText variant="mono" style={styles.grow}>
                 {set.targetWeight === null
                   ? '—'
-                  : `${set.targetWeight.toFixed(1)} kg`}
+                  : `${set.targetWeight.toFixed(1)} ${unit}`}
               </AppText>
             </Pressable>
           ))}
@@ -177,9 +185,10 @@ export function TargetEditorScreen() {
         <View style={styles.pair}>
           <Stepper
             label="Weight"
-            unit="kg"
+            unit={unit}
             value={current.targetWeight ?? 0}
-            step={2.5}
+            step={step}
+            decimals={1}
             min={0}
             onChange={value => change({targetWeight: weightOrNull(value)})}
           />

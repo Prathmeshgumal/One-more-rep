@@ -11,6 +11,7 @@ import {
   getActiveSession,
   completeSet,
 } from '@/repositories/sessionRepo';
+import {updateSettings} from '@/repositories/settingsRepo';
 import {ThemeProvider} from '@/theme';
 import {DatabaseContextTestProvider} from '@/providers/DatabaseGate';
 import {WorkoutScreen} from '@/features/workout/WorkoutScreen';
@@ -110,8 +111,8 @@ describe('WorkoutScreen', () => {
   it('pre-fills the active set with the target', async () => {
     const view = await renderScreen();
     await view.findByText('Bench Press');
-    expect(view.getByLabelText('Weight').props.children).toBe('30.0');
-    expect(view.getByLabelText('Reps').props.children).toBe('10');
+    expect(view.getByLabelText('Weight').props.value).toBe('30.0');
+    expect(view.getByLabelText('Reps').props.value).toBe('10');
   });
 
   // Spec 6.2: pre-filled is not recorded. Until the set is completed the
@@ -134,14 +135,18 @@ describe('WorkoutScreen', () => {
   });
 
   it('steps the weight by the configured increment and the reps by one', async () => {
+    // Set explicitly rather than leaning on DEFAULT_SETTINGS: this test is
+    // named after the configured increment, so it should configure one. It
+    // passed by accident while the default happened to be 2.5.
+    await updateSettings(ctx.db, {defaultIncrement: 2.5});
     const view = await renderScreen();
     await view.findByText('Bench Press');
 
-    await fireEvent.press(view.getByLabelText('Increase weight'));
-    await fireEvent.press(view.getByLabelText('Increase reps'));
-    await fireEvent.press(view.getByLabelText('Increase reps'));
-    expect(view.getByLabelText('Weight').props.children).toBe('32.5');
-    expect(view.getByLabelText('Reps').props.children).toBe('12');
+    await fireEvent.press(view.getByLabelText('Increase Weight'));
+    await fireEvent.press(view.getByLabelText('Increase Reps'));
+    await fireEvent.press(view.getByLabelText('Increase Reps'));
+    expect(view.getByLabelText('Weight').props.value).toBe('32.5');
+    expect(view.getByLabelText('Reps').props.value).toBe('12');
 
     await fireEvent.press(view.getByLabelText('Complete set'));
     await waitFor(async () => {
@@ -151,14 +156,15 @@ describe('WorkoutScreen', () => {
   });
 
   it('will not step reps below one or weight below zero', async () => {
+    await updateSettings(ctx.db, {defaultIncrement: 2.5});
     const view = await renderScreen();
     await view.findByText('Bench Press');
     for (let i = 0; i < 20; i++) {
-      await fireEvent.press(view.getByLabelText('Decrease reps'));
-      await fireEvent.press(view.getByLabelText('Decrease weight'));
+      await fireEvent.press(view.getByLabelText('Decrease Reps'));
+      await fireEvent.press(view.getByLabelText('Decrease Weight'));
     }
-    expect(view.getByLabelText('Reps').props.children).toBe('1');
-    expect(view.getByLabelText('Weight').props.children).toBe('0.0');
+    expect(view.getByLabelText('Reps').props.value).toBe('1');
+    expect(view.getByLabelText('Weight').props.value).toBe('0.0');
   });
 
   // Spec 6.3: completing a set auto-advances, so the next set is already
@@ -175,7 +181,7 @@ describe('WorkoutScreen', () => {
 
   it('shows a recorded set with its verdict', async () => {
     const view = await renderScreen();
-    await fireEvent.press(await view.findByLabelText('Increase reps'));
+    await fireEvent.press(await view.findByLabelText('Increase Reps'));
     await fireEvent.press(view.getByLabelText('Complete set'));
 
     await waitFor(() => {
@@ -213,11 +219,38 @@ describe('WorkoutScreen', () => {
     });
   });
 
-  it('moves to the next exercise on request', async () => {
+  // U1: every exercise is on screen at once, so "move to the next one" is no
+  // longer a button — it is scrolling, and opening the card you land on.
+  it('shows every exercise in the session at once', async () => {
     const view = await renderScreen();
-    await fireEvent.press(await view.findByText(/Next — Cable Fly/));
+    expect(await view.findByText('Bench Press')).toBeTruthy();
+    expect(view.getByText('Cable Fly')).toBeTruthy();
+  });
+
+  it('opens a different exercise when its header is tapped', async () => {
+    const view = await renderScreen();
+    await fireEvent.press(await view.findByLabelText('Cable Fly'));
+
     await waitFor(() => {
-      expect(view.getByText('Cable Fly')).toBeTruthy();
+      expect(
+        view.getByLabelText('Cable Fly').props.accessibilityState.expanded,
+      ).toBe(true);
+    });
+    // U2: opening one closes the other, so there is never a second set that
+    // also looks active.
+    expect(
+      view.getByLabelText('Bench Press').props.accessibilityState.expanded,
+    ).toBe(false);
+    expect(view.getAllByLabelText('Complete set')).toHaveLength(1);
+  });
+
+  it('closes the open card when its own header is tapped', async () => {
+    const view = await renderScreen();
+    await fireEvent.press(await view.findByLabelText('Bench Press'));
+    await waitFor(() => {
+      expect(
+        view.getByLabelText('Bench Press').props.accessibilityState.expanded,
+      ).toBe(false);
     });
   });
 
@@ -245,15 +278,128 @@ describe('WorkoutScreen', () => {
     expect(view.getByText(/27.5×10/)).toBeTruthy();
   });
 
-  it('opens the exercise summary when an exercise is finished', async () => {
+  // Spec 6.3 still auto-advances, but no longer by pushing a screen over the
+  // workout. Finishing an exercise opens the next one that still has work.
+  // Recorded as a design departure in docs/deferred.md.
+  it('opens the next exercise when one is finished', async () => {
     const view = await renderScreen();
     for (let i = 0; i < 3; i++) {
       await fireEvent.press(await view.findByLabelText('Complete set'));
     }
     await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith('ExerciseSummary', {
-        exerciseIndex: 0,
-      });
+      expect(
+        view.getByLabelText('Cable Fly').props.accessibilityState.expanded,
+      ).toBe(true);
+    });
+    expect(mockNavigate).not.toHaveBeenCalledWith(
+      'ExerciseSummary',
+      expect.anything(),
+    );
+  });
+
+  it('does not move the open card out from under a recorded set', async () => {
+    // The bug found on the device in Phase 3. It must not come back through
+    // the rewrite: two of three sets left means you are still on this exercise.
+    const view = await renderScreen();
+    await fireEvent.press(await view.findByLabelText('Complete set'));
+
+    await waitFor(async () => {
+      expect((await sets())[0]!.status).toBe('completed');
+    });
+    expect(
+      view.getByLabelText('Bench Press').props.accessibilityState.expanded,
+    ).toBe(true);
+    expect(view.getAllByLabelText('Complete set')).toHaveLength(1);
+  });
+
+  // U10, reported from the device: a set was skipped by accident and there was
+  // no way back to it. completeSet already overwrites and section 14 already
+  // says the actual is editable -- the screen simply offered no way in.
+  it('reopens a skipped set when it is tapped', async () => {
+    const view = await renderScreen();
+    await fireEvent.press(await view.findByText('Skip set'));
+    await waitFor(async () => expect((await sets())[0]!.status).toBe('skipped'));
+
+    await fireEvent.press(view.getByLabelText('Edit set 1'));
+    await waitFor(() =>
+      expect(view.getByLabelText('Complete set')).toBeTruthy(),
+    );
+    await fireEvent.press(view.getByLabelText('Complete set'));
+
+    await waitFor(async () =>
+      expect((await sets())[0]!.status).toBe('completed'),
+    );
+  });
+
+  it('reopens a recorded set so a wrong number can be corrected', async () => {
+    const view = await renderScreen();
+    await fireEvent.press(await view.findByLabelText('Complete set'));
+    await waitFor(async () =>
+      expect((await sets())[0]!.actualWeight).toBe(30),
+    );
+
+    await fireEvent.press(view.getByLabelText('Edit set 1'));
+    await waitFor(() => expect(view.getByLabelText('Weight')).toBeTruthy());
+    // Reopening loads what was recorded, not the target -- you are correcting
+    // a number, so the number you typed is the better starting point.
+    expect(view.getByLabelText('Weight').props.value).toBe('30.0');
+
+    await fireEvent.changeText(view.getByLabelText('Weight'), '55');
+    await fireEvent.press(view.getByLabelText('Complete set'));
+
+    await waitFor(async () => expect((await sets())[0]!.actualWeight).toBe(55));
+    expect((await sets())[0]!.status).toBe('completed');
+  });
+
+  it('goes back to the first pending set once the correction is saved', async () => {
+    const view = await renderScreen();
+    await fireEvent.press(await view.findByLabelText('Complete set'));
+    await waitFor(async () => expect((await sets())[0]!.status).toBe('completed'));
+
+    await fireEvent.press(view.getByLabelText('Edit set 1'));
+    await waitFor(() => expect(view.queryByLabelText('Edit set 1')).toBeNull());
+    await fireEvent.press(view.getByLabelText('Complete set'));
+
+    // Set 2 is active again, not set 1 forever.
+    await waitFor(() =>
+      expect(view.getByLabelText('Edit set 1')).toBeTruthy(),
+    );
+    expect(view.getAllByLabelText('Complete set')).toHaveLength(1);
+  });
+
+  it('offers no edit on a set that has not happened yet', async () => {
+    const view = await renderScreen();
+    await view.findByText('Bench Press');
+    // Set 1 is active, sets 2 and 3 are pending -- none of them is editable
+    // by tapping, because there is nothing yet to correct.
+    expect(view.queryByLabelText('Edit set 2')).toBeNull();
+    expect(view.queryByLabelText('Edit set 3')).toBeNull();
+  });
+
+  // U11, also from the device: skipping understated an exercise that was
+  // mostly done.
+  it('offers to finish rather than skip once something is recorded', async () => {
+    const view = await renderScreen();
+    expect(await view.findByText('Skip this exercise')).toBeTruthy();
+
+    await fireEvent.press(view.getByLabelText('Complete set'));
+
+    await waitFor(() =>
+      expect(view.getByText('Finish this exercise')).toBeTruthy(),
+    );
+    expect(view.queryByText('Skip this exercise')).toBeNull();
+  });
+
+  it('finishing a part-done exercise records it as completed', async () => {
+    const view = await renderScreen();
+    await fireEvent.press(await view.findByLabelText('Complete set'));
+    await waitFor(() => expect(view.getByText('Finish this exercise')).toBeTruthy());
+
+    await fireEvent.press(view.getByText('Finish this exercise'));
+
+    await waitFor(async () => {
+      const session = (await getActiveSession(ctx.db))!;
+      expect(session.exercises[0]!.status).toBe('completed');
     });
   });
 
@@ -275,8 +421,17 @@ describe('WorkoutScreen', () => {
     }
 
     const view = await renderScreen();
-    expect(await view.findByText('Cable Fly')).toBeTruthy();
-    expect(view.queryByText('Bench Press')).toBeNull();
+    await view.findByText('Cable Fly');
+    await waitFor(() => {
+      expect(
+        view.getByLabelText('Cable Fly').props.accessibilityState.expanded,
+      ).toBe(true);
+    });
+    // The finished exercise has not vanished — it is on screen, collapsed,
+    // still showing what it asked for and how it went.
+    expect(
+      view.getByLabelText('Bench Press').props.accessibilityState.expanded,
+    ).toBe(false);
   });
 
   // Coming back from an exercise summary does not change the session, so an
@@ -285,27 +440,77 @@ describe('WorkoutScreen', () => {
     const view = await renderScreen();
     await view.findByText('Bench Press');
 
-    // Finish the first exercise through the UI, so the query invalidates the
-    // way it does in the app.
-    for (let i = 0; i < 3; i += 1) {
-      await fireEvent.press(await view.findByLabelText('Complete set'));
-    }
+    // Open the second exercise by hand, then come back to it having done
+    // nothing — focus must realign to where the work actually is.
+    await fireEvent.press(view.getByLabelText('Cable Fly'));
     await waitFor(() =>
-      expect(mockNavigate).toHaveBeenCalledWith('ExerciseSummary', {
-        exerciseIndex: 0,
-      }),
+      expect(
+        view.getByLabelText('Cable Fly').props.accessibilityState.expanded,
+      ).toBe(true),
     );
 
-    // Still on the finished exercise: recording sets must not move the screen
-    // out from under someone who is still working on it.
-    expect(view.getByText('Bench Press')).toBeTruthy();
-
-    // Now the summary hands focus back.
     await act(async () => {
       for (const focus of mockFocus) {
         focus();
       }
     });
-    await waitFor(() => expect(view.getByText('Cable Fly')).toBeTruthy());
+
+    // Bench Press still has all three sets pending, so that is where focus
+    // puts you — not on whatever happened to be open when you left.
+    await waitFor(() =>
+      expect(
+        view.getByLabelText('Bench Press').props.accessibilityState.expanded,
+      ).toBe(true),
+    );
+  });
+
+  // Deliberately thin: ExerciseActions owns which rows are offered and why,
+  // and sessionRepo owns what each one does. These only prove the screen
+  // actually joins the two together.
+  it('opens the menu for the exercise whose control was pressed', async () => {
+    const view = await renderScreen();
+    await fireEvent.press(await view.findByLabelText('More for Bench Press'));
+    await waitFor(() =>
+      expect(view.getByLabelText('Swap this exercise')).toBeTruthy(),
+    );
+  });
+
+  it('reorders the session from the menu', async () => {
+    const view = await renderScreen();
+    await fireEvent.press(await view.findByLabelText('More for Bench Press'));
+    await fireEvent.press(view.getByLabelText('Move down'));
+
+    await waitFor(async () => {
+      const session = (await getActiveSession(ctx.db))!;
+      expect(session.exercises.map(e => e.name)).toEqual([
+        'Cable Fly',
+        'Bench Press',
+      ]);
+    });
+  });
+
+  it('writes a note to the database when the field is left', async () => {
+    const view = await renderScreen();
+    const field = await view.findByLabelText('Note for Bench Press');
+    await fireEvent.changeText(field, 'Shoulder felt off.');
+    await fireEvent(field, 'blur');
+
+    await waitFor(async () => {
+      const session = (await getActiveSession(ctx.db))!;
+      expect(session.exercises[0]!.notes).toBe('Shoulder felt off.');
+    });
+  });
+
+  it('sends a swap to the picker rather than doing it blind', async () => {
+    const view = await renderScreen();
+    await fireEvent.press(await view.findByLabelText('More for Bench Press'));
+    await fireEvent.press(view.getByLabelText('Swap this exercise'));
+
+    await waitFor(() =>
+      expect(mockNavigate).toHaveBeenCalledWith('WorkoutExercisePicker', {
+        mode: 'swap',
+        performedExerciseId: expect.any(String),
+      }),
+    );
   });
 });

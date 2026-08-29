@@ -13,8 +13,16 @@ export const settings = sqliteTable('settings', {
   unit: text('unit', {enum: ['kg', 'lb']}).notNull(),
   weekStartDay: integer('week_start_day').notNull(),
   defaultIncrement: real('default_increment').notNull(),
+  /**
+   * 'system' follows the OS. The two explicit values override it, which is the
+   * whole point — a phone left in light mode is not a reason to train in it.
+   */
+  themeMode: text('theme_mode', {enum: ['system', 'light', 'dark']})
+    .notNull()
+    .default('system'),
   updatedAt: integer('updated_at').notNull(),
 });
 
 export type SettingsRow = typeof settings.$inferSelect;
 export type WeightUnit = SettingsRow['unit'];
+export type ThemeMode = SettingsRow['themeMode'];

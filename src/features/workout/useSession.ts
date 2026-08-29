@@ -7,6 +7,7 @@ import {
   completeSet,
   skipSet,
   skipExercise,
+  finishExercise,
   addSet,
   addExercise,
   getPreviousPerformance,
@@ -67,7 +68,7 @@ export function usePreviousPerformanceQuery(exerciseId: string) {
  * is its own committed transaction (spec 6.4), and naming them separately is
  * what keeps that visible at the call site.
  */
-function useSessionMutation<TArgs>(
+export function useSessionMutation<TArgs>(
   run: (db: ReturnType<typeof useDatabase>, args: TArgs) => Promise<unknown>,
 ) {
   const db = useDatabase();
@@ -107,6 +108,10 @@ export const useSkipSet = () =>
 
 export const useSkipExercise = () =>
   useSessionMutation<string>((db, id) => skipExercise(db, id));
+
+/** U11: closes an exercise off, keeping whatever was actually done. */
+export const useFinishExercise = () =>
+  useSessionMutation<string>((db, id) => finishExercise(db, id));
 
 export const useAddSet = () =>
   useSessionMutation<string>((db, id) => addSet(db, id));

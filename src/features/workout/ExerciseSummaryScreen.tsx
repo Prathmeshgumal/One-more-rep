@@ -97,6 +97,16 @@ export function ExerciseSummaryScreen() {
       <AppText variant="printed" color="muted">
         {summaryLine(aggregate)}
       </AppText>
+      {exercise.substitutedFromName ? (
+        <AppText variant="printed" color="plate">
+          {`swapped from ${exercise.substitutedFromName}`}
+        </AppText>
+      ) : null}
+      {exercise.notes ? (
+        <AppText testID="exercise-note" variant="printed" color="muted">
+          {exercise.notes}
+        </AppText>
+      ) : null}
 
       <LedgerTable rows={rows} />
 

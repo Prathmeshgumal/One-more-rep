@@ -9,14 +9,48 @@ import {Card} from '@/ui/Card';
 import {ProgressBar} from '@/ui/ProgressBar';
 import {useTheme, space, radius} from '@/theme';
 import {WEEKDAY_NAMES, weekdayIndex} from '@/domain/weekday';
-import type {PlanDayView} from '@/repositories/planRepo';
-import type {TodayStackParamList} from '@/navigation/types';
+import {targetLine} from '@/domain/format';
+import {compareSet, describeComparison} from '@/domain/setComparison';
+import {LedgerTable, type LedgerRow} from '@/ui/LedgerTable';
+import {SessionSummary} from './SessionSummary';
+import type {SessionExercise} from '@/repositories/sessionRepo';
+import {useSettingsQuery} from '@/features/settings/useSettings';
+import type {
+  TodayStackParamList,
+  RootTabParamList,
+} from '@/navigation/types';
+import type {BottomTabNavigationProp} from '@react-navigation/bottom-tabs';
 import {
   useTodaySessionQuery,
   useTodayPlanQuery,
   useStartWorkout,
   useFinishWorkout,
 } from './useSession';
+
+/** "10 × 30.0", or an em dash where nothing was recorded — as design 14. */
+const pair = (reps: number | null, weight: number | null): string => {
+  if (reps === null) {
+    return '—';
+  }
+  return weight === null ? `${reps}` : `${reps} × ${weight.toFixed(1)}`;
+};
+
+/** The same rows the day-detail ledger draws, from a live session. */
+function ledgerRows(exercise: SessionExercise, unit: string): LedgerRow[] {
+  return exercise.sets.map(set => {
+    const comparison = compareSet(set);
+    return {
+      setNumber: set.setNumber,
+      target: set.isUnplanned ? '—' : pair(set.targetReps, set.targetWeight),
+      actual: pair(set.actualReps, set.actualWeight),
+      result:
+        comparison.status === 'skipped'
+          ? 'Skipped'
+          : describeComparison(comparison, unit),
+      status: comparison.status,
+    };
+  });
+}
 
 const plural = (n: number, one: string, many: string) =>
   `${n} ${n === 1 ? one : many}`;
@@ -28,26 +62,6 @@ const longDate = (ms: number) =>
     month: 'long',
   });
 
-/** "3 × 10 · 30.0 kg", or "3 sets · varied" when the sets differ. */
-function targetLine(exercise: PlanDayView['exercises'][number]): string {
-  const [first, ...rest] = exercise.sets;
-  if (!first) {
-    return 'No sets';
-  }
-  const uniform = rest.every(
-    s =>
-      s.targetReps === first.targetReps &&
-      s.targetWeight === first.targetWeight,
-  );
-  if (!uniform) {
-    return `${exercise.sets.length} sets · varied`;
-  }
-  const base = `${exercise.sets.length} × ${first.targetReps}`;
-  return first.targetWeight === null
-    ? base
-    : `${base} · ${first.targetWeight.toFixed(1)} kg`;
-}
-
 export function TodayScreen() {
   const {colors} = useTheme();
   const insets = useSafeAreaInsets();
@@ -56,6 +70,8 @@ export function TodayScreen() {
 
   const {data: session, isPending: sessionPending} = useTodaySessionQuery();
   const {data: plan, isPending: planPending} = useTodayPlanQuery();
+  const {data: settings} = useSettingsQuery();
+  const unit = settings?.unit ?? 'kg';
   const start = useStartWorkout();
   const finish = useFinishWorkout();
 
@@ -134,11 +150,43 @@ export function TodayScreen() {
             </Card>
           </>
         ) : null}
+
+        {/* The shape of the day, before deciding whether to go back into it. */}
+        <AppText variant="eyebrow" color="muted">
+          The rest of it
+        </AppText>
+        <View style={styles.stack}>
+          {session.exercises.map(exercise => {
+            const recorded = exercise.sets.filter(
+              s => s.status === 'completed',
+            ).length;
+            return (
+              <Card key={exercise.id}>
+                <View style={styles.line}>
+                  <AppText
+                    variant="bodyStrong"
+                    color={exercise.status === 'pending' ? 'ink' : 'muted'}
+                    style={styles.grow}>
+                    {exercise.name}
+                  </AppText>
+                  <AppText variant="mono" color="ink2">
+                    {`${recorded} / ${exercise.sets.length}`}
+                  </AppText>
+                </View>
+              </Card>
+            );
+          })}
+        </View>
       </>,
     );
   }
 
   // ---- Today is already done ---------------------------------------------
+  //
+  // Complaint 10: this used to be two numbers and a "See the summary" button.
+  // The summary was one tap away on a screen with nothing else on it, which is
+  // a layer for its own sake — so it is simply here, with the set-by-set
+  // ledger under it and the full day a button away rather than the summary.
   if (session) {
     const sets = session.exercises.flatMap(e => e.sets);
     const done = sets.filter(s => s.status === 'completed').length;
@@ -153,16 +201,34 @@ export function TodayScreen() {
             {`${done} of ${sets.length} sets recorded`}
           </AppText>
         </View>
-        <ProgressBar
-          value={done}
-          total={sets.length}
-          variant="gain"
-          label="Workout progress"
-        />
+
+        <SessionSummary session={session} unit={unit} />
+
+        <AppText variant="eyebrow" color="muted">
+          Every set
+        </AppText>
+        {session.exercises.map(exercise => (
+          <View key={exercise.id} style={styles.block}>
+            <AppText variant="printed" color="muted">
+              {exercise.name}
+            </AppText>
+            <LedgerTable rows={ledgerRows(exercise, unit)} />
+          </View>
+        ))}
+
         <Button
-          label="See the summary"
+          label="All exercises"
           variant="secondary"
-          onPress={() => navigation.navigate('WorkoutComplete')}
+          onPress={() =>
+            // The full day lives on the History tab, so this crosses out of
+            // the Today stack rather than duplicating that screen here.
+            navigation
+              .getParent<BottomTabNavigationProp<RootTabParamList>>()
+              ?.navigate('History', {
+                screen: 'DayDetail',
+                params: {date: session.date},
+              })
+          }
         />
       </>,
     );
@@ -269,7 +335,7 @@ export function TodayScreen() {
             <AppText variant="bodyStrong">{exercise.name}</AppText>
             {/* Printed type, because nothing has happened yet. */}
             <AppText variant="printed" color="muted">
-              {`target ${targetLine(exercise)}`}
+              {`target ${targetLine(exercise.sets, unit)}`}
             </AppText>
           </Card>
         ))}
@@ -296,6 +362,9 @@ const styles = StyleSheet.create({
     gap: space.md,
   },
   headerBlock: {gap: 2, marginBottom: space.sm},
+  block: {gap: space.sm},
+  line: {flexDirection: 'row', alignItems: 'center', gap: space.md},
+  grow: {flex: 1},
   stack: {gap: space.sm, marginBottom: space.sm},
   banner: {borderRadius: radius.md, padding: space.lg, gap: space.sm},
   bannerRow: {flexDirection: 'row', alignItems: 'baseline', gap: space.sm},

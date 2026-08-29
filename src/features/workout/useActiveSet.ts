@@ -14,8 +14,13 @@ type ActiveSetState = {
   reps: number;
   /** Called when the active set changes; resets the on-screen numbers. */
   load: (args: {setId: string; weight: number | null; reps: number}) => void;
-  adjustWeight: (delta: number) => void;
-  adjustReps: (delta: number) => void;
+  /**
+   * Absolute, not a delta. The field below these numbers can be typed into as
+   * well as stepped (U5), and a typed 62.5 is not expressible as a delta from
+   * whatever happened to be there before.
+   */
+  setWeight: (value: number) => void;
+  setReps: (value: number) => void;
   reset: () => void;
 };
 
@@ -27,13 +32,9 @@ export const useActiveSet = create<ActiveSetState>(set => ({
   weight: null,
   reps: 10,
   load: ({setId, weight, reps}) => set({setId, weight, reps}),
-  adjustWeight: delta =>
-    set(state => ({
-      // A weight of zero is meaningful here — it is what a bodyweight set
-      // shows — so this floors at zero rather than at the increment.
-      weight: Math.max(0, round((state.weight ?? 0) + delta)),
-    })),
-  adjustReps: delta =>
-    set(state => ({reps: Math.max(1, state.reps + delta)})),
+  // A weight of zero is meaningful here — it is what a bodyweight set shows —
+  // so this floors at zero rather than at the increment.
+  setWeight: value => set({weight: Math.max(0, round(value))}),
+  setReps: value => set({reps: Math.max(1, Math.round(value))}),
   reset: () => set({setId: null, weight: null, reps: 10}),
 }));

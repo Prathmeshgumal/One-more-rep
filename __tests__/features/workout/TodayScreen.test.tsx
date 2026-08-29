@@ -18,9 +18,14 @@ import {TodayScreen} from '@/features/workout/TodayScreen';
 import {createTestDb} from '../../helpers/testDb';
 
 const mockNavigate = jest.fn();
+const mockParentNavigate = jest.fn();
 jest.mock('@react-navigation/native', () => ({
   ...jest.requireActual('@react-navigation/native'),
-  useNavigation: () => ({navigate: mockNavigate, goBack: jest.fn()}),
+  useNavigation: () => ({
+    navigate: mockNavigate,
+    goBack: jest.fn(),
+    getParent: () => ({navigate: mockParentNavigate}),
+  }),
   useFocusEffect: (cb: () => void) => {
     const React_ = require('react');
     React_.useEffect(cb, []);
@@ -63,6 +68,7 @@ describe('TodayScreen', () => {
       defaultOptions: {queries: {retry: false, gcTime: 0}},
     });
     mockNavigate.mockClear();
+    mockParentNavigate.mockClear();
   });
 
   afterEach(() => {
@@ -161,5 +167,51 @@ describe('TodayScreen', () => {
     const view = await renderScreen();
     expect(await view.findByText(/Push Day done/i)).toBeTruthy();
     expect(view.queryByText('Start workout')).toBeNull();
+  });
+
+  // Complaint 10: the summary was one tap away on a screen with nothing else
+  // on it, which is a layer for its own sake.
+  describe('once the day is done', () => {
+    const finishedDay = async () => {
+      await planToday();
+      const session = await startWorkout(ctx.db);
+      const sets = session.exercises[0]!.sets;
+      await completeSet(ctx.db, sets[0]!.id, {actualReps: 10, actualWeight: 30});
+      await completeSet(ctx.db, sets[1]!.id, {actualReps: 12, actualWeight: 30});
+      await finishWorkout(ctx.db, session.id);
+    };
+
+    it('shows the summary without a button being pressed', async () => {
+      await finishedDay();
+      const view = await renderScreen();
+      await view.findByText(/Push Day done/i);
+
+      expect(view.getByText('% of plan')).toBeTruthy();
+      expect(view.getByText('Against target')).toBeTruthy();
+      expect(view.getByText('total volume')).toBeTruthy();
+      expect(view.queryByText('See the summary')).toBeNull();
+    });
+
+    it('lists every exercise with its sets', async () => {
+      await finishedDay();
+      const view = await renderScreen();
+      await view.findByText(/Push Day done/i);
+
+      expect(view.getByText('Bench Press')).toBeTruthy();
+      // The recorded pair, set by set, not just a count.
+      expect(view.getByText('10 × 30.0')).toBeTruthy();
+      expect(view.getByText('12 × 30.0')).toBeTruthy();
+    });
+
+    it('opens the full day on the History tab', async () => {
+      await finishedDay();
+      const view = await renderScreen();
+      await fireEvent.press(await view.findByText('All exercises'));
+
+      expect(mockParentNavigate).toHaveBeenCalledWith('History', {
+        screen: 'DayDetail',
+        params: {date: expect.any(Number)},
+      });
+    });
   });
 });

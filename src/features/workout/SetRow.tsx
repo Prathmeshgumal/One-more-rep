@@ -4,6 +4,7 @@ import Svg, {Path} from 'react-native-svg';
 import {AppText} from '@/ui/Text';
 import {StatusChip} from '@/ui/StatusChip';
 import {useTheme, space, radius} from '@/theme';
+import {NumberField} from '@/ui/NumberField';
 import {compareSet, describeComparison} from '@/domain/setComparison';
 
 /**
@@ -11,9 +12,20 @@ import {compareSet, describeComparison} from '@/domain/setComparison';
  *
  * The target is printed across the head strip; the actual is written large
  * beneath it. A recorded row shrinks and carries its verdict; the active row
- * gets the steppers and the check; anything further down is dimmed, because it
- * has not happened yet and should not compete for attention.
+ * gets the fields and the check.
+ *
+ * A set further down used to have the whole row drawn at 55% opacity, on the
+ * reasoning that it had not happened yet and should not compete for attention.
+ * On a phone at arm's length that read as absent, and it is the whole of
+ * complaint 6: "I didn't see the weight and reps target for the next sets."
+ * The head strip now keeps full contrast — the target is what you are working
+ * towards, and you need it *before* you lift, not after — and only the empty
+ * actual is drawn faint, which is honest, because there is nothing there yet.
  */
+/** A space, not an empty string: it holds the line's height so the row keeps
+ *  its shape when there is no number to print. */
+const BLANK = ' ';
+
 export function SetRow({
   setNumber,
   targetReps,
@@ -25,9 +37,12 @@ export function SetRow({
   isActive,
   unit,
   increment,
-  onAdjustWeight,
-  onAdjustReps,
+  weightApplicable = true,
+  fallbackWeight,
+  onSetWeight,
+  onSetReps,
   onComplete,
+  onEdit,
 }: {
   setNumber: number;
   targetReps: number | null;
@@ -39,9 +54,23 @@ export function SetRow({
   isActive: boolean;
   unit: string;
   increment: number;
-  onAdjustWeight?: (delta: number) => void;
-  onAdjustReps?: (delta: number) => void;
+  /** A bodyweight movement gets no weight field at all, not a zero in one. */
+  weightApplicable?: boolean;
+  /**
+   * What to suggest when this set has no target weight of its own — the last
+   * weight actually lifted on this exercise today. Same rule as the active
+   * set's pre-fill (§35), so the ghost and the pre-fill never disagree.
+   */
+  fallbackWeight?: number | null;
+  onSetWeight?: (value: number) => void;
+  onSetReps?: (value: number) => void;
   onComplete?: () => void;
+  /**
+   * U10. Offered only on a set that has already been decided — completed or
+   * skipped. A pending set is either already the active one or is reached by
+   * finishing the sets before it, so there is nothing there to correct yet.
+   */
+  onEdit?: () => void;
 }) {
   const {colors} = useTheme();
 
@@ -62,13 +91,43 @@ export function SetRow({
 
   const done = status !== 'pending';
 
+  /**
+   * A set that has not happened yet shows its **target**, greyed, rather than
+   * an em dash.
+   *
+   * The dash was accurate — nothing has been lifted — but it read as broken
+   * rather than as empty, and it wasted the one place on the row where the
+   * number you are about to aim for could be doing some work.
+   *
+   * A weight-bearing exercise planned without a target weight has nothing to
+   * ghost, so it falls back to the last weight actually lifted on it today.
+   * When even that is missing the slot is left blank rather than dashed: the
+   * KG label already says what the space is for, and an em dash in the
+   * number's place reads as broken rather than as empty.
+   */
+  const ghosting = !isActive;
+  const shownWeight =
+    actualWeight ?? (ghosting ? (targetWeight ?? fallbackWeight ?? null) : null);
+  const shownReps = actualReps ?? (ghosting ? targetReps : null);
+
+  const editable = done && onEdit !== undefined;
+
+  const Row = editable ? Pressable : View;
+
   return (
-    <View
+    <Row
+      {...(editable
+        ? {
+            accessibilityRole: 'button' as const,
+            accessibilityLabel: `Edit set ${setNumber}`,
+            accessibilityHint: 'Reopens this set so it can be corrected',
+            onPress: onEdit,
+          }
+        : {})}
       style={[
         styles.row,
         {borderColor: isActive ? colors.plate : colors.ruleSoft},
         {backgroundColor: colors.surface},
-        !done && !isActive && styles.dim,
       ]}>
       <View
         style={[
@@ -87,48 +146,63 @@ export function SetRow({
       </View>
 
       <View style={styles.body}>
-        <View style={styles.field}>
-          <AppText
-            accessibilityLabel={isActive ? 'Weight' : undefined}
-            variant={isActive ? 'display' : 'inkNum'}
-            color={done || isActive ? 'ink' : 'faint'}>
-            {(isActive ? actualWeight : actualWeight) === null
-              ? '—'
-              : (actualWeight ?? 0).toFixed(1)}
-          </AppText>
-          <AppText variant="printed" color="muted">
-            {unit}
-          </AppText>
-          {isActive && onAdjustWeight ? (
-            <Stepper
-              onDown={() => onAdjustWeight(-increment)}
-              onUp={() => onAdjustWeight(increment)}
-              label="weight"
-            />
-          ) : null}
-        </View>
+        {weightApplicable ? (
+          <View style={styles.field}>
+            {isActive && onSetWeight ? (
+              <NumberField
+                label="Weight"
+                size="display"
+                value={actualWeight}
+                step={increment}
+                min={0}
+                decimals={1}
+                unit={unit}
+                onChange={onSetWeight}
+              />
+            ) : (
+              <>
+                <AppText
+                  variant="inkNum"
+                  color={actualWeight === null ? 'faint' : 'ink'}>
+                  {shownWeight === null ? BLANK : shownWeight.toFixed(1)}
+                </AppText>
+                <AppText variant="printed" color="muted">
+                  {unit}
+                </AppText>
+              </>
+            )}
+          </View>
+        ) : null}
 
-        <AppText variant="printed" color="faint">
-          ×
-        </AppText>
+        {weightApplicable ? (
+          <AppText variant="printed" color="faint">
+            ×
+          </AppText>
+        ) : null}
 
         <View style={styles.field}>
-          <AppText
-            accessibilityLabel={isActive ? 'Reps' : undefined}
-            variant={isActive ? 'display' : 'inkNum'}
-            color={done || isActive ? 'ink' : 'faint'}>
-            {actualReps === null ? '—' : String(actualReps)}
-          </AppText>
-          <AppText variant="printed" color="muted">
-            reps
-          </AppText>
-          {isActive && onAdjustReps ? (
-            <Stepper
-              onDown={() => onAdjustReps(-1)}
-              onUp={() => onAdjustReps(1)}
-              label="reps"
+          {isActive && onSetReps ? (
+            <NumberField
+              label="Reps"
+              size="display"
+              value={actualReps}
+              step={1}
+              min={1}
+              unit="reps"
+              onChange={onSetReps}
             />
-          ) : null}
+          ) : (
+            <>
+              <AppText
+                variant="inkNum"
+                color={actualReps === null ? 'faint' : 'ink'}>
+                {shownReps === null ? BLANK : String(shownReps)}
+              </AppText>
+              <AppText variant="printed" color="muted">
+                reps
+              </AppText>
+            </>
+          )}
         </View>
 
         {isActive && onComplete ? (
@@ -160,42 +234,7 @@ export function SetRow({
           />
         ) : null}
       </View>
-    </View>
-  );
-}
-
-/** The design's −/+ shoulders. Big enough to hit with a chalked-up thumb. */
-function Stepper({
-  onDown,
-  onUp,
-  label,
-}: {
-  onDown: () => void;
-  onUp: () => void;
-  label: string;
-}) {
-  const {colors} = useTheme();
-  return (
-    <View style={styles.stepper}>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={`Decrease ${label}`}
-        onPress={onDown}
-        style={[styles.shoulder, {borderColor: colors.rule}]}>
-        <AppText variant="bodyStrong" color="ink2">
-          −
-        </AppText>
-      </Pressable>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={`Increase ${label}`}
-        onPress={onUp}
-        style={[styles.shoulder, {borderColor: colors.rule}]}>
-        <AppText variant="bodyStrong" color="ink2">
-          +
-        </AppText>
-      </Pressable>
-    </View>
+    </Row>
   );
 }
 
@@ -206,7 +245,6 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     marginBottom: space.sm,
   },
-  dim: {opacity: 0.55},
   head: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -222,13 +260,6 @@ const styles = StyleSheet.create({
     padding: space.md,
   },
   field: {flex: 1, alignItems: 'center', gap: 2},
-  stepper: {flexDirection: 'row', gap: space.sm, marginTop: space.sm},
-  shoulder: {
-    borderWidth: 1,
-    borderRadius: radius.sm,
-    paddingVertical: space.xs,
-    paddingHorizontal: space.md,
-  },
   check: {
     width: 56,
     height: 56,

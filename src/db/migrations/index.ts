@@ -4,6 +4,8 @@ import * as m2 from './0001_safe_darkstar';
 import * as m3 from './0002_fantastic_hellcat';
 import * as m4 from './0003_prune_plan_orphans';
 import * as m5 from './0004_workout_sessions';
+import * as m6 from './0005_futuristic_malcolm_colcord';
+import * as m7 from './0006_neat_demogoblin';
 
 export type Migration = {
   readonly version: number;
@@ -17,4 +19,6 @@ export const migrations: readonly Migration[] = [
   m3,
   m4,
   m5,
+  m6,
+  m7,
 ];
