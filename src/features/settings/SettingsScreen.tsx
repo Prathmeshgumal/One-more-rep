@@ -4,6 +4,7 @@ import {Screen} from '@/ui/Screen';
 import {AppText} from '@/ui/Text';
 import {useTheme, useThemeMode, space, radius} from '@/theme';
 import type {ThemeMode, WeightUnit} from '@/db/schema';
+import {APP_VERSION} from '@/constants';
 import {useSettingsQuery, useUpdateSettings} from './useSettings';
 
 const THEMES: ReadonlyArray<{value: ThemeMode; label: string; hint: string}> = [
@@ -139,12 +140,18 @@ export function SettingsScreen() {
         The − and + buttons move weight by this much. You can always tap a
         number and type it instead.
       </AppText>
+
+      {/* So a bug report can name the build it came from. */}
+      <AppText variant="monoSmall" color="faint" style={styles.version}>
+        {`Version ${APP_VERSION}`}
+      </AppText>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   row: {flexDirection: 'row', gap: space.md},
+  version: {marginTop: space.xl},
   option: {
     flex: 1,
     borderWidth: 1,

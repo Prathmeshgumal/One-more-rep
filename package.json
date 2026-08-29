@@ -1,6 +1,6 @@
 {
   "name": "OneMoreRep",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "android": "set NoDefaultCurrentDirectoryInExePath=&& react-native run-android",
