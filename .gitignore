@@ -59,3 +59,6 @@ yarn-error.log*
 android/app/src/main/assets/index.android.bundle
 android/app/src/main/res/drawable-*/node_modules_*
 android/app/src/main/res/raw/keep.xml
+
+# Backups of the device database. Somebody real trains in these.
+backups/

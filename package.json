@@ -13,6 +13,9 @@
     "apk": "cd android && gradlew.bat assembleRelease",
     "fonts": "python scripts/build-fonts.py",
     "db:generate": "drizzle-kit generate && node scripts/build-migrations.mjs",
+    "db:backup": "node scripts/db-backup.mjs pull",
+    "db:backups": "node scripts/db-backup.mjs list",
+    "db:restore": "node scripts/db-backup.mjs restore",
     "seed:fetch": "node scripts/fetch-exercise-source.mjs",
     "seed:build": "node scripts/build-exercise-seed.mjs",
     "postinstall": "patch-package"

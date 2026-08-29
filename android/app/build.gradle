@@ -108,7 +108,21 @@ android {
     }
     buildTypes {
         debug {
-            signingConfig signingConfigs.debug
+            // Signed with the *release* key when one is configured.
+            //
+            // Android refuses to install a build whose signature differs from
+            // the installed one; the only way past it is an uninstall, and an
+            // uninstall takes the database with it. With the app in real use,
+            // a debug build signed with the shared debug key would mean every
+            // development install costs somebody their training history.
+            //
+            // Falls back to the debug key on a machine with no keystore, so
+            // the project still builds for anyone who clones it.
+            if (project.hasProperty('ONEMOREREP_STORE_FILE')) {
+                signingConfig signingConfigs.release
+            } else {
+                signingConfig signingConfigs.debug
+            }
         }
         release {
             // A release APK signed with the shared debug key installs fine and
