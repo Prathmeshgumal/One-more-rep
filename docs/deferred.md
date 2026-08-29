@@ -318,51 +318,71 @@ and `adb reverse --remove-all`, on a database left empty by the reinstall.
   gates: dismiss the keyboard, re-dump, then tap — and never trust a dump taken
   before the keyboard state changed.**
 
-## R2–R6 are written but only half walked
+## ~~R2–R6 are written but only half walked~~ — CLOSED
 
-**Added:** 2026-08-26, at the end of the usability-fixes plan.
+**Added:** 2026-08-26. **Closed:** 2026-08-29, on an emulator.
 
-Everything in `docs/superpowers/plans/2026-08-24-usability-fixes.md` is
-implemented, 681 tests pass, and the whole thing is installed on the device.
-What follows is the honest split between what a thumb has actually touched and
-what has only been asserted in Jest.
+All four outstanding gates — R3, R4, R5 and R6 — are walked. The physical
+device was not available, so a throwaway AVD was used instead: API 37,
+x86_64, 1080×2280 at 2.75x. It lives on `E:` because `C:` had 1.1 GB free and
+the emulator needs several, and it is separate from the user's own `myschedule`
+AVD, which was left alone.
 
-**Walked on the device:**
+**Walked, each checked against the device database rather than the screen:**
 
-- R1 in full — see the R1 gate above.
-- R2's list layout, by the user: all exercises visible at once, tapping a
-  header opens one and closes the others, recording a set does not move the
-  open card. This is also where U10 and U11 were reported.
-- The app launches with both R6 native libraries loaded. `SoLoader` initialises,
-  `ReactNativeJS: Running "OneMoreRep"`, no FATAL and no AndroidRuntime entry
-  in logcat. That rules out the failure mode that would have mattered most:
-  a native module bringing the app down on startup.
+- **R3 — U10.** A set was skipped, reopened by tapping it, and recorded. The
+  row offered `Edit set 1`, the fields came back, and `performed_sets` went
+  `skipped` → `completed` at 10 × 60.
+- **R3 — U11.** With one of three sets recorded, the control read **Finish this
+  exercise** rather than Skip, and using it left the exercise `completed` with
+  the recorded set untouched and the two pending ones skipped. That is the
+  complaint exactly: "I cannot mark exercise 4 as done."
+- **R3 — the `⋯` menu.** Every rule held, and the disabled rows carried their
+  reasons: swap `enabled=false` with "A set is already recorded", remove
+  `enabled=false` with "This one is in the plan — skip it instead", move up
+  disabled at the top. On an untouched, unplanned exercise both were enabled.
+- **R3 — swap.** Barbell Incline → Dips (a bodyweight movement): the plan slot
+  was kept, the rep targets kept, the **target weight cleared**, the sets still
+  planned rather than bonus, and the card and the history both read "swapped
+  from Barbell Incline Bench Press".
+- **R3 — reorder and remove.** Move down swapped two rows with positions
+  staying unique; removing an unplanned exercise took its sets with it (no
+  orphans) and left the exercise in the library.
+- **R3 — complaint 4.** Adding with "Also add to the plan" put the exercise in
+  the session as bonus **and** forked a new plan version carrying it, while the
+  running session's own planned slots did not move. §39, from both sides.
+- **R4.** Searching for "Sandbag Carry", which is not in the 873-exercise
+  library, offered `Create "Sandbag Carry"` with the name carried into the
+  editor; saving created it (`is_custom = 1`) and added it to the workout
+  without ever leaving the Today stack.
+- **R5.** Today's finished state showed 33% of plan, 2/5 exercises, 4/12 sets,
+  all four verdicts and the volume **with no button pressed**, then every
+  exercise set by set. "All exercises" crossed tabs into History at the right
+  day.
+- **R6.** A real PNG, which had never been produced before: 1080 × 1259, in
+  `DCIM/One More Rep`, light palette, skipped sets absent, bodyweight reps
+  printed without a weight, "4 SETS · 600 KG" correct — and "Saved to your
+  gallery" reported back.
 
-**Not walked, and each is a real gap:**
+**Two bugs it found, both fixed:**
 
-1. **R3 — reopening a decided set (U10), Finish vs Skip (U11), the `⋯` menu,
-   swap, remove, reorder, and notes.** The largest untested surface. The
-   repository rules are covered by 25 tests, but nothing has proved the sheet
-   opens over a scrolling list on a real screen, or that the note field
-   survives the keyboard the way `PlanDayScreen`'s rename did not.
-2. **R4 — creating a custom exercise from either picker.** Specifically: that
-   back from the editor returns to the *picker* rather than the Exercises tab,
-   which is the whole reason the screen is registered in three stacks. Jest
-   renders one screen at a time and cannot see it.
-3. **R5 — Today's inline summary**, and the cross-tab jump to History.
-   `getParent()` is mocked in the tests; on the device it is a real tab
-   navigator.
-4. **R6 — the image itself.** Every part that matters is mocked in Jest:
-   `captureRef` returns a fixed path and `CameraRoll.save` returns a fixed
-   URI. Nothing has produced an actual PNG, or checked it is legible, or
-   confirmed it lands in the gallery. The one-shot capture — mount, wait for
-   `onLayout`, rasterise, unmount — is exactly the kind of timing that works in
-   a test renderer and fails on hardware.
+1. **A note typed and then dismissed with the hardware back key was silently
+   lost.** Android hides the keyboard without blurring the field, so `onBlur`
+   never fired — the trap `PlanDayScreen` already documents, which ate a rename
+   once before. Collapsing the card lost it too, since unmounting does not blur
+   either. Now committed on a debounce, on unmount, and on blur.
+2. **The day image came out 2970px wide** — 1080 was being used as dp while a
+   capture is in physical pixels, so on a 2.75x screen the content sat down the
+   left of a picture twice as wide as it needed. It was perfectly legible,
+   which is precisely why no test caught it. The width is derived from the
+   density now.
 
-**Why this is written down rather than assumed fine:** the R1 gate found two
-bugs that ~600 tests had missed — `NumberField` renormalising its own draft
-mid-word, and the Today tab never refreshing after a plan edit. Neither was
-visible from Jest. The same is likely true of something above.
+**What this still does not cover.** The emulator is API 37 on x86_64; the
+user's phone is API 33 on arm64. Nothing here exercised the `WRITE_EXTERNAL_
+STORAGE` path, which only runs on API ≤ 28, and no real keyboard other than
+the emulator's was used against the note field. The R1 and R2 gates were walked
+on the physical device, so the two halves together cover more than either does
+alone — but they are not the same thing, and this section says which was which.
 
 ## Design departures — R6
 

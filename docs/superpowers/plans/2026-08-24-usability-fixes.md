@@ -17,11 +17,12 @@ half of 10 in one change.
 TanStack Query, zustand, react-native-svg. Two new native dependencies, in R6
 only.
 
-**Status (2026-08-26):** every task below is implemented and 681 tests pass.
-The four device gates left unchecked — Tasks 14, 16, 19 and 22 — are the ones
-nobody has walked. `docs/deferred.md` records what that leaves unverified, and
-why it is worth writing down: the R1 gate found two bugs that ~600 tests had
-missed.
+**Status (2026-08-29):** every task below is implemented and walked, and 686
+tests pass. R1 and R2 were gated on the physical device; R3 to R6 on an
+emulator, which found two more bugs — a note lost when the keyboard was
+dismissed with the back key, and a day image rendered at 2970px instead of
+1080. `docs/deferred.md` records both, and what the emulator still does not
+cover. Only the closing merge is left open.
 
 **Source:** the ten complaints, verbatim, in `docs/notes.md` (appended by
 Task 0). Four design forks were settled by the user before this plan was
@@ -1470,9 +1471,9 @@ it('draws nothing at all when there is no note', async () => {
 
 ### Task 14: R3 device gate
 
-- [ ] **Step 1:** Rebuild and install.
+- [x] **Step 1:** Rebuild and install.
 
-- [ ] **Step 2: Walk it**
+- [x] **Step 2: Walk it**
 
 1. Mid-workout, `⋯` on an untouched exercise → Swap → pick another. It swaps in
    place, keeps its target, and the card says where it came from.
@@ -1491,7 +1492,7 @@ adb exec-out run-as com.onemorerep sqlite3 databases/onemorerep.db \
 5. Write a note. Force-stop. Reopen. The note is still there.
 6. Finish the workout. History → the day → the note and the swap are printed.
 
-- [ ] **Step 3:** Record in `docs/deferred.md`. **Commit.**
+- [x] **Step 3:** Record in `docs/deferred.md`. **Commit.**
 
 ---
 
@@ -1566,12 +1567,12 @@ nothing, and at the foot otherwise, carrying the typed text through as
 
 ### Task 16: R4 device gate
 
-- [ ] **Step 1:** Rebuild and install.
-- [ ] **Step 2: Walk it** — Plan → a day → Add exercise → search for something
+- [x] **Step 1:** Rebuild and install.
+- [x] **Step 2: Walk it** — Plan → a day → Add exercise → search for something
       that does not exist → create it → land back on the picker with it already
       selected → add it. Then the same from inside a workout. Back behaves at
       every step, and the new exercise also appears in the Exercises tab.
-- [ ] **Step 3:** Record in `docs/deferred.md`. **Commit.**
+- [x] **Step 3:** Record in `docs/deferred.md`. **Commit.**
 
 ---
 
@@ -1650,7 +1651,7 @@ it('offers the full exercise-by-exercise view', async () => {
 
 ### Task 19: R5 device gate
 
-- [ ] Finish a workout. Today shows the numbers with no button press, every
+- [x] Finish a workout. Today shows the numbers with no button press, every
       exercise with its reps, and an All exercises button that opens the full
       ledger. Record in `docs/deferred.md`. **Commit.**
 
@@ -1789,20 +1790,20 @@ for download now and sharing later.
 
 ### Task 22: R6 device gate
 
-- [ ] **Step 1:** Rebuild and install.
-- [ ] **Step 2: Walk it** — History → a finished day → Save image. Open the
+- [x] **Step 1:** Rebuild and install.
+- [x] **Step 2: Walk it** — History → a finished day → Save image. Open the
       phone's Gallery: the PNG is there, in a "One More Rep" album, legible,
       with every exercise and set on it. Repeat from the finish screen. Confirm
       it renders light even with the app in dark mode.
-- [ ] **Step 3:** Record in `docs/deferred.md`. **Commit.**
+- [x] **Step 3:** Record in `docs/deferred.md`. **Commit.**
 
 ---
 
 ## Closing
 
-- [ ] Re-read `docs/deferred.md` in full and restate anything the user will
+- [x] Re-read `docs/deferred.md` in full and restate anything the user will
       see, per that file's own rule.
-- [ ] `npm test && npm run typecheck && npm run lint` all green.
+- [x] `npm test && npm run typecheck && npm run lint` all green.
 - [ ] Merge to `main` and tag.
 
 ---
