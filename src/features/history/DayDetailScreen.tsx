@@ -17,7 +17,7 @@ import type {Session} from '@/repositories/sessionRepo';
 import {useSettingsQuery} from '@/features/settings/useSettings';
 import type {HistoryStackParamList} from '@/navigation/types';
 import {useDayQuery, useDaySessionQuery} from './useHistory';
-import {DayImageCard, IMAGE_WIDTH} from './DayImageCard';
+import {DayImageCard, CARD_WIDTH} from './DayImageCard';
 import {useSaveDayImage} from './useSaveDayImage';
 
 /** "10 × 30.0", or an em dash where nothing was recorded (design 14). */
@@ -216,7 +216,7 @@ export function DayDetailScreen() {
 
 const styles = StyleSheet.create({
   block: {gap: space.sm},
-  offscreen: {position: 'absolute', left: -IMAGE_WIDTH * 2, top: 0},
+  offscreen: {position: 'absolute', left: -CARD_WIDTH * 2, top: 0},
   label: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -7,7 +7,7 @@ import {AppText} from '@/ui/Text';
 import {Button} from '@/ui/Button';
 import {useTheme, space} from '@/theme';
 import {SessionSummary} from './SessionSummary';
-import {DayImageCard, IMAGE_WIDTH} from '@/features/history/DayImageCard';
+import {DayImageCard, CARD_WIDTH} from '@/features/history/DayImageCard';
 import {useSaveDayImage} from '@/features/history/useSaveDayImage';
 import {useSettingsQuery} from '@/features/settings/useSettings';
 import type {TodayStackParamList} from '@/navigation/types';
@@ -146,5 +146,5 @@ const styles = StyleSheet.create({
     gap: space.md,
   },
   headerBlock: {gap: 2},
-  offscreen: {position: 'absolute', left: -IMAGE_WIDTH * 2, top: 0},
+  offscreen: {position: 'absolute', left: -CARD_WIDTH * 2, top: 0},
 });

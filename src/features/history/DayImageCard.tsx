@@ -1,5 +1,5 @@
 import React from 'react';
-import {StyleSheet, View} from 'react-native';
+import {PixelRatio, StyleSheet, View} from 'react-native';
 import {AppText} from '@/ui/Text';
 import {palettes, type as typeScale, space} from '@/theme';
 import {formatLongDate} from '@/domain/dateLabels';
@@ -7,8 +7,21 @@ import {groupDigits} from '@/domain/format';
 import {sessionVolume} from '@/domain/sessionProgress';
 import type {Session} from '@/repositories/sessionRepo';
 
-/** The width the card is laid out at before it is rasterised. */
+/** How wide the finished PNG should be, in physical pixels. */
 export const IMAGE_WIDTH = 1080;
+
+/**
+ * The width to lay the card out at, in dp.
+ *
+ * A capture is in physical pixels, so a card laid out at 1080 *dp* comes out
+ * at 1080 x the screen density — 2970px on a 2.75x device, about 2.7 times the
+ * width of a phone, with the content stranded down the left of the picture.
+ * That is what the emulator produced before this line existed.
+ *
+ * Dividing by the density instead makes the finished PNG 1080px wide on every
+ * device, and lays the card out at roughly phone width so the text fills it.
+ */
+export const CARD_WIDTH = IMAGE_WIDTH / PixelRatio.get();
 
 /**
  * The picture of a finished day (complaint 8).
@@ -45,7 +58,9 @@ export function DayImageCard({
   const volume = sessionVolume(session.exercises);
 
   return (
-    <View style={[styles.card, {backgroundColor: ink.paper}]}>
+    <View
+      testID="day-image-card"
+      style={[styles.card, {backgroundColor: ink.paper}]}>
       <AppText variant="eyebrow" color="muted" style={{color: ink.muted}}>
         ONE MORE REP
       </AppText>
@@ -93,8 +108,8 @@ export function DayImageCard({
 
 const styles = StyleSheet.create({
   card: {
-    width: IMAGE_WIDTH,
-    padding: space.xxxl * 2,
+    width: CARD_WIDTH,
+    padding: space.xxxl,
     gap: space.md,
   },
   title: {marginTop: space.xs},

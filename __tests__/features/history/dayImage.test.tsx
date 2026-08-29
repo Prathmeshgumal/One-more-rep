@@ -1,10 +1,14 @@
 import React from 'react';
-import {View} from 'react-native';
+import {PixelRatio, StyleSheet, View} from 'react-native';
 import {render, renderHook, act} from '@testing-library/react-native';
 import {captureRef} from 'react-native-view-shot';
 import {CameraRoll} from '@react-native-camera-roll/camera-roll';
 import {ThemeProvider} from '@/theme';
-import {DayImageCard} from '@/features/history/DayImageCard';
+import {
+  DayImageCard,
+  CARD_WIDTH,
+  IMAGE_WIDTH,
+} from '@/features/history/DayImageCard';
 import {useSaveDayImage} from '@/features/history/useSaveDayImage';
 import type {Session, SessionSet} from '@/repositories/sessionRepo';
 
@@ -56,6 +60,24 @@ const renderCard = (s: Session = session()) =>
   );
 
 describe('DayImageCard', () => {
+  // Found on the emulator: the card was laid out at 1080 *dp*, and a capture is
+  // in physical pixels — so on a 2.75x screen the PNG came out 2970 wide, about
+  // 2.7 times the width of a phone, with the right half empty. The layout width
+  // has to be derived from the density for the finished image to be 1080px.
+  it('is laid out so the finished image is the width it claims', async () => {
+    const view = await renderCard();
+    const card = view.getByTestId('day-image-card');
+    const flat = StyleSheet.flatten(card.props.style) as {width?: number};
+    expect(flat.width).toBe(IMAGE_WIDTH / PixelRatio.get());
+    expect(CARD_WIDTH).toBe(IMAGE_WIDTH / PixelRatio.get());
+  });
+
+  it('stays a portrait-ish card rather than a wide banner', async () => {
+    // A phone screen is roughly 390dp across. Anything far beyond that leaves
+    // the content stranded on the left of the picture.
+    expect(CARD_WIDTH).toBeLessThan(700);
+  });
+
   it('names the day and dates it', async () => {
     const view = await renderCard();
     expect(view.getByText('Push Day')).toBeTruthy();
