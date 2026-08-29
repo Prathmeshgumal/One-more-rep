@@ -11,6 +11,7 @@
     "android:release": "set NoDefaultCurrentDirectoryInExePath=&& react-native run-android --mode release",
     "android:fast": "set NoDefaultCurrentDirectoryInExePath=&& react-native run-android --no-packager",
     "apk": "cd android && gradlew.bat assembleRelease",
+    "apk:verify": "node scripts/verify-apk.mjs",
     "fonts": "python scripts/build-fonts.py",
     "db:generate": "drizzle-kit generate && node scripts/build-migrations.mjs",
     "db:backup": "node scripts/db-backup.mjs pull",
