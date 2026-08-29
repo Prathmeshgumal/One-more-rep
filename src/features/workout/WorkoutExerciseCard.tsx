@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {Pressable, StyleSheet, TextInput, View} from 'react-native';
 import {AppText} from '@/ui/Text';
 import {StatusChip} from '@/ui/StatusChip';
@@ -217,14 +217,25 @@ export function WorkoutExerciseCard({
   );
 }
 
+/** How long after the last keystroke a note is written. */
+const NOTE_DEBOUNCE_MS = 800;
+
 /**
  * What happened on this exercise today, in the user's own words.
  *
- * Committed on blur rather than on every keystroke, so a note is one write
- * instead of forty. The draft is seeded once and then left alone: `exercise`
- * is a fresh object on every refetch, and an unguarded effect would overwrite
- * whatever was being typed — the same trap `PlanDayScreen` documents, and the
- * one that already ate a rename on this device.
+ * Committing on blur alone is not enough, and the emulator proved it: Android's
+ * hardware back dismisses the keyboard **without** blurring the field, so the
+ * note was silently lost — the same trap `PlanDayScreen` documents, which ate
+ * a rename on the device once already. Collapsing the card or opening another
+ * one unmounts the field, and neither blurs it first either.
+ *
+ * So there are three ways out and all of them are covered: a debounce while
+ * typing, so a note is never more than a second from being saved even if the
+ * process is killed; the unmount, for every way the field can disappear; and
+ * blur, which is simply the fastest of the three when it does happen.
+ *
+ * The draft is seeded once and then left alone. `exercise` is a fresh object on
+ * every refetch, and an unguarded effect would overwrite what is being typed.
  */
 function NoteField({
   name,
@@ -239,6 +250,21 @@ function NoteField({
   const [text, setText] = useState(value ?? '');
   const saved = useRef(value ?? '');
 
+  // Read through refs so the unmount cleanup sees the last thing typed rather
+  // than what was on screen when the effect was registered.
+  const latest = useRef({text, onCommit});
+  latest.current = {text, onCommit};
+
+  const commit = useCallback(() => {
+    const {text: current, onCommit: commitNow} = latest.current;
+    const trimmed = current.trim();
+    if (trimmed === saved.current) {
+      return;
+    }
+    saved.current = trimmed;
+    commitNow(trimmed === '' ? null : trimmed);
+  }, []);
+
   useEffect(() => {
     // Only when the note changed underneath us — a different exercise, or a
     // write that landed elsewhere. Never mid-typing.
@@ -248,14 +274,13 @@ function NoteField({
     }
   }, [value]);
 
-  const commit = () => {
-    const trimmed = text.trim();
-    if (trimmed === saved.current) {
-      return;
-    }
-    saved.current = trimmed;
-    onCommit(trimmed === '' ? null : trimmed);
-  };
+  useEffect(() => {
+    const timer = setTimeout(commit, NOTE_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [text, commit]);
+
+  // Every way the field can vanish without a blur.
+  useEffect(() => commit, [commit]);
 
   return (
     <TextInput

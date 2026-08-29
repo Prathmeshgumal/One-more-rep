@@ -1,6 +1,6 @@
 import React from 'react';
 import {Text} from 'react-native';
-import {render, fireEvent} from '@testing-library/react-native';
+import {render, fireEvent, act} from '@testing-library/react-native';
 import {ThemeProvider} from '@/theme';
 import {WorkoutExerciseCard} from '@/features/workout/WorkoutExerciseCard';
 import type {
@@ -286,6 +286,81 @@ describe('WorkoutExerciseCard controls', () => {
     });
     await fireEvent(view.getByLabelText('Note for Bench Press'), 'blur');
     expect(onNote).not.toHaveBeenCalled();
+  });
+
+  // Found on the emulator: Android's hardware back dismisses the keyboard
+  // without blurring the field, so onBlur never fires and the note was lost.
+  // PlanDayScreen documents this exact trap -- it ate a rename once already.
+  it('commits shortly after typing stops, without waiting for a blur', async () => {
+    jest.useFakeTimers();
+    try {
+      const onNote = jest.fn();
+      const view = await renderCard({expanded: true, onNote});
+      await fireEvent.changeText(
+        view.getByLabelText('Note for Bench Press'),
+        'Shoulder felt off.',
+      );
+      expect(onNote).not.toHaveBeenCalled();
+
+      await act(async () => {
+        jest.advanceTimersByTime(1000);
+      });
+      expect(onNote).toHaveBeenCalledWith('Shoulder felt off.');
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  // Collapsing the card, opening another one, or leaving the screen all
+  // unmount the field, and none of them blur it first.
+  it('commits what was typed when the card closes under it', async () => {
+    jest.useFakeTimers();
+    try {
+      const onNote = jest.fn();
+      const view = await renderCard({expanded: true, onNote});
+      await fireEvent.changeText(
+        view.getByLabelText('Note for Bench Press'),
+        'Rack was busy.',
+      );
+
+      // Closed before the debounce could fire.
+      await view.rerender(
+        <ThemeProvider>
+          <WorkoutExerciseCard
+            exercise={exercise()}
+            expanded={false}
+            onToggle={jest.fn()}
+            onLayoutY={jest.fn()}
+            unit="kg"
+            increment={0.5}
+            onNote={onNote}
+          />
+        </ThemeProvider>,
+      );
+
+      expect(onNote).toHaveBeenCalledWith('Rack was busy.');
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('writes once, not once per keystroke', async () => {
+    jest.useFakeTimers();
+    try {
+      const onNote = jest.fn();
+      const view = await renderCard({expanded: true, onNote});
+      const field = view.getByLabelText('Note for Bench Press');
+      for (const text of ['S', 'Sh', 'Sho', 'Shou']) {
+        await fireEvent.changeText(field, text);
+      }
+      await act(async () => {
+        jest.advanceTimersByTime(1000);
+      });
+      expect(onNote).toHaveBeenCalledTimes(1);
+      expect(onNote).toHaveBeenCalledWith('Shou');
+    } finally {
+      jest.useRealTimers();
+    }
   });
 
   it('says where a swapped exercise came from', async () => {
