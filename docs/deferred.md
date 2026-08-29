@@ -384,6 +384,45 @@ the emulator's was used against the note field. The R1 and R2 gates were walked
 on the physical device, so the two halves together cover more than either does
 alone — but they are not the same thing, and this section says which was which.
 
+## Design departures — navigation
+
+### Five tabs became two
+
+**Added:** 2026-08-30, at the user's request.
+
+`docs/design/screens.html` draws a five-tab bar, and the tab glyphs were copied
+from it verbatim. The app now has two tabs: Today and Settings.
+
+- **Plan** and **History** are icon buttons on Today's header, right and left.
+- The **exercise library** lives inside Settings.
+
+The argument is that a whole section is a heavy way to reach something you
+open, use and leave — and that the split which actually earns a tab is the
+thing you do against the thing you configure. Whether it is right is a
+judgement about this app rather than about design systems in general, and it
+was the user's to make.
+
+Three consequences worth knowing:
+
+1. **The plan and history screens are in the Today stack**, not nested
+   navigators. That is what makes back mean "return to Today" from anywhere in
+   either, and lets a day of history open from the plan without crossing a
+   navigator. `PlanStackParamList` and `HistoryStackParamList` are now aliases
+   of `TodayStackParamList`, which is honest: they are one stack.
+2. **Three screens that were tab roots are now pushed**, and each needed a back
+   control it never had — `PlanWeekScreen`, `HistoryTimelineScreen` and
+   `ExerciseListScreen`. The structural test in
+   `__tests__/features/backNavigation.test.tsx` caught all three rather than
+   letting them ship as dead ends.
+3. **The glyphs moved rather than being redrawn.** Plan, history and the
+   dumbbell came out of `TabIcon` and into `IconButton` unchanged, and
+   `__tests__/ui/iconGlyphs.test.tsx` checks each against
+   `docs/design/screens.html` itself — so the button and the design cannot
+   drift apart without a test failing.
+
+If this is ever revisited, the thing to reconsider is whether Settings earns a
+tab at all now, or whether it should be a third icon and the bar should go.
+
 ## Design departures — R6
 
 ### The day image ignores the theme

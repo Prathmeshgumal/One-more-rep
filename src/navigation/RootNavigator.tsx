@@ -1,11 +1,8 @@
 import React from 'react';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {ExercisesStack} from './ExercisesStack';
-import {HistoryStack} from './HistoryStack';
-import {PlanStack} from './PlanStack';
 import {TodayStack} from './TodayStack';
-import {SettingsScreen} from '@/features/settings/SettingsScreen';
+import {SettingsStack} from './SettingsStack';
 import {TAB_ICON} from '@/ui/TabIcon';
 import {useTheme, font} from '@/theme';
 import type {RootTabParamList} from './types';
@@ -13,13 +10,18 @@ import type {RootTabParamList} from './types';
 const Tab = createBottomTabNavigator<RootTabParamList>();
 
 /**
- * The five tabs of section 3, matching the design's `.tabbar` rule: a 21px
- * line icon over a 10px semibold label, inactive in `faint` and active in
- * `plate`, on a `surface` bar with a `rule` hairline above it.
+ * Two tabs, where the design drew five.
  *
- * The design's 76px height is 62px of content plus 14px of breathing room at
- * the bottom; on a gesture-navigation device the system inset replaces that
- * padding, so the larger of the two is used rather than both.
+ * Plan and History became buttons on Today's header and the exercise library
+ * moved into Settings, on the grounds that a whole section is a heavy way to
+ * reach something you open, use and leave. What is left is the split that
+ * actually earns a tab: the thing you do, and the thing you configure.
+ *
+ * The bar keeps the design's `.tabbar` rule otherwise — a 21px line icon over
+ * a 10px semibold label, inactive in `faint` and active in `plate`, on a
+ * `surface` bar with a `rule` hairline above it. Its 76px is 62px of content
+ * plus 14px of breathing room; on a gesture-navigation device the system inset
+ * replaces that padding, so the larger of the two is used rather than both.
  */
 export function RootNavigator() {
   const {colors} = useTheme();
@@ -48,10 +50,7 @@ export function RootNavigator() {
         tabBarIcon: TAB_ICON[route.name],
       })}>
       <Tab.Screen name="Today" component={TodayStack} />
-      <Tab.Screen name="Plan" component={PlanStack} />
-      <Tab.Screen name="History" component={HistoryStack} />
-      <Tab.Screen name="Exercises" component={ExercisesStack} />
-      <Tab.Screen name="Settings" component={SettingsScreen} />
+      <Tab.Screen name="Settings" component={SettingsStack} />
     </Tab.Navigator>
   );
 }

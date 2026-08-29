@@ -6,6 +6,7 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {AppText} from '@/ui/Text';
 import {Button} from '@/ui/Button';
 import {Card} from '@/ui/Card';
+import {IconButton} from '@/ui/IconButton';
 import {ProgressBar} from '@/ui/ProgressBar';
 import {useTheme, space, radius} from '@/theme';
 import {WEEKDAY_NAMES, weekdayIndex} from '@/domain/weekday';
@@ -15,11 +16,7 @@ import {LedgerTable, type LedgerRow} from '@/ui/LedgerTable';
 import {SessionSummary} from './SessionSummary';
 import type {SessionExercise} from '@/repositories/sessionRepo';
 import {useSettingsQuery} from '@/features/settings/useSettings';
-import type {
-  TodayStackParamList,
-  RootTabParamList,
-} from '@/navigation/types';
-import type {BottomTabNavigationProp} from '@react-navigation/bottom-tabs';
+import type {TodayStackParamList} from '@/navigation/types';
 import {
   useTodaySessionQuery,
   useTodayPlanQuery,
@@ -83,13 +80,33 @@ export function TodayScreen() {
     return <View style={[styles.root, {backgroundColor: colors.paper}]} />;
   }
 
+  /**
+   * Every state of this screen is wrapped in this, which is the point: the two
+   * controls are drawn once here rather than six times below, so a state added
+   * later cannot quietly ship without a way to reach the plan.
+   *
+   * History on the left and the plan on the right, either side of whatever the
+   * day has to say — the past behind you, the routine ahead.
+   */
   const frame = (children: React.ReactNode) => (
     <ScrollView
       style={{backgroundColor: colors.paper}}
       contentContainerStyle={[
         styles.content,
-        {paddingTop: insets.top + space.xl},
+        {paddingTop: insets.top + space.md},
       ]}>
+      <View style={styles.bar}>
+        <IconButton
+          glyph="history"
+          label="History"
+          onPress={() => navigation.navigate('HistoryTimeline')}
+        />
+        <IconButton
+          glyph="plan"
+          label="Weekly plan"
+          onPress={() => navigation.navigate('PlanWeek')}
+        />
+      </View>
       {children}
     </ScrollView>
   );
@@ -219,16 +236,9 @@ export function TodayScreen() {
         <Button
           label="All exercises"
           variant="secondary"
-          onPress={() =>
-            // The full day lives on the History tab, so this crosses out of
-            // the Today stack rather than duplicating that screen here.
-            navigation
-              .getParent<BottomTabNavigationProp<RootTabParamList>>()
-              ?.navigate('History', {
-                screen: 'DayDetail',
-                params: {date: session.date},
-              })
-          }
+          // History is in this stack now, so the full day is a plain push
+          // rather than a jump across tabs.
+          onPress={() => navigation.navigate('DayDetail', {date: session.date})}
         />
       </>,
     );
@@ -240,8 +250,8 @@ export function TodayScreen() {
       <View style={styles.blank}>
         <AppText variant="h2">No plan yet</AppText>
         <AppText variant="body" color="muted" style={styles.centred}>
-          Build a weekly routine on the Plan tab, and today's workout will
-          appear here.
+          Build a weekly routine with the plan button above, and today's
+          workout will appear here.
         </AppText>
       </View>,
     );
@@ -299,7 +309,8 @@ export function TodayScreen() {
           {`${WEEKDAY_NAMES[weekday]} is not set up`}
         </AppText>
         <AppText variant="body" color="muted" style={styles.centred}>
-          Add exercises to this day on the Plan tab, or mark it a rest day.
+          Add exercises to this day with the plan button above, or mark it a
+          rest day.
         </AppText>
       </View>,
     );
@@ -360,6 +371,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: space.xl,
     paddingBottom: space.xxxl,
     gap: space.md,
+  },
+  bar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: space.xs,
   },
   headerBlock: {gap: 2, marginBottom: space.sm},
   block: {gap: space.sm},

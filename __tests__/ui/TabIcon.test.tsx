@@ -3,13 +3,7 @@ import {render} from '@testing-library/react-native';
 import {TabIcon} from '@/ui/TabIcon';
 import type {RootTabParamList} from '@/navigation/types';
 
-const TABS: ReadonlyArray<keyof RootTabParamList> = [
-  'Today',
-  'Plan',
-  'History',
-  'Exercises',
-  'Settings',
-];
+const TABS: ReadonlyArray<keyof RootTabParamList> = ['Today', 'Settings'];
 
 type Node = {props?: Record<string, unknown>; children?: unknown} | null;
 
@@ -53,7 +47,7 @@ describe('TabIcon', () => {
 
   // Sequentially, not Promise.all: concurrent renders leave RNTL in a state
   // where the next test's toJSON() comes back null.
-  it('draws every tab a different glyph', async () => {
+  it('draws each tab a different glyph', async () => {
     const drawn: string[] = [];
     for (const name of TABS) {
       drawn.push((await glyphFor(name))[0]!);

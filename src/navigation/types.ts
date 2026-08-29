@@ -1,51 +1,26 @@
 import type {NavigatorScreenParams} from '@react-navigation/native';
 
 /**
- * `NavigatorScreenParams` rather than `undefined` on the stacks that get
- * navigated into from another tab — Today's "All exercises" opens the History
- * stack at a specific day. Typed here rather than cast at the call site, so a
- * wrong screen name or a missing date is a compile error.
+ * Two tabs, not five.
+ *
+ * Plan and History were sections of their own until they became buttons on
+ * Today's header, and the exercise library moved inside Settings. The screens
+ * did not change — only how you reach them — so each former section is now a
+ * span of the stack it was folded into.
  */
 export type RootTabParamList = {
   Today: NavigatorScreenParams<TodayStackParamList> | undefined;
-  Plan: NavigatorScreenParams<PlanStackParamList> | undefined;
-  History: NavigatorScreenParams<HistoryStackParamList> | undefined;
-  Exercises: NavigatorScreenParams<ExercisesStackParamList> | undefined;
-  Settings: undefined;
+  Settings: NavigatorScreenParams<SettingsStackParamList> | undefined;
 };
 
-export type ExercisesStackParamList = {
-  ExerciseList: undefined;
-  ExerciseDetail: {id: string};
-  /** No id means "create a new one"; `initialName` seeds it from a search. */
-  ExerciseEditor: {id?: string; initialName?: string} | undefined;
-  ExerciseHistory: {exerciseId: string};
-};
-
-export type HistoryStackParamList = {
-  HistoryTimeline: undefined;
-  HistoryCalendar: undefined;
-  /** Local midnight of the day to open. */
-  DayDetail: {date: number};
-  ExerciseHistory: {exerciseId: string};
-};
-
-export type PlanStackParamList = {
-  PlanWeek: undefined;
-  PlanDay: {weekday: number};
-  PlanExercisePicker: {weekday: number};
-  PlanTargetEditor: {weekday: number; exerciseIndex: number};
-  /**
-   * The same editor the Exercises tab uses, registered here as well so a
-   * custom exercise can be made without leaving the plan builder (complaint 5).
-   * React Navigation resolves a name within the current navigator first, so
-   * back returns to the picker rather than dropping you in another tab.
-   */
-  ExerciseEditor: {id?: string; initialName?: string} | undefined;
-  PlanCopyDay: {weekday: number};
-  PlanHistory: undefined;
-};
-
+/**
+ * Everything reachable from Today: the workout itself, the whole plan builder,
+ * and the whole of history.
+ *
+ * One stack rather than three, because a button that pushes is the only reason
+ * any of them is on screen — and back then returns to Today, which is what a
+ * button implies and what a tab could never do.
+ */
 export type TodayStackParamList = {
   /** Renamed from `Today`: sharing the tab's name made navigate() ambiguous. */
   TodayHome: undefined;
@@ -60,6 +35,49 @@ export type TodayStackParamList = {
     | {mode?: 'add'}
     | {mode: 'swap'; performedExerciseId: string}
     | undefined;
-  /** Registered here too, for the same reason as on the Plan stack. */
+  /**
+   * The same editor Settings uses, registered here as well so a custom
+   * exercise can be made without leaving the plan builder or a workout
+   * (complaint 5). React Navigation resolves a name within the current
+   * navigator first, so back returns to the picker rather than another tab.
+   */
   ExerciseEditor: {id?: string; initialName?: string} | undefined;
+
+  // ---- the plan, reached by the button on Today's right ----
+  PlanWeek: undefined;
+  PlanDay: {weekday: number};
+  PlanExercisePicker: {weekday: number};
+  PlanTargetEditor: {weekday: number; exerciseIndex: number};
+  PlanCopyDay: {weekday: number};
+  PlanHistory: undefined;
+
+  // ---- history, reached by the button on Today's left ----
+  HistoryTimeline: undefined;
+  HistoryCalendar: undefined;
+  /** Local midnight of the day to open. */
+  DayDetail: {date: number};
+  ExerciseHistory: {exerciseId: string};
 };
+
+/**
+ * The plan and history screens live in the Today stack now, so these are the
+ * same list under the names those screens already use. Kept rather than
+ * renamed because the names still say something true about which part of the
+ * app a screen belongs to — and because being one stack is precisely what
+ * lets a plan screen open a day of history without crossing a navigator.
+ */
+export type PlanStackParamList = TodayStackParamList;
+export type HistoryStackParamList = TodayStackParamList;
+
+/** Settings, and the exercise library that now sits inside it. */
+export type SettingsStackParamList = {
+  SettingsHome: undefined;
+  ExerciseList: undefined;
+  ExerciseDetail: {id: string};
+  /** No id means "create a new one"; `initialName` seeds it from a search. */
+  ExerciseEditor: {id?: string; initialName?: string} | undefined;
+  ExerciseHistory: {exerciseId: string};
+};
+
+/** The library moved into Settings; this is the name its screens already use. */
+export type ExercisesStackParamList = SettingsStackParamList;

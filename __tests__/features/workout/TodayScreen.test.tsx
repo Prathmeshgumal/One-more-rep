@@ -203,14 +203,13 @@ describe('TodayScreen', () => {
       expect(view.getByText('12 × 30.0')).toBeTruthy();
     });
 
-    it('opens the full day on the History tab', async () => {
+    it('opens the full day, which is in this stack now', async () => {
       await finishedDay();
       const view = await renderScreen();
       await fireEvent.press(await view.findByText('All exercises'));
 
-      expect(mockParentNavigate).toHaveBeenCalledWith('History', {
-        screen: 'DayDetail',
-        params: {date: expect.any(Number)},
+      expect(mockNavigate).toHaveBeenCalledWith('DayDetail', {
+        date: expect.any(Number),
       });
     });
   });

@@ -5,6 +5,7 @@ import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Svg, {Circle, Path} from 'react-native-svg';
 import {AppText} from '@/ui/Text';
+import {BackButton} from '@/ui/BackButton';
 import {Button} from '@/ui/Button';
 import {Hatch} from '@/ui/Hatch';
 import {useTheme, space, radius} from '@/theme';
@@ -91,6 +92,9 @@ export function PlanWeekScreen() {
         styles.content,
         {paddingTop: insets.top + space.xl},
       ]}>
+      {/* The plan was a tab, where the tab itself was the way back. It is
+          pushed from Today now, so it needs one of its own. */}
+      <BackButton />
       <View style={styles.header}>
         <View style={styles.grow}>
           <AppText variant="eyebrow" color="muted">

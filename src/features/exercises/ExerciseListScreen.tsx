@@ -7,6 +7,7 @@ import {AppText} from '@/ui/Text';
 import {Card} from '@/ui/Card';
 import {Chip} from '@/ui/Chip';
 import {SearchField} from '@/ui/SearchField';
+import {BackButton} from '@/ui/BackButton';
 import {useTheme, space, radius} from '@/theme';
 import type {Exercise} from '@/repositories/exerciseRepo';
 import type {ExercisesStackParamList} from '@/navigation/types';
@@ -44,6 +45,9 @@ export function ExerciseListScreen() {
 
   const header = (
     <View style={styles.header}>
+      {/* The library used to be a tab, where the tab itself was the way back.
+          It is pushed from Settings now, so it needs one of its own. */}
+      <BackButton />
       <AppText variant="eyebrow" color="muted">
         {isPending || !data
           ? 'Loading'

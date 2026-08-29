@@ -45,23 +45,45 @@ describe('RootNavigator', () => {
     expect(await view.findByText(/No plan yet/i)).toBeTruthy();
   });
 
-  it('reaches every one of the five tabs', async () => {
+  it('reaches both tabs', async () => {
     const view = await renderApp();
     // Asserted on each screen's own copy rather than its title, because a tab
     // label and its heading can read the same.
-    const tabs: ReadonlyArray<readonly [string, RegExp]> = [
-      ['Plan', /Your week is empty/i],
-      ['History', /completed workouts will appear here/i],
-      ['Exercises', /create your own/i],
-      ['Settings', /weight unit/i],
-    ];
-    for (const [tab, marker] of tabs) {
-      await fireEvent.press(
-        view.getByRole('button', { name: new RegExp(tab) }),
-      );
-      await waitFor(() => {
-        expect(view.getAllByText(marker).length).toBeGreaterThan(0);
-      });
-    }
+    await fireEvent.press(view.getByRole('button', { name: /Settings/ }));
+    await waitFor(() => {
+      expect(view.getAllByText(/weight unit/i).length).toBeGreaterThan(0);
+    });
+  });
+
+  // Plan, History and the exercise library were tabs. Losing a tab must not
+  // mean losing the screen, so each is asserted reachable by its new route.
+  it('reaches the plan from Today, where the tab used to be', async () => {
+    const view = await renderApp();
+    await fireEvent.press(await view.findByLabelText('Weekly plan'));
+    await waitFor(() => {
+      expect(view.getAllByText(/Your week is empty/i).length).toBeGreaterThan(0);
+    });
+  });
+
+  it('reaches history from Today', async () => {
+    const view = await renderApp();
+    await fireEvent.press(await view.findByLabelText('History'));
+    await waitFor(() => {
+      expect(
+        view.getAllByText(/completed workouts will appear here/i).length,
+      ).toBeGreaterThan(0);
+    });
+  });
+
+  it('reaches the exercise library through Settings', async () => {
+    const view = await renderApp();
+    await fireEvent.press(view.getByRole('button', { name: /Settings/ }));
+    await waitFor(() => {
+      expect(view.getByText('Exercise library')).toBeTruthy();
+    });
+    await fireEvent.press(view.getByText('Exercise library'));
+    await waitFor(() => {
+      expect(view.getAllByText(/create your own/i).length).toBeGreaterThan(0);
+    });
   });
 });

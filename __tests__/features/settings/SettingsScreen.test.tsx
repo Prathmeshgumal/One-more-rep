@@ -1,6 +1,7 @@
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { NavigationContainer } from '@react-navigation/native';
 import { runMigrations } from '@/db/migrate';
 import { getSettings } from '@/repositories/settingsRepo';
 import { ThemeProvider, useThemeMode } from '@/theme';
@@ -12,12 +13,16 @@ describe('SettingsScreen', () => {
   let ctx: ReturnType<typeof createTestDb>;
   let client: QueryClient;
 
+  // Settings is the root of its own stack now, and pushes the exercise
+  // library, so it needs a navigator around it.
   const renderScreen = () =>
     render(
       <ThemeProvider>
         <QueryClientProvider client={client}>
           <DatabaseContextTestProvider db={ctx.db}>
-            <SettingsScreen />
+            <NavigationContainer>
+              <SettingsScreen />
+            </NavigationContainer>
           </DatabaseContextTestProvider>
         </QueryClientProvider>
       </ThemeProvider>,
@@ -127,5 +132,11 @@ describe('SettingsScreen', () => {
       ).toBe(true);
     });
     expect((await getSettings(ctx.db)).defaultIncrement).toBe(2.5);
+  });
+
+  it('offers the exercise library, which used to be a tab', async () => {
+    const view = await renderScreen();
+    await settled(view);
+    expect(view.getByText('Exercise library')).toBeTruthy();
   });
 });

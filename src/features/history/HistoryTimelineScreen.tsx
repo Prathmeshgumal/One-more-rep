@@ -48,6 +48,7 @@ export function HistoryTimelineScreen() {
 
   return (
     <Screen
+      back
       eyebrow="This week"
       title="History"
       action={

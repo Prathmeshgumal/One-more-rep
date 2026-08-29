@@ -1,10 +1,14 @@
 import React from 'react';
 import {Pressable, StyleSheet, View} from 'react-native';
+import {useNavigation} from '@react-navigation/native';
+import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {Screen} from '@/ui/Screen';
+import {Card} from '@/ui/Card';
 import {AppText} from '@/ui/Text';
 import {useTheme, useThemeMode, space, radius} from '@/theme';
 import type {ThemeMode, WeightUnit} from '@/db/schema';
 import {APP_VERSION} from '@/constants';
+import type {SettingsStackParamList} from '@/navigation/types';
 import {useSettingsQuery, useUpdateSettings} from './useSettings';
 
 const THEMES: ReadonlyArray<{value: ThemeMode; label: string; hint: string}> = [
@@ -75,12 +79,28 @@ function Option({
 }
 
 export function SettingsScreen() {
+  const navigation =
+    useNavigation<NativeStackNavigationProp<SettingsStackParamList>>();
   const {data, isPending} = useSettingsQuery();
   const update = useUpdateSettings();
   const setMode = useThemeMode(state => state.setMode);
 
   return (
     <Screen title="Settings">
+      {/* The library was a tab of its own. It belongs here because it is
+          something you set up rather than something you do — and reaching for
+          it mid-workout is served by the pickers, which can create an exercise
+          without leaving the workout at all. */}
+      <AppText variant="eyebrow" color="muted">
+        Exercises
+      </AppText>
+      <Card onPress={() => navigation.navigate('ExerciseList')}>
+        <AppText variant="bodyStrong">Exercise library</AppText>
+        <AppText variant="small" color="muted">
+          Browse every movement, and add your own
+        </AppText>
+      </Card>
+
       <AppText variant="eyebrow" color="muted">
         Theme
       </AppText>

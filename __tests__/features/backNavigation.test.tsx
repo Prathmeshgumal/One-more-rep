@@ -20,6 +20,9 @@ const read = (relative: string): string =>
 
 /** Screens pushed onto a stack rather than sitting at its root. */
 const PUSHED: readonly string[] = [
+  'features/exercises/ExerciseListScreen.tsx',
+  'features/plan/PlanWeekScreen.tsx',
+  'features/history/HistoryTimelineScreen.tsx',
   'features/exercises/ExerciseDetailScreen.tsx',
   'features/exercises/ExerciseEditorScreen.tsx',
   'features/plan/PlanDayScreen.tsx',
@@ -44,12 +47,15 @@ const NO_BACK: readonly string[] = [
 ];
 
 /** Stack roots: the tab already is the way back. */
-const ROOTS: readonly string[] = [
-  'ExerciseListScreen',
-  'PlanWeekScreen',
-  'TodayScreen',
-  'HistoryTimelineScreen',
-];
+/**
+ * Stack roots: the tab already is the way back.
+ *
+ * There are two of these now rather than four. PlanWeekScreen,
+ * HistoryTimelineScreen and ExerciseListScreen were roots of their own tabs
+ * until those tabs became buttons; all three are pushed now, and all three had
+ * to grow a back control they never needed before.
+ */
+const ROOTS: readonly string[] = ['TodayScreen', 'SettingsScreen'];
 
 const offersBack = (source: string): boolean =>
   source.includes('<BackButton') || /<Screen[\s\S]{0,80}?\bback\b/.test(source);
@@ -64,7 +70,7 @@ describe('back navigation', () => {
   });
 
   it('classifies every screen registered in a stack', () => {
-    const stacks = ['ExercisesStack', 'PlanStack', 'TodayStack', 'HistoryStack']
+    const stacks = ['TodayStack', 'SettingsStack']
       .map(name => read(`navigation/${name}.tsx`))
       .join('\n');
     const registered = [...stacks.matchAll(/component=\{(\w+)\}/g)].map(
