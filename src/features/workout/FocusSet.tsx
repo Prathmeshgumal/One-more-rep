@@ -1,0 +1,263 @@
+import React from 'react';
+import {Pressable, StyleSheet, View} from 'react-native';
+import {AppText} from '@/ui/Text';
+import {useTheme, space, radius, type ColorToken} from '@/theme';
+import type {SetCursor} from './sessionCursor';
+
+/** What the screen is doing, which is not what the set says about itself. */
+export type FocusMode = 'live' | 'amending' | 'skipped';
+
+/**
+ * A stepper shoulder. 64dp for reps, 40dp for weight — reps change between
+ * every set, weight changes between exercises, and the sizes say so.
+ */
+function Step({
+  label,
+  glyph,
+  size,
+  onPress,
+}: {
+  label: string;
+  glyph: string;
+  size: 40 | 64;
+  onPress: () => void;
+}) {
+  const {colors} = useTheme();
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      onPress={onPress}
+      style={[
+        styles.step,
+        {
+          width: size,
+          height: size,
+          borderRadius: size === 64 ? size / 2 : radius.md,
+          backgroundColor: colors.surface,
+          borderColor: colors.rule,
+        },
+      ]}>
+      <AppText variant={size === 64 ? 'h1' : 'h2'} color="ink2">
+        {glyph}
+      </AppText>
+    </Pressable>
+  );
+}
+
+/**
+ * One set, filling the screen.
+ *
+ * The 112px numeral is the whole argument for this flow: it is readable at
+ * arm's length, lying on a bench, without your glasses. Nothing else in the
+ * app can offer that, because nothing else gives one number the whole screen.
+ *
+ * Weight sits above it at a quarter of the size when the exercise takes one.
+ * That hierarchy is deliberate — reps are what changes between sets, weight
+ * is what changes when you move the pin.
+ */
+export function FocusSet({
+  cursor,
+  mode,
+  reps,
+  weight,
+  unit,
+  increment,
+  previousLabel,
+  onStepReps,
+  onStepWeight,
+  onUndoSkip,
+}: {
+  cursor: SetCursor;
+  mode: FocusMode;
+  reps: number;
+  weight: number | null;
+  unit: string;
+  increment: number;
+  /** "last time 11", when there is a last time. */
+  previousLabel: string | null;
+  onStepReps: (delta: number) => void;
+  onStepWeight: (delta: number) => void;
+  onUndoSkip: () => void;
+}) {
+  const {colors} = useTheme();
+  const {set, exercise} = cursor;
+
+  const numeralColor: ColorToken =
+    mode === 'amending' ? 'short' : mode === 'skipped' ? 'skip' : 'ink';
+
+  const target =
+    set.targetReps === null
+      ? 'bonus set · no target'
+      : `target ${set.targetReps}${
+          set.targetWeight !== null ? ` × ${set.targetWeight} ${unit}` : ''
+        }`;
+
+  // Amending shows what is on record beside what you are changing it to, so
+  // you can always see what you are moving away from.
+  const caption =
+    mode === 'amending' && set.actualReps !== null
+      ? `${target} · recorded as ${set.actualReps}`
+      : previousLabel
+      ? `${target} · ${previousLabel}`
+      : target;
+
+  return (
+    <View style={styles.body}>
+      <AppText variant="printed" color="muted">
+        {`Exercise ${cursor.exerciseNumber} of ${cursor.exerciseCount} · set ${cursor.setNumber} of ${cursor.setsInExercise}`}
+      </AppText>
+      <AppText variant="h1" style={styles.name} numberOfLines={2}>
+        {exercise.name}
+      </AppText>
+
+      {mode === 'skipped' ? (
+        <>
+          <AppText variant="display" color="skip" style={styles.skipped}>
+            Skipped
+          </AppText>
+          <AppText variant="printed" color="faint" style={styles.target}>
+            {set.targetReps === null
+              ? 'a bonus set, left undone'
+              : `target was ${set.targetReps} reps`}
+          </AppText>
+          <View
+            style={[styles.flag, {backgroundColor: colors.skipSoft}]}
+            accessible
+            accessibilityLabel="A skipped set is not counted against you">
+            <AppText variant="monoSmall" color="skip">
+              not counted against you
+            </AppText>
+          </View>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Undo skip"
+            onPress={onUndoSkip}
+            style={[styles.undo, {borderColor: colors.plate}]}>
+            <AppText variant="bodyStrong" color="plate">
+              Undo skip
+            </AppText>
+          </Pressable>
+        </>
+      ) : (
+        <>
+          {/* A bodyweight movement gets no weight control at all, rather than
+              a zero in one — §26's rule, kept. */}
+          {exercise.weightApplicable ? (
+            <View style={styles.load}>
+              <Step
+                label={`Decrease weight by ${increment} ${unit}`}
+                glyph="−"
+                size={40}
+                onPress={() => onStepWeight(-increment)}
+              />
+              <View
+                style={[
+                  styles.weight,
+                  {backgroundColor: colors.surface2, borderColor: colors.rule},
+                ]}>
+                <AppText variant="h2">{String(weight ?? 0)}</AppText>
+                <AppText variant="monoSmall" color="muted">
+                  {unit}
+                </AppText>
+              </View>
+              <Step
+                label={`Increase weight by ${increment} ${unit}`}
+                glyph="＋"
+                size={40}
+                onPress={() => onStepWeight(increment)}
+              />
+            </View>
+          ) : null}
+
+          <AppText
+            variant="focus"
+            color={numeralColor}
+            style={styles.numeral}
+            accessibilityLabel={`${reps} reps`}>
+            {String(reps)}
+          </AppText>
+          <AppText variant="printed" color="muted">
+            reps
+          </AppText>
+          <AppText variant="printed" color="faint" style={styles.target}>
+            {caption}
+          </AppText>
+
+          {mode === 'amending' ? (
+            <View style={[styles.flag, {backgroundColor: colors.shortSoft}]}>
+              <AppText variant="monoSmall" color="short">
+                amending a recorded set
+              </AppText>
+            </View>
+          ) : null}
+
+          <View style={styles.steps}>
+            <Step
+              label="One rep fewer"
+              glyph="−"
+              size={64}
+              onPress={() => onStepReps(-1)}
+            />
+            <Step
+              label="One rep more"
+              glyph="＋"
+              size={64}
+              onPress={() => onStepReps(1)}
+            />
+          </View>
+        </>
+      )}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  body: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: space.xxl,
+  },
+  step: {
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  name: {marginTop: space.sm, textAlign: 'center'},
+  load: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.md,
+    marginTop: space.lg,
+  },
+  weight: {
+    minWidth: 110,
+    height: 40,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: space.xs,
+    paddingHorizontal: space.md,
+  },
+  /** 112px. The whole argument for this flow. */
+  numeral: {marginTop: space.xl},
+  skipped: {marginTop: space.xl},
+  target: {marginTop: space.md, textAlign: 'center'},
+  flag: {
+    marginTop: space.md,
+    paddingVertical: space.xs,
+    paddingHorizontal: space.md,
+    borderRadius: radius.pill,
+  },
+  steps: {flexDirection: 'row', gap: space.lg, marginTop: space.xxl},
+  undo: {
+    marginTop: space.xl,
+    borderWidth: 1,
+    borderRadius: radius.lg,
+    paddingVertical: space.md,
+    paddingHorizontal: space.xxl,
+  },
+});

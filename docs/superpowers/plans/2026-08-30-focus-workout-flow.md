@@ -205,3 +205,49 @@ start → save → correct.
 - `adb shell pm clear` is never run. Back up before touching the device.
 - Nothing outside `src/theme/tokens.ts` declares a colour or a font size.
 - Commit after every task.
+
+---
+
+## Regression checklist — carried over from the old workout screen
+
+`SessionScreen.legacy.test.tsx` covered 34 behaviours of the expanding-card
+screen. The screen is gone but almost none of the *behaviours* are: they have
+to reappear through the focus flow's controls. The legacy file is kept, failing
+and skipped, purely as this checklist, and is deleted in Task 7.2 once every
+line below is ticked.
+
+| Behaviour | Restored in |
+| --- | --- |
+| opens on the first exercise with its progress | 2.2 ✅ |
+| pre-fills the active set with the target | 2.3 ✅ |
+| records nothing until the set is completed | 2.3 ✅ |
+| steps weight by the increment, reps by one | 2.3 ✅ |
+| will not step reps below one or weight below zero | 2.3 ✅ |
+| shows what was lifted last time | 2.3 ✅ |
+| opens on the first exercise that still has a pending set | 2.2 ✅ |
+| realigns when the screen is focused again | 2.2 ✅ |
+| leaves the workout when closed | 2.2 ✅ |
+| writes the actuals when the set is completed | 3.2 |
+| advances to the next set once one is recorded | 3.2 |
+| shows a recorded set with its verdict | 3.2 |
+| does not move focus out from under a recorded set | 3.2 |
+| skips a set without recording anything | 3.4 |
+| reopens a skipped set when it is tapped | 3.4 |
+| adds a bonus set with no target | 4.2 |
+| removes a bonus set added by mistake | 4.2 |
+| offers no way to remove a planned set | 4.2 |
+| skips the whole exercise and moves on | 4.2 |
+| offers to finish rather than skip once something is recorded | 4.2 |
+| finishing a part-done exercise records it as completed | 4.2 |
+| opens the next exercise when one is finished | 4.2 |
+| opens the menu for the exercise whose control was pressed | 4.2 |
+| reorders the session from the menu | 4.2 |
+| writes a note to the database when the field is left | 4.2 |
+| sends a swap to the picker rather than doing it blind | 4.2 |
+| shows every exercise in the session at once | 4.1 (the peek) |
+| opens a different exercise when its header is tapped | 4.1 (the peek) |
+| closes the open card when its own header is tapped | dropped — nothing expands |
+| reopens a recorded set so a wrong number can be corrected | 4.3 |
+| goes back to the first pending set once the correction is saved | 4.3 |
+| offers no edit on a set that has not happened yet | 4.3 |
+| stops offering to finish once there is nothing left | 5.1 |

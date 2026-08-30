@@ -85,6 +85,21 @@ export const type = {
     letterSpacing: -0.8,
     fontVariant: TABULAR,
   },
+  /**
+   * The focus screen's rep count, and nothing else.
+   *
+   * Larger than anything else in the app by a factor of two, deliberately: it
+   * is the one number you read from a bench, at arm's length, mid-set. Two
+   * digits at this size are 190px wide, which clears the 345px of a 393dp
+   * screen inside its padding with room for three.
+   */
+  focus: {
+    fontFamily: font.wideBold,
+    fontSize: 112,
+    lineHeight: 116,
+    letterSpacing: -4.5,
+    fontVariant: TABULAR,
+  },
   /** The design's `.bignum` — the completion percentage and nothing else. */
   bignum: {
     fontFamily: font.wideBold,
