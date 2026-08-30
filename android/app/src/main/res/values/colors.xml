@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      The ground the logo is drawn on, sampled from the artwork itself rather
+      than guessed, so the adaptive icon's background and the mark it carries
+      came out of the same image.
+    -->
+    <color name="ic_launcher_background">#202225</color>
+</resources>

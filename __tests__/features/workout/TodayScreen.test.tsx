@@ -181,15 +181,41 @@ describe('TodayScreen', () => {
       await finishWorkout(ctx.db, session.id);
     };
 
-    it('shows the summary without a button being pressed', async () => {
+    it('counts the exercises and the sets, without a button being pressed', async () => {
       await finishedDay();
       const view = await renderScreen();
       await view.findByText(/Push Day done/i);
 
-      expect(view.getByText('% of plan')).toBeTruthy();
-      expect(view.getByText('Against target')).toBeTruthy();
-      expect(view.getByText('total volume')).toBeTruthy();
+      expect(view.getByText('Exercises')).toBeTruthy();
+      expect(view.getByText('Sets')).toBeTruthy();
+      // Two exercises of three sets each; two sets recorded on the first, so
+      // that exercise reads done and the untouched one does not.
+      expect(view.getByText('1 / 2')).toBeTruthy();
+      expect(view.getByText('2 / 6')).toBeTruthy();
       expect(view.queryByText('See the summary')).toBeNull();
+    });
+
+    // The percentage, the verdict chips and the volume are a report, and a
+    // report belongs where you go to read it rather than on the way past.
+    it('leaves the full report to the finish screen', async () => {
+      await finishedDay();
+      const view = await renderScreen();
+      await view.findByText(/Push Day done/i);
+
+      expect(view.queryByText('% of plan')).toBeNull();
+      expect(view.queryByText('Against target')).toBeNull();
+      expect(view.queryByText('total volume')).toBeNull();
+      expect(view.queryByText('Achieved')).toBeNull();
+    });
+
+    // The header used to say "N of M sets recorded" while counting bonus sets,
+    // where the card does not. Two answers to one question, three lines apart.
+    it('gives one answer for how many sets were recorded', async () => {
+      await finishedDay();
+      const view = await renderScreen();
+      await view.findByText(/Push Day done/i);
+
+      expect(view.queryByText(/sets recorded/)).toBeNull();
     });
 
     it('lists every exercise with its sets', async () => {

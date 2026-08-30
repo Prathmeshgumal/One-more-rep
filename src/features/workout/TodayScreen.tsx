@@ -13,7 +13,7 @@ import {WEEKDAY_NAMES, weekdayIndex} from '@/domain/weekday';
 import {targetLine} from '@/domain/format';
 import {compareSet, describeComparison} from '@/domain/setComparison';
 import {LedgerTable, type LedgerRow} from '@/ui/LedgerTable';
-import {SessionSummary} from './SessionSummary';
+import {SessionCounts} from './SessionSummary';
 import type {SessionExercise} from '@/repositories/sessionRepo';
 import {useSettingsQuery} from '@/features/settings/useSettings';
 import type {TodayStackParamList} from '@/navigation/types';
@@ -200,13 +200,17 @@ export function TodayScreen() {
 
   // ---- Today is already done ---------------------------------------------
   //
-  // Complaint 10: this used to be two numbers and a "See the summary" button.
-  // The summary was one tap away on a screen with nothing else on it, which is
-  // a layer for its own sake — so it is simply here, with the set-by-set
-  // ledger under it and the full day a button away rather than the summary.
+  // Complaint 10 put the summary here rather than behind a button. It then
+  // turned out to be too much of one: a percentage, four verdict chips and a
+  // volume total are a report, and a report is something you go and look at
+  // rather than something that should meet you on the way past. Two counts
+  // answer the question you actually have standing here — did I do the work —
+  // and the full report is still on the finish screen.
+  //
+  // The header used to carry "N of M sets recorded" as well. It counted bonus
+  // sets where the card below does not, so the two disagreed three lines
+  // apart; the card wins, because it names exercises in the same breath.
   if (session) {
-    const sets = session.exercises.flatMap(e => e.sets);
-    const done = sets.filter(s => s.status === 'completed').length;
     return frame(
       <>
         <View style={styles.headerBlock}>
@@ -214,12 +218,9 @@ export function TodayScreen() {
             {longDate(now)}
           </AppText>
           <AppText variant="h1">{`${session.dayName} done`}</AppText>
-          <AppText variant="small" color="muted">
-            {`${done} of ${sets.length} sets recorded`}
-          </AppText>
         </View>
 
-        <SessionSummary session={session} unit={unit} />
+        <SessionCounts session={session} />
 
         <AppText variant="eyebrow" color="muted">
           Every set

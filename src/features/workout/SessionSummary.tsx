@@ -14,15 +14,60 @@ import {
 import type {Session} from '@/repositories/sessionRepo';
 
 /**
- * How a session went, in one block.
+ * How much of the day got done: exercises, and sets.
  *
- * Lifted out of `WorkoutCompleteScreen` unchanged so Today can show the same
- * thing without a button press (complaint 10). It renders from a `Session`
- * alone — no queries, no navigation — which is what lets two screens draw it
- * without either owning it.
+ * This is all Today shows. Standing there having finished, the useful question
+ * is "did I do the work", and two counts answer it — a percentage, four
+ * verdict chips and a volume total are a report, and a report is something you
+ * go and look at rather than something that should meet you on the way past.
  *
- * The saving stayed behind on the finish screen. That is the one part there
- * must never be two of.
+ * The full report still exists on the finish screen, which is where you have
+ * just stopped and are actually reviewing.
+ *
+ * Bonus sets are excluded from both numerators and denominators, so the ratio
+ * stays "of what was planned" rather than moving because extra work was done.
+ */
+export function SessionCounts({session}: {session: Session}) {
+  const allSets = session.exercises.flatMap(e => e.sets);
+  const plannedSets = allSets.filter(s => !s.isUnplanned);
+  const donePlanned = allSets.filter(
+    s => s.status === 'completed' && !s.isUnplanned,
+  );
+  const doneExercises = session.exercises.filter(
+    e => e.status === 'completed',
+  ).length;
+
+  return (
+    <View style={styles.stats}>
+      <Card>
+        <AppText variant="eyebrow" color="muted">
+          Exercises
+        </AppText>
+        <AppText variant="inkNum">
+          {`${doneExercises} / ${session.exercises.length}`}
+        </AppText>
+      </Card>
+      <Card>
+        <AppText variant="eyebrow" color="muted">
+          Sets
+        </AppText>
+        <AppText variant="inkNum">
+          {`${donePlanned.length} / ${plannedSets.length}`}
+        </AppText>
+      </Card>
+    </View>
+  );
+}
+
+/**
+ * The full report: how far through the plan, and how every set went.
+ *
+ * The finish screen only. Today used to draw this too and it was too much for
+ * a screen you walk past — see `SessionCounts` above.
+ *
+ * It renders from a `Session` alone — no queries, no navigation. The saving
+ * stayed behind on the finish screen itself; that is the one part there must
+ * never be two of.
  */
 export function SessionSummary({
   session,
@@ -40,9 +85,6 @@ export function SessionSummary({
   const percent = completionPercent(allSets);
   const counts = countByStatus(allSets);
   const volume = sessionVolume(session.exercises);
-  const doneExercises = session.exercises.filter(
-    e => e.status === 'completed',
-  ).length;
 
   return (
     <>
@@ -63,26 +105,7 @@ export function SessionSummary({
         </>
       )}
 
-      <View style={styles.stats}>
-        <Card>
-          <AppText variant="eyebrow" color="muted">
-            Exercises
-          </AppText>
-          <AppText variant="inkNum">
-            {`${doneExercises} / ${session.exercises.length}`}
-          </AppText>
-        </Card>
-        <Card>
-          <AppText variant="eyebrow" color="muted">
-            Sets
-          </AppText>
-          <AppText variant="inkNum">
-            {`${doneSets.filter(s => !s.isUnplanned).length} / ${
-              plannedSets.length
-            }`}
-          </AppText>
-        </Card>
-      </View>
+      <SessionCounts session={session} />
 
       <Card>
         <AppText variant="eyebrow" color="muted">
