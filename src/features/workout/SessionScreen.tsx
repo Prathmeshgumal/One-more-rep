@@ -281,22 +281,40 @@ export function SessionScreen() {
     setFocusIndex(firstPendingIndex(cursors));
   }, [cursors]);
 
-  /** §21: skipped, with actuals left empty. Never pretend it happened. */
+  /**
+   * §21: skipped, with actuals left empty. Never pretend it happened.
+   *
+   * Then it moves on, exactly as recording does. It used to stay put and offer
+   * "Go to Cable Fly", which made skipping a two-tap act: pressing Skip is
+   * already the decision to leave this set behind, and asking again is asking
+   * a question that was just answered. The four-second Undo is the way back,
+   * and the skipped set is still reachable from the rail, the peek and the
+   * edge taps if you want a longer look at it.
+   */
   const onSkip = useCallback(async () => {
     if (!cursor) {
       return;
     }
     const snapshot = await snapshotSet(db, cursor.set.id);
     skip.mutate(cursor.set.id, {
-      onSuccess: () =>
+      onSuccess: () => {
         setUndo({
           setId: cursor.set.id,
           index: cursor.index,
           snapshot,
           message: `Set ${cursor.setNumber} skipped`,
-        }),
+        });
+        const next = nextPendingAfter(cursors, cursor.index);
+        if (next !== null) {
+          setFocusIndex(next);
+          return;
+        }
+        // Skipping the last undecided set ends the workout as surely as
+        // recording it does.
+        setFinishOpen(true);
+      },
     });
-  }, [cursor, db, skip]);
+  }, [cursor, cursors, db, skip]);
 
   /** The body's own Undo, on a set that is already skipped. */
   const onUndoSkip = useCallback(() => {

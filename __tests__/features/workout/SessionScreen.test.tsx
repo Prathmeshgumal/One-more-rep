@@ -612,21 +612,57 @@ describe('SessionScreen', () => {
 
     // Skipping stays on the set rather than moving on, so the decision is
     // visible and can be taken back in one tap.
-    it('stays on the skipped set and offers to undo it', async () => {
+    /**
+     * Pressing Skip is already the decision to leave the set behind. Staying
+     * put and offering "Go to Cable Fly" asked a question that had just been
+     * answered, and made skipping a two-tap act.
+     */
+    it('moves on after skipping, the way recording does', async () => {
       const view = await renderScreen();
       await fireEvent.press(await view.findByLabelText('Skip this set'));
-      expect(await view.findByText('Skipped')).toBeTruthy();
-      expect(view.getByLabelText('Undo skip')).toBeTruthy();
-      expect(view.getByText('Exercise 1 of 2 · set 1 of 3')).toBeTruthy();
+      expect(
+        await view.findByText('Exercise 1 of 2 · set 2 of 3'),
+      ).toBeTruthy();
+    });
+
+    it('offers the undo on the way past', async () => {
+      const view = await renderScreen();
+      await fireEvent.press(await view.findByLabelText('Skip this set'));
+      expect(await view.findByText('Set 1 skipped')).toBeTruthy();
+      expect(view.getByLabelText('Undo')).toBeTruthy();
     });
 
     it('puts a skipped set back when the skip is undone', async () => {
       const view = await renderScreen();
       await fireEvent.press(await view.findByLabelText('Skip this set'));
-      await fireEvent.press(await view.findByLabelText('Undo skip'));
+      await fireEvent.press(await view.findByLabelText('Undo'));
       await waitFor(async () => {
         expect((await sets())[0]!.status).toBe('pending');
       });
+    });
+
+    // Still reachable for a longer look, from the rail, the peek or an edge.
+    it('still offers Undo skip when you go back to the set', async () => {
+      const view = await renderScreen();
+      await fireEvent.press(await view.findByLabelText('Skip this set'));
+      await view.findByText('Exercise 1 of 2 · set 2 of 3');
+      await fireEvent.press(view.getByLabelText('Previous set'));
+      expect(await view.findByText('Skipped')).toBeTruthy();
+      expect(view.getByLabelText('Undo skip')).toBeTruthy();
+    });
+
+    // Skipping the last undecided set ends the workout as surely as
+    // recording it does.
+    it('opens the finish sheet when the last set is skipped', async () => {
+      const session = (await getActiveSession(ctx.db))!;
+      const all = session.exercises.flatMap(e => e.sets);
+      for (const set of all.slice(0, -1)) {
+        await completeSet(ctx.db, set.id, {actualReps: 10, actualWeight: 30});
+      }
+      const view = await renderScreen();
+      await view.findByText('Exercise 2 of 2 · set 3 of 3');
+      await fireEvent.press(view.getByLabelText('Skip this set'));
+      expect(await view.findByText('That was the last set.')).toBeTruthy();
     });
 
     it('offers no skip on a set that is already decided', async () => {
