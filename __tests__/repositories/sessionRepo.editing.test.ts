@@ -397,21 +397,40 @@ describe('removeSet', () => {
     expect((await first()).sets).toHaveLength(3);
   });
 
-  it('refuses once the set has recorded something', async () => {
+  // Deleting a bonus set can only ever give you less credit than you earned,
+  // never more, so there is nothing to protect against. Refusing left no way
+  // back from a set completed by accident.
+  it('deletes a bonus set even once it has recorded something', async () => {
     const exercise = await first();
     const added = await addSet(ctx.db, exercise.id);
     await completeSet(ctx.db, added, {actualReps: 8, actualWeight: 20});
 
-    await expect(removeSet(ctx.db, added)).rejects.toThrow(/recorded/i);
-    expect((await first()).sets).toHaveLength(4);
+    await removeSet(ctx.db, added);
+
+    const sets = (await first()).sets;
+    expect(sets).toHaveLength(3);
+    expect(sets.every(s => !s.isUnplanned)).toBe(true);
   });
 
-  it('refuses a set that was skipped rather than left alone', async () => {
+  it('deletes a bonus set that was skipped', async () => {
     const exercise = await first();
     const added = await addSet(ctx.db, exercise.id);
     await skipSet(ctx.db, added);
 
-    await expect(removeSet(ctx.db, added)).rejects.toThrow(/recorded/i);
+    await removeSet(ctx.db, added);
+    expect((await first()).sets).toHaveLength(3);
+  });
+
+  // The direction that matters: a planned set stays put whatever its state,
+  // because erasing one makes the workout look better than it was.
+  it('still refuses a planned set that was skipped', async () => {
+    const exercise = await first();
+    await skipSet(ctx.db, exercise.sets[0]!.id);
+
+    await expect(removeSet(ctx.db, exercise.sets[0]!.id)).rejects.toThrow(
+      /skip/i,
+    );
+    expect((await first()).sets).toHaveLength(3);
   });
 
   // An exercise with no sets can never be completed and draws as an empty

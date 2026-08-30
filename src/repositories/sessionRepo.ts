@@ -659,20 +659,28 @@ export async function addSet(
 }
 
 /**
- * Deletes a set that was added by hand and never used.
+ * Deletes a set you added yourself.
  *
- * The mirror of `removeExercise`, and it carries the same rule: only work you
- * invented can be un-invented. A *planned* set you did not do is **skipped**,
- * never erased — deleting it would shrink the denominator of "% of plan" and
- * quietly flatter the workout, which is the one thing this app must not do.
+ * Only work you invented can be un-invented. A *planned* set you did not do is
+ * **skipped**, never erased — deleting it would shrink the denominator of
+ * "% of plan" and quietly flatter the workout, which is the one thing this app
+ * must not do.
  *
- * It also refuses once anything has been recorded on it. At that point the set
- * happened, and a wrong number is a thing to correct rather than to delete —
- * tapping a recorded set reopens it (U10).
+ * A bonus set can go whatever state it is in, including recorded, and that
+ * asymmetry is deliberate. The two directions are not the same risk: erasing a
+ * planned set makes you look better than you were, while erasing a bonus set
+ * only gives you less credit than you earned. The dangerous direction is the
+ * first one, and it stays closed.
  *
- * The last set on an exercise cannot go either. An exercise with no sets can
- * never be completed and renders as an empty card; the honest action there is
- * to remove the exercise, which the menu already offers.
+ * This started stricter — recorded meant it happened, so correct it rather
+ * than delete it. Then a bonus set was added and completed by accident during
+ * testing, and there was no way back at all: the wrong row was in that workout
+ * for good. Refusing left no recourse; allowing it leaves a mistake that can
+ * be redone.
+ *
+ * The last set on an exercise cannot go. An exercise with no sets can never be
+ * completed and renders as an empty card; the honest action there is to remove
+ * the exercise, which the menu already offers.
  */
 export async function removeSet(
   db: AppDatabase,
@@ -685,12 +693,6 @@ export async function removeSet(
       'This set is part of the plan. Skip it rather than removing it.',
     );
   }
-  if (set.status !== 'pending') {
-    throw new Error(
-      'This set already recorded something, so it is part of the workout now.',
-    );
-  }
-
   const siblings = await db
     .select({id: performedSets.id})
     .from(performedSets)

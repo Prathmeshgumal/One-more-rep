@@ -202,12 +202,11 @@ export function WorkoutExerciseCard({
                     : undefined
                 }
                 onRemove={
-                  // A bonus set with nothing on it yet, and never the last one
-                  // standing — an exercise with no sets can never be finished.
-                  set.isUnplanned &&
-                  set.status === 'pending' &&
-                  exercise.sets.length > 1 &&
-                  onRemoveSet
+                  // Work you invented, and never the last set standing — an
+                  // exercise with no sets can never be finished. Recorded or
+                  // not: a bonus set deleted only ever gives you less credit,
+                  // never more, so there is nothing to protect against.
+                  set.isUnplanned && exercise.sets.length > 1 && onRemoveSet
                     ? () => onRemoveSet(set.id)
                     : undefined
                 }

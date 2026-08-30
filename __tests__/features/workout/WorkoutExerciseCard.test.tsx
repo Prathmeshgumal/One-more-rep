@@ -407,15 +407,18 @@ describe('removing a set you added', () => {
     expect(view.queryByLabelText('Remove set 2')).toBeNull();
   });
 
-  it('offers none once the bonus set has recorded something', async () => {
+  it('still offers it once the bonus set has recorded something', async () => {
+    const onRemoveSet = jest.fn();
     const view = await renderCard({
       expanded: true,
-      onRemoveSet: jest.fn(),
+      onRemoveSet,
       exercise: exercise({
         sets: [set(1), bonus(2, {status: 'completed', actualReps: 8})],
       }),
     });
-    expect(view.queryByLabelText('Remove set 2')).toBeNull();
+
+    await fireEvent.press(view.getByLabelText('Remove set 2'));
+    expect(onRemoveSet).toHaveBeenCalledWith('s2');
   });
 
   // An exercise with no sets can never be finished, and draws as an empty card.
