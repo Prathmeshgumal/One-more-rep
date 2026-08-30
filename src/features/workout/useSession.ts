@@ -116,6 +116,11 @@ export const useAddSet = () =>
   useSessionMutation<string>((db, id) => addSet(db, id));
 
 export const useAddExercise = () =>
-  useSessionMutation<{sessionId: string; exerciseId: string}>(
-    (db, {sessionId, exerciseId}) => addExercise(db, sessionId, exerciseId),
+  useSessionMutation<{
+    sessionId: string;
+    exerciseId: string;
+    /** Drop it in behind this one rather than at the end of the day. */
+    after?: string;
+  }>((db, {sessionId, exerciseId, after}) =>
+    addExercise(db, sessionId, exerciseId, {after}),
   );

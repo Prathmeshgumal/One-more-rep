@@ -950,23 +950,62 @@ export async function addExercise(
   db: AppDatabase,
   sessionId: string,
   exerciseId: string,
+  opts: {after?: string} = {},
 ): Promise<string> {
-  const rows = await db
-    .select({orderIndex: performedExercises.orderIndex})
-    .from(performedExercises)
-    .where(eq(performedExercises.workoutSessionId, sessionId))
-    .orderBy(desc(performedExercises.orderIndex))
-    .limit(1);
+  /**
+   * `after` puts the new exercise directly behind one already in the session,
+   * rather than at the end of the day.
+   *
+   * That is what the request actually is. You decide to add a movement while
+   * standing in front of it, part way down the workout — appending it behind
+   * four exercises you have not reached yet means walking away from the rack
+   * and coming back, and the rail would show it at the far right while you do
+   * it next.
+   */
+  let position: number | null = null;
+  if (opts.after) {
+    const anchor = await db
+      .select({orderIndex: performedExercises.orderIndex})
+      .from(performedExercises)
+      .where(eq(performedExercises.id, opts.after))
+      .limit(1);
+    if (anchor[0]) {
+      position = anchor[0].orderIndex + 1;
+    }
+  }
+
+  if (position === null) {
+    const last = await db
+      .select({orderIndex: performedExercises.orderIndex})
+      .from(performedExercises)
+      .where(eq(performedExercises.workoutSessionId, sessionId))
+      .orderBy(desc(performedExercises.orderIndex))
+      .limit(1);
+    position = (last[0]?.orderIndex ?? -1) + 1;
+  }
 
   const id = newId('pex');
-  await db.insert(performedExercises).values({
-    id,
-    workoutSessionId: sessionId,
-    exerciseId,
-    plannedExerciseId: null,
-    orderIndex: (rows[0]?.orderIndex ?? -1) + 1,
-    status: 'pending',
-  });
+  await db.run(sql.raw('BEGIN'));
+  try {
+    // Everything at or past the insertion point moves down one. Skipped when
+    // appending, where nothing is in the way.
+    await db.run(
+      sql`UPDATE performed_exercises SET order_index = order_index + 1
+          WHERE workout_session_id = ${sessionId} AND order_index >= ${position}`,
+    );
+    await db.insert(performedExercises).values({
+      id,
+      workoutSessionId: sessionId,
+      exerciseId,
+      plannedExerciseId: null,
+      orderIndex: position,
+      status: 'pending',
+    });
+    await db.run(sql.raw('COMMIT'));
+  } catch (error) {
+    await db.run(sql.raw('ROLLBACK'));
+    throw error;
+  }
   await addSet(db, id);
   return id;
 }

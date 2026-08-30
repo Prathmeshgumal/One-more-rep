@@ -43,6 +43,7 @@ export function ExerciseActions({
   onNote,
   onRemove,
   onMove,
+  onAddExercise,
 }: {
   visible: boolean;
   exercise: SessionExercise;
@@ -59,6 +60,7 @@ export function ExerciseActions({
   onNote: () => void;
   onRemove: () => void;
   onMove: (direction: -1 | 1) => void;
+  onAddExercise: () => void;
 }) {
   const anyPending = exercise.sets.some(s => s.status === 'pending');
   const anyDecided = exercise.sets.some(s => s.status !== 'pending');
@@ -145,6 +147,23 @@ export function ExerciseActions({
       reason: isPlanned
         ? 'This exercise is in the plan — skip it instead'
         : 'A set is already recorded, so it is part of the workout now',
+    },
+    {
+      /**
+       * The one action here that is about the day rather than about this
+       * exercise, and it lands directly behind this one — you decide to add a
+       * movement standing in front of it, part way down the workout, and
+       * appending it behind four exercises you have not reached yet means
+       * walking away from the rack to come back to it.
+       *
+       * It took the slot the `Why?` tile had. That tile listed every reason at
+       * once, which the line under the grid already invites you to ask for one
+       * at a time, and a tenth tile would have cost a fourth row holding one.
+       */
+      label: 'Add an exercise',
+      short: 'Add exercise',
+      glyph: '⊕',
+      onPress: onAddExercise,
     },
   ];
 

@@ -55,6 +55,7 @@ const renderActions = (
         onNote={jest.fn()}
         onRemove={jest.fn()}
         onMove={jest.fn()}
+        onAddExercise={jest.fn()}
         {...props}
       />
     </ThemeProvider>,
@@ -74,6 +75,7 @@ describe('ExerciseActions', () => {
       'Move up',
       'Move down',
       'Remove from this workout',
+      'Add an exercise',
     ]) {
       expect(view.getByLabelText(label)).toBeTruthy();
     }
@@ -100,15 +102,17 @@ describe('ExerciseActions', () => {
     expect(view.getByText(/already recorded/i)).toBeTruthy();
   });
 
-  /** ...and one tile collects every reason at once. */
-  it('lists every reason behind the Why tile', async () => {
-    const view = await renderActions({
-      exercise: exercise({sets: [done(1), set(2), set(3)]}),
-      isFirst: true,
-    });
-    await fireEvent.press(view.getByLabelText('Why are some greyed out?'));
-    expect(view.getByText(/Swap for another exercise —/)).toBeTruthy();
-    expect(view.getByText(/Move up — Already first/)).toBeTruthy();
+  /**
+   * The one action on this sheet that is about the day rather than about this
+   * exercise. It was lost when the focus flow replaced the scrolling workout
+   * screen the ghost button lived at the bottom of; the picker it opens and
+   * the mutation behind it were there the whole time.
+   */
+  it('offers to add an exercise, anchored behind this one', async () => {
+    const onAddExercise = jest.fn();
+    const view = await renderActions({onAddExercise});
+    await fireEvent.press(view.getByLabelText('Add an exercise'));
+    expect(onAddExercise).toHaveBeenCalled();
   });
 
   it('says so when nothing is greyed out', async () => {

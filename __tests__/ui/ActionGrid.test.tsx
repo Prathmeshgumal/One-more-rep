@@ -98,23 +98,14 @@ describe('ActionGrid', () => {
     expect(view.getByText('2 greyed out · tap one to see why')).toBeTruthy();
   });
 
-  it('collects every reason behind the Why tile', async () => {
+  it('draws exactly the actions it is given, and nothing of its own', async () => {
     const view = await renderGrid({actions: blocked});
-    await fireEvent.press(view.getByLabelText('Why are some greyed out?'));
-    expect(
-      view.getByText('Swap for another exercise — A set is already recorded'),
-    ).toBeTruthy();
-    expect(view.getByText('Move up — Already first')).toBeTruthy();
+    expect(view.queryByLabelText('Why are some greyed out?')).toBeNull();
   });
 
   it('says so when there is nothing to explain', async () => {
     const view = await renderGrid();
     expect(view.getByText('Everything here is available')).toBeTruthy();
-
-    await fireEvent.press(view.getByLabelText('Why are some greyed out?'));
-    expect(
-      view.getByText('Everything here is available right now'),
-    ).toBeTruthy();
   });
 
   /** A sheet reopened must not still be showing what you asked last time. */

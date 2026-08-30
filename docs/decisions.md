@@ -667,9 +667,42 @@ and are **not** built; they are real work, not a redraw.
 
 ---
 
+## D38 · Adding an exercise mid-workout, back from the dead
+
+Reported from the phone: there was no way to add an exercise during a
+workout. There had been — a ghost button at the bottom of the scrolling
+`WorkoutScreen` (`14894da`). The focus flow replaced that screen with one set
+at a time, and the button had nowhere to live, so it went. The picker it
+opened, `useAddExercise`, and the "also add it to the plan" toggle were all
+still there and all still working; only the door was lost. D36's grid
+inherited the same eight actions the sheet had, so it did not bring it back
+either.
+
+It is now the ninth tile in the `⋯` grid, and it lands **directly behind the
+exercise you added it from** rather than at the end of the day. That is the
+request as actually made: you decide to add a movement standing in front of
+it, part way down the workout. Appending it behind four exercises you have not
+reached yet means walking away from the rack to come back, and the rail would
+show it at the far right while you did it next. `addExercise` takes an
+optional `after`, shifts everything at or past that position down one inside a
+transaction, and still appends when no anchor is given or the anchor is not in
+this session.
+
+It took the slot `Why?` had. That tile listed every reason at once; the line
+under the grid already invites you to ask for them one at a time, and a tenth
+tile would have bought a fourth row holding one. The grid stays 3 × 3.
+
+It is the only action on that sheet that is about the day rather than about
+the exercise the sheet is named after. The peek would be the tidier home by
+scope, but the `⋯` is where a hand goes looking for "what else can I do", and
+one correct-by-taxonomy door nobody opens is worth less than a slightly
+impure one that gets used.
+
+---
+
 ## Outstanding
 
-**The device walk for v4.** D35–D37 are verified against 853 tests and
+**The device walk for v4.** D35–D38 are verified against 863 tests and
 jsdom. A fade that appears at the right moment, nine tiles at 111 × 88 and a
 pinned chip row are all things that only answer on glass.
 

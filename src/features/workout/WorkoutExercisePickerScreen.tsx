@@ -39,7 +39,7 @@ export function WorkoutExercisePickerScreen() {
     useNavigation<NativeStackNavigationProp<WorkoutStackParamList>>();
 
   const params = useRoute().params as
-    | {mode?: 'add' | 'swap'; performedExerciseId?: string}
+    | {mode?: 'add' | 'swap'; performedExerciseId?: string; after?: string}
     | undefined;
   const isSwap = params?.mode === 'swap';
 
@@ -99,7 +99,7 @@ export function WorkoutExercisePickerScreen() {
         return;
       }
       add.mutate(
-        {sessionId: session.id, exerciseId: created},
+        {sessionId: session.id, exerciseId: created, after: params?.after},
         {onSuccess: () => navigation.goBack()},
       );
       // Intentionally not reactive: this runs on the focus that follows the
@@ -180,7 +180,13 @@ export function WorkoutExercisePickerScreen() {
                 return;
               }
               add.mutate(
-                {sessionId: session.id, exerciseId: item.id},
+                {
+                  sessionId: session.id,
+                  exerciseId: item.id,
+                  // Behind the exercise you were standing on, not at the end
+                  // of a day you have not reached yet.
+                  after: params?.after,
+                },
                 {
                   onSuccess: () => {
                     if (!alsoPlan) {

@@ -655,6 +655,14 @@ export function SessionScreen() {
             direction,
           })
         }
+        onAddExercise={() =>
+          navigation.navigate('WorkoutExercisePicker', {
+            mode: 'add',
+            // Behind the exercise you are standing on, not at the end of the
+            // day.
+            after: cursor.exercise.id,
+          })
+        }
       />
 
       <FinishSheet

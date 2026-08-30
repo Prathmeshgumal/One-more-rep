@@ -38,7 +38,7 @@ export type WorkoutStackParamList = {
    * exercise (U6); `performedExerciseId` names the slot.
    */
   WorkoutExercisePicker:
-    | {mode?: 'add'}
+    | {mode?: 'add'; after?: string}
     | {mode: 'swap'; performedExerciseId: string}
     | undefined;
   /**

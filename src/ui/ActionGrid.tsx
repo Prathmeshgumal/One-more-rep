@@ -33,10 +33,10 @@ const PER_ROW = 3;
  * and each one carries a glyph you can find without reading.
  *
  * The trade is that a tile has nowhere to print why an action is unavailable.
- * So an unavailable tile is still pressable — it explains itself into the line
- * below the grid instead of acting — and the last tile collects every reason
- * at once. A greyed control that does nothing at all when pressed is the one
- * thing worse than a greyed control.
+ * So an unavailable tile is still pressable and explains itself into the line
+ * below the grid instead of acting, and that line stands there counting them
+ * until you do. A greyed control that does nothing at all when pressed is the
+ * one thing worse than a greyed control.
  */
 export function ActionGrid({
   visible,
@@ -52,7 +52,7 @@ export function ActionGrid({
   const {colors} = useTheme();
   const insets = useSafeAreaInsets();
 
-  /** `null` is the standing hint, `'*'` is every reason, else one label. */
+  /** `null` is the standing hint; otherwise the label being explained. */
   const [explaining, setExplaining] = useState<string | null>(null);
 
   // A sheet reopened must not still be showing what you asked last time.
@@ -71,8 +71,7 @@ export function ActionGrid({
     onClose();
   };
 
-  const explained =
-    explaining === '*' ? blocked : blocked.filter(a => a.label === explaining);
+  const explained = blocked.filter(a => a.label === explaining);
 
   return (
     <Modal
@@ -110,21 +109,6 @@ export function ActionGrid({
               onPress={() => press(action)}
             />
           ))}
-          <Tile
-            action={{
-              label: 'Why are some greyed out?',
-              short: 'Why?',
-              glyph: '?',
-              onPress: () => setExplaining('*'),
-              disabled: blocked.length === 0,
-              reason: 'Everything here is available right now',
-            }}
-            onPress={() =>
-              setExplaining(
-                blocked.length === 0 ? 'Why are some greyed out?' : '*',
-              )
-            }
-          />
         </View>
 
         {/* The line the tiles cannot carry. Reserved whether or not anything
@@ -139,9 +123,7 @@ export function ActionGrid({
             ))
           ) : (
             <AppText variant="printed" color="faint">
-              {explaining !== null
-                ? 'Everything here is available right now'
-                : blocked.length === 0
+              {blocked.length === 0
                 ? 'Everything here is available'
                 : `${blocked.length} greyed out · tap one to see why`}
             </AppText>
