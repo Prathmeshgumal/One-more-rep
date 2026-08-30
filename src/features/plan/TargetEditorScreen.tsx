@@ -182,24 +182,30 @@ export function TargetEditorScreen() {
         <AppText variant="eyebrow" color="muted">
           {uniform ? 'Every set' : `Set ${editing + 1}`}
         </AppText>
+        {/* Half each. The Stepper no longer claims this for itself — in a
+            column that claim collapsed it to nothing. */}
         <View style={styles.pair}>
-          <Stepper
-            label="Weight"
-            unit={unit}
-            value={current.targetWeight ?? 0}
-            step={step}
-            decimals={1}
-            min={0}
-            onChange={value => change({targetWeight: weightOrNull(value)})}
-          />
-          <Stepper
-            label="Reps"
-            unit="reps"
-            value={current.targetReps}
-            step={1}
-            min={1}
-            onChange={value => change({targetReps: value})}
-          />
+          <View style={styles.half}>
+            <Stepper
+              label="Weight"
+              unit={unit}
+              value={current.targetWeight ?? 0}
+              step={step}
+              decimals={1}
+              min={0}
+              onChange={value => change({targetWeight: weightOrNull(value)})}
+            />
+          </View>
+          <View style={styles.half}>
+            <Stepper
+              label="Reps"
+              unit="reps"
+              value={current.targetReps}
+              step={1}
+              min={1}
+              onChange={value => change({targetReps: value})}
+            />
+          </View>
         </View>
       </View>
 
@@ -223,6 +229,7 @@ const styles = StyleSheet.create({
   headerBlock: {gap: 2},
   field: {gap: space.sm},
   pair: {flexDirection: 'row', gap: space.md},
+  half: {flex: 1},
   ledgerRow: {
     flexDirection: 'row',
     alignItems: 'center',
