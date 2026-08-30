@@ -17,7 +17,9 @@ import {useExerciseHistoryQuery} from './useHistory';
 const setsLine = (session: SessionProgress): string =>
   session.sets
     .map(set =>
-      set.weight === null ? `${set.reps}` : `${set.weight.toFixed(1)}×${set.reps}`,
+      set.weight === null
+        ? `${set.reps}`
+        : `${set.weight.toFixed(1)}×${set.reps}`,
     )
     .join(' · ');
 
@@ -36,7 +38,11 @@ export function ExerciseHistoryScreen() {
 
   if (!data) {
     return (
-      <Screen back eyebrow="Exercise history" title={isPending ? '' : 'Not found'} />
+      <Screen
+        back
+        eyebrow="Exercise history"
+        title={isPending ? '' : 'Not found'}
+      />
     );
   }
 

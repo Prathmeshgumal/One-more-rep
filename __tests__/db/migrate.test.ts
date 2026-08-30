@@ -6,7 +6,11 @@ import {createTestDb} from '../helpers/testDb';
 
 const FIXTURES: readonly Migration[] = [
   {version: 1, name: '0000_first', statements: ['CREATE TABLE a (id INTEGER)']},
-  {version: 2, name: '0001_second', statements: ['CREATE TABLE b (id INTEGER)']},
+  {
+    version: 2,
+    name: '0001_second',
+    statements: ['CREATE TABLE b (id INTEGER)'],
+  },
 ];
 
 const tableNames = async (db: AppDatabase) => {
@@ -80,9 +84,7 @@ describe('runMigrations', () => {
 
     const columnsOf = async (table: string) =>
       (
-        await ctx.db.all<{name: string}>(
-          sql.raw(`PRAGMA table_info(${table})`),
-        )
+        await ctx.db.all<{name: string}>(sql.raw(`PRAGMA table_info(${table})`))
       ).map(c => c.name);
 
     expect(await columnsOf('settings')).toContain('theme_mode');

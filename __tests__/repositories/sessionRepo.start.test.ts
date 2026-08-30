@@ -1,7 +1,12 @@
 import {sql} from 'drizzle-orm';
 import {runMigrations} from '@/db/migrate';
 import {createPlan, editPlan} from '@/repositories/planRepo';
-import {addExercises, renameDay, setRestDay, setTargets} from '@/domain/planDraft';
+import {
+  addExercises,
+  renameDay,
+  setRestDay,
+  setTargets,
+} from '@/domain/planDraft';
 import {
   startWorkout,
   getSessionForDate,
@@ -130,16 +135,16 @@ describe('startWorkout', () => {
   it('leaves nothing behind when starting fails partway', async () => {
     const insert = ctx.db.insert.bind(ctx.db);
     let calls = 0;
-    const spy = jest
-      .spyOn(ctx.db, 'insert')
-      .mockImplementation(((table: Parameters<typeof insert>[0]) => {
-        calls += 1;
-        // The session and its exercises land, then the sets blow up.
-        if (calls > 2) {
-          throw new Error('injected failure');
-        }
-        return insert(table);
-      }) as typeof insert);
+    const spy = jest.spyOn(ctx.db, 'insert').mockImplementation(((
+      table: Parameters<typeof insert>[0],
+    ) => {
+      calls += 1;
+      // The session and its exercises land, then the sets blow up.
+      if (calls > 2) {
+        throw new Error('injected failure');
+      }
+      return insert(table);
+    }) as typeof insert);
 
     await expect(startWorkout(ctx.db, {now: MONDAY})).rejects.toThrow(
       /injected failure/,

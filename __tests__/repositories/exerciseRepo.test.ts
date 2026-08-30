@@ -98,7 +98,9 @@ describe('exerciseRepo', () => {
 
   it('filters by a group of muscles, so Back catches lats and traps alike', async () => {
     await seed();
-    const found = await listExercises(ctx.db, {muscles: ['chest', 'quadriceps']});
+    const found = await listExercises(ctx.db, {
+      muscles: ['chest', 'quadriceps'],
+    });
     expect(found.map(e => e.name)).toEqual(['Air Squat', 'Cable Fly']);
   });
 
@@ -136,7 +138,9 @@ describe('exerciseRepo', () => {
     const [first] = await listExercises(ctx.db);
     await softDeleteExercise(ctx.db, first!.id);
 
-    expect((await listExercises(ctx.db)).map(e => e.name)).toEqual(['Cable Fly']);
+    expect((await listExercises(ctx.db)).map(e => e.name)).toEqual([
+      'Cable Fly',
+    ]);
     expect(await countExercises(ctx.db)).toBe(2);
     expect(await getExercise(ctx.db, first!.id)).toBeDefined();
   });
@@ -157,7 +161,9 @@ describe('exerciseRepo', () => {
       weightApplicable: true,
     });
     await new Promise(r => setTimeout(r, 5));
-    const updated = await updateCustomExercise(ctx.db, created.id, {name: 'Fly'});
+    const updated = await updateCustomExercise(ctx.db, created.id, {
+      name: 'Fly',
+    });
     expect(updated.updatedAt).toBeGreaterThan(created.updatedAt);
   });
 

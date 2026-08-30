@@ -1,10 +1,10 @@
 import React from 'react';
-import { render, fireEvent } from '@testing-library/react-native';
-import { ThemeProvider } from '@/theme';
-import { SearchField } from '@/ui/SearchField';
-import { Chip } from '@/ui/Chip';
-import { Card } from '@/ui/Card';
-import { AppText } from '@/ui/Text';
+import {render, fireEvent} from '@testing-library/react-native';
+import {ThemeProvider} from '@/theme';
+import {SearchField} from '@/ui/SearchField';
+import {Chip} from '@/ui/Chip';
+import {Card} from '@/ui/Card';
+import {AppText} from '@/ui/Text';
 
 const wrap = (ui: React.ReactElement) =>
   render(<ThemeProvider>{ui}</ThemeProvider>);

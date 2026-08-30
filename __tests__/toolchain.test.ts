@@ -18,7 +18,8 @@ describe('the app version', () => {
   const root = path.join(__dirname, '..');
 
   const fromPackageJson = (): string =>
-    JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')).version;
+    JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'))
+      .version;
 
   const fromGradle = (): string => {
     const gradle = fs.readFileSync(

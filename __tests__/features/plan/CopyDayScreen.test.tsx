@@ -14,7 +14,11 @@ import {createTestDb} from '../../helpers/testDb';
 const mockGoBack = jest.fn();
 jest.mock('@react-navigation/native', () => ({
   ...jest.requireActual('@react-navigation/native'),
-  useNavigation: () => ({goBack: mockGoBack, navigate: jest.fn(), addListener: () => () => {}}),
+  useNavigation: () => ({
+    goBack: mockGoBack,
+    navigate: jest.fn(),
+    addListener: () => () => {},
+  }),
   useRoute: () => ({params: {weekday: 0}}),
 }));
 
@@ -62,7 +66,9 @@ describe('CopyDayScreen', () => {
     const view = await renderScreen();
     expect(await view.findByText('Copy from Monday')).toBeTruthy();
     expect(view.getByText('Push Day')).toBeTruthy();
-    expect(view.getByText(/1 exercise · 3 sets · targets included/)).toBeTruthy();
+    expect(
+      view.getByText(/1 exercise · 3 sets · targets included/),
+    ).toBeTruthy();
   });
 
   it('offers the other six days and not the source', async () => {

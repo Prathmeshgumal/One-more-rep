@@ -15,7 +15,11 @@ const mockGoBack = jest.fn();
 const mockNavigate = jest.fn();
 jest.mock('@react-navigation/native', () => ({
   ...jest.requireActual('@react-navigation/native'),
-  useNavigation: () => ({goBack: mockGoBack, navigate: mockNavigate, addListener: () => () => {}}),
+  useNavigation: () => ({
+    goBack: mockGoBack,
+    navigate: mockNavigate,
+    addListener: () => () => {},
+  }),
   useRoute: () => ({params: {weekday: 0}}),
 }));
 
@@ -115,7 +119,10 @@ describe('ExercisePickerScreen', () => {
 
     const plan = await getActivePlan(ctx.db);
     const day = plan!.days[0]!;
-    expect(day.exercises.map(e => e.name)).toEqual(['Bench Press', 'Cable Fly']);
+    expect(day.exercises.map(e => e.name)).toEqual([
+      'Bench Press',
+      'Cable Fly',
+    ]);
     expect(day.exercises[0]!.sets).toHaveLength(3);
     expect(day.exercises[0]!.sets[0]).toEqual({
       setNumber: 1,

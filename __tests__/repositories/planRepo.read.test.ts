@@ -48,9 +48,7 @@ describe('planRepo reads', () => {
 
   it('refuses to create a second plan while one is active', async () => {
     await createPlan(ctx.db, {now: MONDAY});
-    await expect(createPlan(ctx.db, {now: MONDAY})).rejects.toThrow(
-      /already/i,
-    );
+    await expect(createPlan(ctx.db, {now: MONDAY})).rejects.toThrow(/already/i);
   });
 
   // Days are indexed by weekday, so a screen can say days[weekday] without
@@ -143,7 +141,10 @@ describe('planRepo reads', () => {
       sql`INSERT INTO plan_versions (id,name,effective_from,effective_to)
           VALUES ('new','My plan',${MONDAY},NULL)`,
     );
-    for (const [version, id] of [['old', 'od'], ['new', 'nd']] as const) {
+    for (const [version, id] of [
+      ['old', 'od'],
+      ['new', 'nd'],
+    ] as const) {
       for (let weekday = 0; weekday < 7; weekday++) {
         await ctx.db.run(
           sql`INSERT INTO plan_days (id, plan_version_id, weekday, is_rest_day)
@@ -152,8 +153,12 @@ describe('planRepo reads', () => {
       }
     }
 
-    expect((await getPlanForDate(ctx.db, older + 1000))?.version.id).toBe('old');
-    expect((await getPlanForDate(ctx.db, MONDAY + 1000))?.version.id).toBe('new');
+    expect((await getPlanForDate(ctx.db, older + 1000))?.version.id).toBe(
+      'old',
+    );
+    expect((await getPlanForDate(ctx.db, MONDAY + 1000))?.version.id).toBe(
+      'new',
+    );
     expect(await getPlanForDate(ctx.db, older - 1000)).toBeUndefined();
   });
 

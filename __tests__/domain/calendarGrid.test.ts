@@ -56,7 +56,13 @@ describe('buildCalendarCells', () => {
     const june: ResolvedDay[] = eachLocalDay(
       new Date(2026, 5, 1).getTime(),
       new Date(2026, 5, 30).getTime(),
-    ).map(date => ({...august[0]!, date, weekday: weekdayIndex(new Date(date))}));
-    expect(buildCalendarCells(june, AUG(22)).filter(c => c.kind === 'pad')).toEqual([]);
+    ).map(date => ({
+      ...august[0]!,
+      date,
+      weekday: weekdayIndex(new Date(date)),
+    }));
+    expect(
+      buildCalendarCells(june, AUG(22)).filter(c => c.kind === 'pad'),
+    ).toEqual([]);
   });
 });

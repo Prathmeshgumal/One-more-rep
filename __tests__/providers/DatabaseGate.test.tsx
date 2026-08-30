@@ -1,13 +1,13 @@
 import React from 'react';
-import { Text } from 'react-native';
-import { render, waitFor } from '@testing-library/react-native';
-import { ThemeProvider } from '@/theme';
-import { DatabaseGate } from '@/providers/DatabaseGate';
-import { sql } from 'drizzle-orm';
-import { runMigrations } from '@/db/migrate';
-import { updateSettings } from '@/repositories/settingsRepo';
-import { useThemeMode } from '@/theme';
-import { createTestDb } from '../helpers/testDb';
+import {Text} from 'react-native';
+import {render, waitFor} from '@testing-library/react-native';
+import {ThemeProvider} from '@/theme';
+import {DatabaseGate} from '@/providers/DatabaseGate';
+import {sql} from 'drizzle-orm';
+import {runMigrations} from '@/db/migrate';
+import {updateSettings} from '@/repositories/settingsRepo';
+import {useThemeMode} from '@/theme';
+import {createTestDb} from '../helpers/testDb';
 
 // React Native Testing Library 14 made render async.
 const wrap = (ui: React.ReactElement) =>
@@ -21,7 +21,7 @@ describe('DatabaseGate', () => {
   });
 
   it('renders children once migrations succeed', async () => {
-    const { db, close } = createTestDb();
+    const {db, close} = createTestDb();
     open.push(close);
     const view = await wrap(
       <DatabaseGate getDb={() => db}>
@@ -35,7 +35,7 @@ describe('DatabaseGate', () => {
   // on launch, keeping every set it recorded. There is no background job, so
   // this is the only moment it can happen.
   it('closes a session left open from a previous day', async () => {
-    const { db, close } = createTestDb();
+    const {db, close} = createTestDb();
     open.push(close);
     await runMigrations(db);
     await db.run(
@@ -51,7 +51,7 @@ describe('DatabaseGate', () => {
     expect(await view.findByText('ready')).toBeTruthy();
 
     await waitFor(async () => {
-      const rows = await db.all<{ status: string }>(
+      const rows = await db.all<{status: string}>(
         sql`SELECT status FROM workout_sessions WHERE id='old'`,
       );
       expect(rows[0]?.status).toBe('abandoned');
@@ -63,11 +63,11 @@ describe('DatabaseGate', () => {
   // regresses, the app launches in the wrong palette and corrects itself a
   // frame later, which reads as a flash of the wrong colour.
   it('loads the saved theme before it renders its children', async () => {
-    const { db, close } = createTestDb();
+    const {db, close} = createTestDb();
     open.push(close);
     await runMigrations(db);
-    await updateSettings(db, { themeMode: 'dark' });
-    useThemeMode.setState({ mode: 'system' });
+    await updateSettings(db, {themeMode: 'dark'});
+    useThemeMode.setState({mode: 'system'});
 
     const view = await wrap(
       <DatabaseGate getDb={() => db}>
@@ -83,8 +83,7 @@ describe('DatabaseGate', () => {
       <DatabaseGate
         getDb={() => {
           throw new Error('disk is full');
-        }}
-      >
+        }}>
         <Text>ready</Text>
       </DatabaseGate>,
     );

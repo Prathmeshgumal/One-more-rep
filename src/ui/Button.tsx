@@ -56,7 +56,9 @@ export function Button({
         pressed && styles.pressed,
         disabled && styles.disabled,
       ]}>
-      <AppText variant={size === 'sm' ? 'small' : 'bodyStrong'} color={ink[variant]}>
+      <AppText
+        variant={size === 'sm' ? 'small' : 'bodyStrong'}
+        color={ink[variant]}>
         {label}
       </AppText>
     </Pressable>

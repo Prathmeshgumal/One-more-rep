@@ -39,9 +39,7 @@ const PUSHED: readonly string[] = [
  * The two exceptions, each with a reason. A back chevron mid-workout reads as
  * "cancel this", and the finish screen has nothing sensible behind it.
  */
-const NO_BACK: readonly string[] = [
-  'features/workout/SessionScreen.tsx',
-];
+const NO_BACK: readonly string[] = ['features/workout/SessionScreen.tsx'];
 
 /** Stack roots: the tab already is the way back. */
 /**

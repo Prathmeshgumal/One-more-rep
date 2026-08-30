@@ -105,7 +105,11 @@ describe('an upgrade never loses what is already there', () => {
       actual_weight: 60,
       status: 'completed',
     });
-    expect(sets[1]).toMatchObject({id: 'ps2', actual_reps: 8, actual_weight: 62.5});
+    expect(sets[1]).toMatchObject({
+      id: 'ps2',
+      actual_reps: 8,
+      actual_weight: 62.5,
+    });
   });
 
   it('keeps the workout and the exercise it was performed against', async () => {
@@ -115,9 +119,10 @@ describe('an upgrade never loses what is already there', () => {
     );
     expect(sessions).toEqual([{id: 'ws1', day_name_snapshot: 'Push Day'}]);
 
-    const performed = await ctx.db.all<{id: string; planned_exercise_id: string}>(
-      sql`SELECT id, planned_exercise_id FROM performed_exercises`,
-    );
+    const performed = await ctx.db.all<{
+      id: string;
+      planned_exercise_id: string;
+    }>(sql`SELECT id, planned_exercise_id FROM performed_exercises`);
     expect(performed).toEqual([{id: 'pex1', planned_exercise_id: 'ple1'}]);
   });
 

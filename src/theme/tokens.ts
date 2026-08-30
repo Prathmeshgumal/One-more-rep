@@ -108,7 +108,12 @@ export const type = {
     letterSpacing: -1.96,
     fontVariant: TABULAR,
   },
-  h1: {fontFamily: font.sansBold, fontSize: 26, lineHeight: 30, letterSpacing: -0.4},
+  h1: {
+    fontFamily: font.sansBold,
+    fontSize: 26,
+    lineHeight: 30,
+    letterSpacing: -0.4,
+  },
   h2: {fontFamily: font.sansSemi, fontSize: 20, lineHeight: 25},
   h3: {fontFamily: font.sansSemi, fontSize: 17, lineHeight: 22},
   body: {fontFamily: font.sans, fontSize: 15, lineHeight: 22},
@@ -139,7 +144,12 @@ export const type = {
     letterSpacing: -0.5,
     fontVariant: TABULAR,
   },
-  mono: {fontFamily: font.mono, fontSize: 13, lineHeight: 18, fontVariant: TABULAR},
+  mono: {
+    fontFamily: font.mono,
+    fontSize: 13,
+    lineHeight: 18,
+    fontVariant: TABULAR,
+  },
   monoSmall: {
     fontFamily: font.mono,
     fontSize: 11,
@@ -150,5 +160,13 @@ export const type = {
 
 export type TypeToken = keyof typeof type;
 
-export const space = {xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 24, xxxl: 32} as const;
+export const space = {
+  xs: 4,
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 20,
+  xxl: 24,
+  xxxl: 32,
+} as const;
 export const radius = {sm: 10, md: 14, lg: 20, pill: 999} as const;

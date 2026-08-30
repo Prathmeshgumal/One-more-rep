@@ -63,9 +63,7 @@ export async function seedExercises(
   // This runs once per install and holds the first launch behind a spinner,
   // so the number matters and is otherwise invisible. Development only.
   if (__DEV__) {
-    console.log(
-      `[seed] ${rows.length} exercises in ${Date.now() - started}ms`,
-    );
+    console.log(`[seed] ${rows.length} exercises in ${Date.now() - started}ms`);
   }
 
   return {inserted: rows.length};

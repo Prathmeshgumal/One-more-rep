@@ -14,7 +14,11 @@ import {createTestDb} from '../../helpers/testDb';
 const mockNavigate = jest.fn();
 jest.mock('@react-navigation/native', () => ({
   ...jest.requireActual('@react-navigation/native'),
-  useNavigation: () => ({navigate: mockNavigate, goBack: jest.fn(), addListener: () => () => {}}),
+  useNavigation: () => ({
+    navigate: mockNavigate,
+    goBack: jest.fn(),
+    addListener: () => () => {},
+  }),
 }));
 
 describe('PlanWeekScreen', () => {
@@ -80,7 +84,9 @@ describe('PlanWeekScreen', () => {
 
   it('shows a named day with its exercise and set counts', async () => {
     await createPlan(ctx.db);
-    await editPlan(ctx.db, d => addExercises(renameDay(d, 0, 'Push Day'), 0, ['bench']));
+    await editPlan(ctx.db, d =>
+      addExercises(renameDay(d, 0, 'Push Day'), 0, ['bench']),
+    );
 
     const view = await renderScreen();
     expect(await view.findByText('Push Day')).toBeTruthy();
@@ -100,7 +106,9 @@ describe('PlanWeekScreen', () => {
 
   it('summarises the week in the header', async () => {
     await createPlan(ctx.db);
-    await editPlan(ctx.db, d => addExercises(renameDay(d, 0, 'Push Day'), 0, ['bench']));
+    await editPlan(ctx.db, d =>
+      addExercises(renameDay(d, 0, 'Push Day'), 0, ['bench']),
+    );
 
     const view = await renderScreen();
     expect(await view.findByText('1 workout day · 1 exercise')).toBeTruthy();

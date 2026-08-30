@@ -102,11 +102,11 @@ export function PlanWeekScreen() {
           </AppText>
           <AppText variant="h1">Your week</AppText>
           <AppText variant="small" color="muted">
-            {`${plural(workoutDays.length, 'workout day', 'workout days')} · ${plural(
-              totalExercises,
-              'exercise',
-              'exercises',
-            )}`}
+            {`${plural(
+              workoutDays.length,
+              'workout day',
+              'workout days',
+            )} · ${plural(totalExercises, 'exercise', 'exercises')}`}
           </AppText>
         </View>
         <Pressable
@@ -115,7 +115,13 @@ export function PlanWeekScreen() {
           onPress={() => navigation.navigate('PlanHistory')}
           hitSlop={space.md}>
           <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
-            <Circle cx={12} cy={12} r={8} stroke={colors.ink2} strokeWidth={1.8} />
+            <Circle
+              cx={12}
+              cy={12}
+              r={8}
+              stroke={colors.ink2}
+              strokeWidth={1.8}
+            />
             <Path
               d="M12 8v4l3 2"
               stroke={colors.ink2}
@@ -140,8 +146,8 @@ export function PlanWeekScreen() {
                 day.isRestDay
                   ? `${WEEKDAY_NAMES[day.weekday]}, rest day`
                   : unset
-                    ? `${WEEKDAY_NAMES[day.weekday]}, not set up`
-                    : `${WEEKDAY_NAMES[day.weekday]}, ${name}`
+                  ? `${WEEKDAY_NAMES[day.weekday]}, not set up`
+                  : `${WEEKDAY_NAMES[day.weekday]}, ${name}`
               }
               onPress={() =>
                 navigation.navigate('PlanDay', {weekday: day.weekday})
@@ -199,7 +205,12 @@ const styles = StyleSheet.create({
   centred: {textAlign: 'center'},
   fullWidth: {width: '100%', marginTop: space.sm},
   ghostWeek: {width: '100%', gap: space.sm, marginBottom: space.lg},
-  ghostRow: {height: 34, borderWidth: 1, borderRadius: radius.sm, borderStyle: 'dashed'},
+  ghostRow: {
+    height: 34,
+    borderWidth: 1,
+    borderRadius: radius.sm,
+    borderStyle: 'dashed',
+  },
   content: {
     paddingHorizontal: space.xl,
     paddingBottom: space.xxxl,

@@ -8,7 +8,10 @@ export async function getSchemaVersion(db: AppDatabase): Promise<number> {
   return rows[0]?.user_version ?? 0;
 }
 
-async function setSchemaVersion(db: AppDatabase, version: number): Promise<void> {
+async function setSchemaVersion(
+  db: AppDatabase,
+  version: number,
+): Promise<void> {
   if (!Number.isInteger(version) || version < 0) {
     throw new Error(`Refusing to set a non-integer schema version: ${version}`);
   }

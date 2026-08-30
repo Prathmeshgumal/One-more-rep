@@ -60,8 +60,8 @@ export function NumberField({
     value === null
       ? EM_DASH
       : decimals === undefined
-        ? String(value)
-        : value.toFixed(decimals);
+      ? String(value)
+      : value.toFixed(decimals);
 
   // The draft is what is on screen while editing; `printed` is the truth. They
   // diverge only between the first keystroke and the blur.

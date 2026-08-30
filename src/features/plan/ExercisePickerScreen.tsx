@@ -1,6 +1,10 @@
 import React, {useState} from 'react';
 import {FlatList, StyleSheet, View} from 'react-native';
-import {useNavigation, useRoute, useFocusEffect} from '@react-navigation/native';
+import {
+  useNavigation,
+  useRoute,
+  useFocusEffect,
+} from '@react-navigation/native';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {AppText} from '@/ui/Text';
@@ -36,7 +40,8 @@ export function ExercisePickerScreen() {
   const [selected, setSelected] = useState<string[]>([]);
 
   const settledSearch = useDebounced(search, 250);
-  const filter = MUSCLE_FILTERS.find(f => f.label === group) ?? MUSCLE_FILTERS[0]!;
+  const filter =
+    MUSCLE_FILTERS.find(f => f.label === group) ?? MUSCLE_FILTERS[0]!;
   const {data: exercises} = useExerciseListQuery({
     search: settledSearch || undefined,
     muscles: filter.values.length ? filter.values : undefined,

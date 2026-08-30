@@ -12,7 +12,9 @@ function Chrome() {
   const {scheme} = useTheme();
   return (
     <>
-      <StatusBar barStyle={scheme === 'dark' ? 'light-content' : 'dark-content'} />
+      <StatusBar
+        barStyle={scheme === 'dark' ? 'light-content' : 'dark-content'}
+      />
       <NavigationContainer>
         <RootNavigator />
       </NavigationContainer>
