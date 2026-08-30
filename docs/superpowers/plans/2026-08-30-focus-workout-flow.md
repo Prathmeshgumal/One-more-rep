@@ -229,25 +229,25 @@ line below is ticked.
 | leaves the workout when closed | 2.2 ✅ |
 | writes the actuals when the set is completed | 3.2 ✅ |
 | advances to the next set once one is recorded | 3.2 ✅ |
-| shows a recorded set with its verdict | 4.1 — the peek and the rail carry it |
+| shows a recorded set with its verdict | 4.1 ✅ |
 | does not move focus out from under a recorded set | 3.2 ✅ |
 | skips a set without recording anything | 3.4 ✅ |
 | reopens a skipped set when it is tapped | 3.4 ✅ |
-| adds a bonus set with no target | 4.2 |
-| removes a bonus set added by mistake | 4.2 |
-| offers no way to remove a planned set | 4.2 |
-| skips the whole exercise and moves on | 4.2 |
-| offers to finish rather than skip once something is recorded | 4.2 |
-| finishing a part-done exercise records it as completed | 4.2 |
-| opens the next exercise when one is finished | 4.2 |
-| opens the menu for the exercise whose control was pressed | 4.2 |
-| reorders the session from the menu | 4.2 |
-| writes a note to the database when the field is left | 4.2 |
-| sends a swap to the picker rather than doing it blind | 4.2 |
-| shows every exercise in the session at once | 4.1 (the peek) |
-| opens a different exercise when its header is tapped | 4.1 (the peek) |
+| adds a bonus set with no target | 4.2 ✅ |
+| removes a bonus set added by mistake | 4.2 ✅ |
+| offers no way to remove a planned set | 4.2 ✅ |
+| skips the whole exercise and moves on | 4.2 ✅ |
+| offers to finish rather than skip once something is recorded | 4.2 ✅ |
+| finishing a part-done exercise records it as completed | 4.2 ✅ |
+| opens the next exercise when one is finished | 4.2 ✅ |
+| opens the menu for the exercise whose control was pressed | 4.2 ✅ |
+| reorders the session from the menu | 4.2 ✅ |
+| writes a note to the database when the field is left | 4.2 ✅ — a sheet with Save |
+| sends a swap to the picker rather than doing it blind | 4.2 ✅ |
+| shows every exercise in the session at once | 4.1 ✅ |
+| opens a different exercise when its header is tapped | 4.1 ✅ |
 | closes the open card when its own header is tapped | dropped — nothing expands |
-| reopens a recorded set so a wrong number can be corrected | 4.3 |
-| goes back to the first pending set once the correction is saved | 4.3 |
-| offers no edit on a set that has not happened yet | 4.3 |
+| reopens a recorded set so a wrong number can be corrected | 4.3 ✅ |
+| goes back to the first pending set once the correction is saved | 4.3 ✅ |
+| offers no edit on a set that has not happened yet | n/a — every set is reachable now |
 | stops offering to finish once there is nothing left | 5.1 |

@@ -11,6 +11,9 @@ import {FocusSet, type FocusMode} from './FocusSet';
 import {FocusActions} from './FocusActions';
 import {UndoBanner} from './UndoBanner';
 import {SetRail} from './SetRail';
+import {SessionPeek} from './SessionPeek';
+import {NoteSheet} from './NoteSheet';
+import {ExerciseActions} from './ExerciseActions';
 import {useActiveSet} from './useActiveSet';
 import {
   flattenSets,
@@ -24,8 +27,17 @@ import {
   usePreviousPerformanceQuery,
   useCompleteSet,
   useSkipSet,
+  useSkipExercise,
+  useFinishExercise,
+  useAddSet,
 } from './useSession';
-import {useRestoreSet} from './useSessionEditing';
+import {
+  useRestoreSet,
+  useSetExerciseNotes,
+  useRemoveExercise,
+  useRemoveSet,
+  useMoveExercise,
+} from './useSessionEditing';
 import {useDatabase} from '@/providers/DatabaseGate';
 import {snapshotSet, type SetSnapshot} from '@/repositories/sessionRepo';
 
@@ -55,8 +67,18 @@ export function SessionScreen() {
   const complete = useCompleteSet();
   const skip = useSkipSet();
   const restore = useRestoreSet();
+  const skipExercise = useSkipExercise();
+  const finishExercise = useFinishExercise();
+  const addSet = useAddSet();
+  const setNotes = useSetExerciseNotes();
+  const removeExercise = useRemoveExercise();
+  const removeSet = useRemoveSet();
+  const moveExercise = useMoveExercise();
 
   const [focusIndex, setFocusIndex] = useState(0);
+  const [peekOpen, setPeekOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [noteOpen, setNoteOpen] = useState(false);
 
   // Memoised because the record and advance callbacks close over it: a fresh
   // array every render would rebuild them every render, and the undo timer
@@ -187,6 +209,34 @@ export function SessionScreen() {
     );
   }, [cursor, cursors, db, active, complete]);
 
+  /**
+   * Saves a correction to a set already decided, then returns to the live one.
+   *
+   * Deliberately not `onRecord`: that advances to the next *pending* set,
+   * which after correcting set 2 of exercise 1 would be set 3 — walking you
+   * backwards through a workout you had already reached the end of. An
+   * amendment ends where it started, at whatever is genuinely next.
+   */
+  const onSaveAmendment = useCallback(() => {
+    if (!cursor) {
+      return;
+    }
+    const live = firstPendingIndex(cursors);
+    complete.mutate(
+      {
+        setId: cursor.set.id,
+        actualReps: active.reps,
+        actualWeight: cursor.exercise.weightApplicable ? active.weight : null,
+      },
+      {onSuccess: () => setFocusIndex(live)},
+    );
+  }, [cursor, cursors, active, complete]);
+
+  /** Leaves the record alone and goes back to where the work is. */
+  const onCancelAmendment = useCallback(() => {
+    setFocusIndex(firstPendingIndex(cursors));
+  }, [cursors]);
+
   /** §21: skipped, with actuals left empty. Never pretend it happened. */
   const onSkip = useCallback(async () => {
     if (!cursor) {
@@ -229,6 +279,80 @@ export function SessionScreen() {
       setFocusIndex(next);
     }
   }, [cursor, cursors]);
+
+  /** Moves focus to a set named by id — how the peek and the rail navigate. */
+  const jumpToSet = useCallback(
+    (setId: string) => {
+      const found = cursors.findIndex(c => c.set.id === setId);
+      if (found >= 0) {
+        setFocusIndex(found);
+      }
+    },
+    [cursors],
+  );
+
+  /**
+   * U11: finishing and skipping are different acts, and the difference is
+   * whether anything actually happened. An exercise with three of four sets
+   * recorded is finished, not skipped — calling it skipped understates the
+   * work, which is how it came back from the phone.
+   */
+  const onFinishExercise = useCallback(() => {
+    if (!cursor) {
+      return;
+    }
+    const id = cursor.exercise.id;
+    const anyRecorded = cursor.exercise.sets.some(
+      s => s.status === 'completed',
+    );
+    const run = anyRecorded ? finishExercise : skipExercise;
+    run.mutate(id, {
+      onSuccess: () => {
+        // Land on the first set of whatever is next rather than on the last
+        // set of what was just closed.
+        const next = cursors.find(
+          c => c.index > cursor.index && c.exercise.id !== id,
+        );
+        if (next) {
+          setFocusIndex(next.index);
+        }
+      },
+    });
+  }, [cursor, cursors, finishExercise, skipExercise]);
+
+  /**
+   * A set added by mistake, taken back (U10).
+   *
+   * Focus steps back one so the screen is not left pointing at a set that no
+   * longer exists — the index is a position, and the list just got shorter.
+   */
+  const onRemoveSet = useCallback(() => {
+    if (!cursor) {
+      return;
+    }
+    const target = Math.max(0, cursor.index - 1);
+    removeSet.mutate(cursor.set.id, {onSuccess: () => setFocusIndex(target)});
+  }, [cursor, removeSet]);
+
+  /** A bonus set: no target, appended to this exercise, focused immediately. */
+  const onAddSet = useCallback(() => {
+    if (!cursor) {
+      return;
+    }
+    const id = cursor.exercise.id;
+    const before = cursor.exercise.sets.length;
+    addSet.mutate(id, {
+      onSuccess: () => {
+        // The new set is the last one on this exercise. Counted from the
+        // exercise's first cursor, because the flat index moves when an
+        // earlier exercise gains a set.
+        const first = cursors.find(c => c.exercise.id === id);
+        if (first) {
+          setFocusIndex(first.index + before);
+        }
+      },
+    });
+  }, [cursor, cursors, addSet]);
 
   if (!session || !cursor) {
     return <View style={[styles.root, {backgroundColor: colors.paper}]} />;
@@ -295,9 +419,16 @@ export function SessionScreen() {
             {`${done} of ${cursors.length} recorded`}
           </AppText>
         </View>
-        {/* Finish and the exercise menu arrive in the next tasks; the header
-            keeps their place so the layout does not shift under testing. */}
-        <View style={styles.icon} />
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Actions for ${cursor.exercise.name}`}
+          hitSlop={space.md}
+          onPress={() => setMenuOpen(true)}
+          style={styles.icon}>
+          <AppText variant="h2" color="muted">
+            ⋯
+          </AppText>
+        </Pressable>
       </View>
 
       <SetRail
@@ -320,16 +451,26 @@ export function SessionScreen() {
         onUndoSkip={onUndoSkip}
       />
 
-      <View style={styles.hints}>
+      {/* The peek is the only route to the shape of the day, so it gets a
+          visible control rather than relying on a gesture nobody is told
+          about. */}
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Show the whole session"
+        onPress={() => setPeekOpen(true)}
+        style={styles.hints}>
         <AppText variant="monoSmall" color="faint">
           {focusIndex > 0 ? `← set ${cursors[focusIndex - 1]!.setNumber}` : ' '}
+        </AppText>
+        <AppText variant="monoSmall" color="muted">
+          ▲ the whole session
         </AppText>
         <AppText variant="monoSmall" color="faint">
           {focusIndex < cursors.length - 1
             ? `set ${cursors[focusIndex + 1]!.setNumber} →`
             : ' '}
         </AppText>
-      </View>
+      </Pressable>
 
       <View style={{paddingBottom: insets.bottom}}>
         <FocusActions
@@ -342,11 +483,67 @@ export function SessionScreen() {
           busy={complete.isPending || skip.isPending || restore.isPending}
           onRecord={onRecord}
           onSkip={onSkip}
-          onSaveAmendment={onRecord}
-          onCancelAmendment={onAdvance}
+          onSaveAmendment={onSaveAmendment}
+          onCancelAmendment={onCancelAmendment}
           onAdvance={onAdvance}
         />
       </View>
+
+      <SessionPeek
+        visible={peekOpen}
+        session={session}
+        unit={unit}
+        liveSetId={cursor.set.id}
+        onSelectSet={jumpToSet}
+        onClose={() => setPeekOpen(false)}
+      />
+
+      <ExerciseActions
+        visible={menuOpen}
+        exercise={cursor.exercise}
+        set={cursor.set}
+        setNumber={cursor.setNumber}
+        isFirst={cursor.exerciseNumber === 1}
+        isLast={cursor.exerciseNumber === cursor.exerciseCount}
+        onClose={() => setMenuOpen(false)}
+        onAddSet={onAddSet}
+        onRemoveSet={onRemoveSet}
+        onFinish={onFinishExercise}
+        onSwap={() =>
+          navigation.navigate('WorkoutExercisePicker', {
+            mode: 'swap',
+            performedExerciseId: cursor.exercise.id,
+          })
+        }
+        onNote={() => setNoteOpen(true)}
+        onRemove={() =>
+          removeExercise.mutate(cursor.exercise.id, {
+            // The removed exercise's sets leave the session, so the index has
+            // to come back inside it or the screen renders nothing.
+            onSuccess: () => setFocusIndex(0),
+          })
+        }
+        onMove={direction =>
+          moveExercise.mutate({
+            performedExerciseId: cursor.exercise.id,
+            direction,
+          })
+        }
+      />
+
+      <NoteSheet
+        visible={noteOpen}
+        exerciseName={cursor.exercise.name}
+        note={cursor.exercise.notes}
+        onSave={note => {
+          setNotes.mutate({
+            performedExerciseId: cursor.exercise.id,
+            notes: note,
+          });
+          setNoteOpen(false);
+        }}
+        onClose={() => setNoteOpen(false)}
+      />
 
       {undo ? (
         // Keyed on the message: recording a second set inside the window
