@@ -10,7 +10,7 @@ export const APP_NAME = 'One More Rep';
  * a tester reporting a bug against the wrong version is worse than no version
  * at all.
  */
-export const APP_VERSION = '1.0.0';
+export const APP_VERSION = '1.1.0';
 
 /**
  * The longest a note on an exercise may be.
