@@ -470,7 +470,67 @@ defect at the same moment, which is the second time on this branch.
 
 ---
 
+## D30 · §39, narrowed rather than dropped
+
+`startWorkout` copies targets into `performed_sets` and the session never looks
+at the plan again. That is §39, and what it protects is real: a set recorded on
+Tuesday keeps the number it was judged against, so history cannot be rewritten
+by editing the plan.
+
+It protected one thing too many. A 3.5 kg target set on Ab Roller *while the
+workout was running* reached nothing at all — the session had already
+snapshotted `target_weight = NULL` — and nothing on screen said the plan and
+the workout had diverged. Reported from the phone.
+
+`syncActiveSessionFromPlan` splits the rule along the line §39 actually cared
+about:
+
+- **Pending sets follow the plan.** Targets rewritten, sets added when the plan
+  gains them, trailing ones dropped when it loses them.
+- **Decided sets never move.** Completed or skipped, the target is evidence.
+- **A recorded set the plan no longer has is kept.** Deleting it would shrink
+  the denominator and flatter the workout.
+- **Exercises are not touched at all.** The session has its own menu for
+  adding, swapping and skipping them; a plan edit that undid a deliberate
+  session edit would be worse than the bug.
+- **Bonus sets survive and are renumbered behind the planned ones**, or a
+  session that loses a set reads "set 4 of 3".
+
+Matching is **positional by exercise, not by `plannedExerciseId`**. Every plan
+write rewrites the tree — in place, or as a fork once a session exists against
+the version — so those ids do not survive the edit that triggers the sync. This
+was the trap: the obvious join is the one that silently matches nothing.
+
+It runs inside `useEditPlan`'s `mutationFn`, not its `onSuccess`, so the
+session query is invalidated against a database that has already caught up.
+The other order refetches the old targets and leaves nothing to trigger a
+second read.
+
+**Consequence:** the set list can now shrink underneath the focus screen, and
+the focus is an index. `SessionScreen` clamps it, or the screen renders blank
+on a workout that just lost its last set.
+
+---
+
+## D31 · A plate you can pick up mid-set
+
+The catalogue's flag describes the movement and the plan's target was fixed
+when the workout began; neither knows you have just picked a plate up off the
+rack. A set with no weight now offers **＋ add weight**, which opens the pad.
+
+The next set of that exercise inherits it through `active.load`'s
+`lastRecorded` fallback — you have not put the plate down in between.
+
+`weightToWrite` keeps §26 intact through the escape hatch: a weight added and
+then stepped back to zero records `NULL`, not `0`. You took the plate off; the
+ledger says so by staying empty rather than by claiming you lifted nought.
+
+---
+
 ## Outstanding
+
+**The device walk for v3.** D30's sync is verified against 14 repository tests
+and jsdom. Editing a target mid-workout and watching it land is a phone test.
 
 **The device walk for v2.** D27–D29 are verified against jsdom only. The pad's
 key sizes, the shortened bar and the 44dp weight shoulders are things that

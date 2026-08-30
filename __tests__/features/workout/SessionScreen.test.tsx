@@ -431,6 +431,28 @@ describe('SessionScreen', () => {
     });
   });
 
+  // The session can get shorter underneath the screen now that a plan edit
+  // reaches a running workout. Focus is a position, not an identity, so left
+  // alone it points past the end and the screen renders nothing at all.
+  it('steps back when the set it was on disappears', async () => {
+    const session = (await getActiveSession(ctx.db))!;
+    const all = session.exercises.flatMap(e => e.sets);
+    for (const set of all.slice(0, -1)) {
+      await completeSet(ctx.db, set.id, {actualReps: 10, actualWeight: 30});
+    }
+    const last = all[all.length - 1]!;
+
+    const view = await renderScreen();
+    expect(await view.findByText('Exercise 2 of 2 · set 3 of 3')).toBeTruthy();
+
+    await act(async () => {
+      await ctx.db.run(sql`DELETE FROM performed_sets WHERE id = ${last.id}`);
+      await client.invalidateQueries();
+    });
+
+    expect(await view.findByText('Exercise 2 of 2 · set 2 of 2')).toBeTruthy();
+  });
+
   it('leaves the workout when closed', async () => {
     const view = await renderScreen();
     await fireEvent.press(await view.findByLabelText('Close workout'));

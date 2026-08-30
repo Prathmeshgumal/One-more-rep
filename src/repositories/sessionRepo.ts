@@ -210,8 +210,15 @@ export async function getActiveSession(
  * planned set — which makes resume a plain read, progress a COUNT, and removes
  * any need to invent structure halfway through a workout.
  *
- * Targets are **copied in**, not referenced. That is §39 made structural: this
- * session can no longer be changed by editing the plan.
+ * Targets are **copied in**, not referenced (§39). What that buys is history
+ * that cannot be rewritten: a set you recorded on Tuesday keeps the number it
+ * was recorded against, whatever the plan says afterwards.
+ *
+ * It bought one thing too many, though. A target changed while the workout is
+ * still running never reached the sets you had not done yet, so raising a
+ * weight mid-session meant closing the workout or living with the old number.
+ * `syncActiveSessionFromPlan` narrows §39 to what it was protecting: sets that
+ * are **pending** follow the plan, sets that are decided never move.
  */
 export async function startWorkout(
   db: AppDatabase,
@@ -353,6 +360,168 @@ async function requireSet(
  * because §14 makes the actual editable and the alternative is a wrong number
  * stuck in history forever.
  */
+/**
+ * Brings a running workout back in line with the plan it came from.
+ *
+ * §39 froze a session's targets at `startWorkout`, which protects history —
+ * a recorded set keeps the number it was judged against — but it also froze
+ * the sets you had not reached yet. Setting a 3.5 kg target on the exercise
+ * you are three sets away from did nothing at all, and there was no way to
+ * tell from the screen that the plan and the workout had diverged.
+ *
+ * So the rule is narrowed rather than dropped:
+ *
+ * - **Pending sets follow the plan.** Targets are rewritten, sets appear when
+ *   the plan gains them, and trailing ones disappear when it loses them.
+ * - **Decided sets never move.** Completed or skipped, the target it was
+ *   performed against is evidence, and evidence does not get edited.
+ * - **Exercises are left alone entirely.** The session has its own menu for
+ *   adding, removing and swapping them, and a plan edit that undid a
+ *   deliberate session edit would be worse than the problem being fixed.
+ * - **Bonus sets survive.** They were never in the plan, so the plan has no
+ *   opinion about them; they keep their place after the planned ones.
+ *
+ * Matching is positional, by exercise, not by `plannedExerciseId`: every plan
+ * write rewrites the tree — in place or as a fork — so those ids do not
+ * outlive the edit that prompted this call.
+ */
+export async function syncActiveSessionFromPlan(
+  db: AppDatabase,
+  opts: {now?: number} = {},
+): Promise<void> {
+  const now = opts.now ?? Date.now();
+  const session = await getActiveSession(db, {now});
+  if (!session) {
+    return;
+  }
+
+  const plan = await getPlanForDate(db, now);
+  const day = plan?.days[weekdayIndex(new Date(now))];
+  if (!day || day.isRestDay) {
+    // Today became a rest day while a workout was running. Ending it is a
+    // decision, not a side effect of editing the plan.
+    return;
+  }
+
+  // Positional first, so two sets of the same exercise on one day keep their
+  // order; the id search behind it catches an exercise the session moved.
+  const claimed = new Set<number>();
+  const matchPlan = (exerciseId: string, orderIndex: number) => {
+    const atSamePlace = day.exercises[orderIndex];
+    if (
+      atSamePlace &&
+      atSamePlace.exerciseId === exerciseId &&
+      !claimed.has(orderIndex)
+    ) {
+      claimed.add(orderIndex);
+      return atSamePlace;
+    }
+    const found = day.exercises.findIndex(
+      (e, i) => e.exerciseId === exerciseId && !claimed.has(i),
+    );
+    if (found === -1) {
+      return undefined;
+    }
+    claimed.add(found);
+    return day.exercises[found];
+  };
+
+  await db.run(sql.raw('BEGIN'));
+  try {
+    for (const [orderIndex, exercise] of session.exercises.entries()) {
+      const planned = matchPlan(exercise.exerciseId, orderIndex);
+      if (!planned) {
+        // Swapped, added mid-session, or dropped from the plan. The session's
+        // own edits win.
+        continue;
+      }
+
+      const planSets = [...planned.sets].sort(
+        (a, b) => a.setNumber - b.setNumber,
+      );
+      const fromPlan = exercise.sets.filter(s => !s.isUnplanned);
+      const bonus = exercise.sets.filter(s => s.isUnplanned);
+
+      // 1. Retarget the pending ones the plan still has.
+      for (let i = 0; i < Math.min(fromPlan.length, planSets.length); i++) {
+        const set = fromPlan[i]!;
+        const target = planSets[i]!;
+        if (set.status !== 'pending') {
+          continue;
+        }
+        if (
+          set.targetReps === target.targetReps &&
+          set.targetWeight === target.targetWeight
+        ) {
+          continue;
+        }
+        await db
+          .update(performedSets)
+          .set({
+            targetReps: target.targetReps,
+            targetWeight: target.targetWeight,
+          })
+          .where(eq(performedSets.id, set.id));
+      }
+
+      // 2. Drop the trailing planned sets the plan no longer has — but only
+      //    the ones you never touched.
+      const surplus = fromPlan
+        .slice(planSets.length)
+        .filter(s => s.status === 'pending');
+      if (surplus.length > 0) {
+        await db.delete(performedSets).where(
+          inArray(
+            performedSets.id,
+            surplus.map(s => s.id),
+          ),
+        );
+      }
+
+      // 3. Add the ones it has gained.
+      const gained = planSets.slice(fromPlan.length);
+      if (gained.length > 0) {
+        await db.insert(performedSets).values(
+          gained.map((target, offset) => ({
+            id: newId('pst'),
+            performedExerciseId: exercise.id,
+            setNumber: fromPlan.length + offset + 1,
+            targetReps: target.targetReps,
+            targetWeight: target.targetWeight,
+            actualReps: null,
+            actualWeight: null,
+            status: 'pending' as const,
+            isUnplanned: false,
+            completedAt: null,
+          })),
+        );
+      }
+
+      // 4. Bonus sets sit after the planned ones. Losing a planned set
+      //    leaves them numbered above a count that no longer exists, which
+      //    reads on screen as "set 5 of 4". The kept planned sets are already
+      //    1..n, because the surplus is always trailing.
+      const plannedCount = fromPlan.length - surplus.length + gained.length;
+      for (const [offset, set] of bonus.entries()) {
+        const wanted = plannedCount + offset + 1;
+        if (set.setNumber !== wanted) {
+          await db
+            .update(performedSets)
+            .set({setNumber: wanted})
+            .where(eq(performedSets.id, set.id));
+        }
+      }
+
+      // Gaining or losing sets can finish an exercise, or un-finish one.
+      await refreshExerciseStatus(db, exercise.id);
+    }
+    await db.run(sql.raw('COMMIT'));
+  } catch (error) {
+    await db.run(sql.raw('ROLLBACK'));
+    throw error instanceof Error ? error : new Error(String(error));
+  }
+}
+
 export async function completeSet(
   db: AppDatabase,
   setId: string,

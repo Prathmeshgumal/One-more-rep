@@ -146,6 +146,18 @@ export function SessionScreen() {
   }, [session, isFetching]);
 
   /**
+   * The session can get shorter underneath the screen — a plan edit that drops
+   * a set now reaches a running workout — and the focus is a position, not an
+   * identity. Left alone it points past the end and the screen renders
+   * nothing at all.
+   */
+  useEffect(() => {
+    if (cursors.length > 0 && focusIndex > cursors.length - 1) {
+      setFocusIndex(cursors.length - 1);
+    }
+  }, [cursors.length, focusIndex]);
+
+  /**
    * §35: the controls arrive holding the target. A set being corrected opens
    * on what was recorded instead — you are fixing a number, so the number that
    * was typed is the better starting point than the one it aimed at. A bonus
