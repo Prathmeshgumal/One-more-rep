@@ -401,7 +401,80 @@ remembers losing.
 
 ---
 
+## D27 · The set has the casting vote over the catalogue
+
+`exercises.json` ships `3/4 Sit-Up` with `weightApplicable: false`, and it is
+right about the movement. But `TargetEditorScreen` never consulted that flag,
+so the 0.5 kg plate held on the chest went into the plan quite happily — and
+`FocusSet` gated its stepper on the flag, so the screen printed
+`TARGET 11 × 0.5 KG` above no way to change it. The set knew about a weight the
+exercise denied existed.
+
+`weightInPlay(exercise, set)` resolves it in the set's favour: a weight is in
+play when the catalogue says the movement takes one **or** this set already
+carries a target or a recorded weight — which is the only route by which a
+body-only exercise gets a number on it at all.
+
+**Not** used for the value the screen opens holding. A bodyweight set with no
+weight anywhere still arrives at `null`, not at a zero that reads like a
+measurement (§26 stands).
+
+The two tests that encoded the old rule cleared the catalogue flag and left a
+30 kg target sitting on the sets. That is a weighted set by any honest reading,
+so the fixture now clears both.
+
+---
+
+## D28 · A pad, not the system keyboard
+
+The steppers are right for a rep either side of the target and wrong for
+everything else: 20 kg to 60 is sixteen presses, and the last eight are done
+without looking. So both numbers are pressable and open `NumberPad`.
+
+A `TextInput` with `keyboardType="numeric"` was the smaller change and the
+wrong one. Android's keyboard takes the bottom third of the screen — exactly
+where Record lives — so the field being filled in pushes away the button that
+commits it. It also brings a suggestion strip, a return key with opinions and a
+layout shift, onto a screen whose entire argument is that nothing moves. Twelve
+keys have none of that and can afford 64dp targets at 393dp wide, which the
+system keyboard cannot.
+
+**The first key press replaces the incoming value.** Typing 6 into a field
+reading 42.5 has to give 6; accumulating gives 42.56, which is not a weight
+anyone meant. A backspace on an untouched field clears it rather than editing
+it, for the same reason.
+
+---
+
+## D29 · Three buttons that did one thing
+
+The strip under the set was a single `Pressable` laid out as
+`← set 2 · ▲ the whole session · set 1 →`. The arrows were labels describing
+what the rail already does; they rendered as controls and lied. Reported from
+the bench before any test caught it, because no test can assert that something
+*looks* like a button.
+
+`FocusUtility` replaces it: one session button naming its own progress, the
+note button, and the "then Cable Fly" line. Moving that line out of the Record
+button is what pays for the action bar dropping 76 → 56 — with padding the old
+bar was 92dp, a tenth of the screen, for two controls.
+
+The pills are 32dp inside a 36dp row, below the 44 floor, so they carry
+`hitSlop` to 52. Growing the target rather than the pill is the point: the row
+exists because the action bar gave up two lines to make space for it.
+
+The note button names its exercise. The ⋯ menu still offers the same act, and
+two controls answering to one name is a maze with a screen reader — the
+duplicate-label collision showed up as a test failure and an accessibility
+defect at the same moment, which is the second time on this branch.
+
+---
+
 ## Outstanding
+
+**The device walk for v2.** D27–D29 are verified against jsdom only. The pad's
+key sizes, the shortened bar and the 44dp weight shoulders are things that
+answer on glass.
 
 **The device walk.** Everything above is verified against jsdom and a release
 bundle that builds. The 112px numeral, the rail's tick widths and every sheet
