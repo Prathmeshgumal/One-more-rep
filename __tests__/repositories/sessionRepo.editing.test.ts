@@ -13,6 +13,9 @@ import {
   removeExercise,
   moveExercise,
   addExercise,
+  addSet,
+  removeSet,
+  skipSet,
 } from '@/repositories/sessionRepo';
 import {createTestDb} from '../helpers/testDb';
 
@@ -342,5 +345,98 @@ describe('editing a workout while it is running', () => {
       const indexes = (await reload()).exercises.map(e => e.orderIndex);
       expect(new Set(indexes).size).toBe(indexes.length);
     });
+  });
+});
+
+/**
+ * Removing a set you added by mistake. The mirror of removeExercise, and it
+ * carries the same rule: only work you invented can be un-invented.
+ */
+describe('removeSet', () => {
+  let ctx: ReturnType<typeof createTestDb>;
+  const reload = async () => (await getActiveSession(ctx.db, {now: MONDAY}))!;
+  const first = async () => (await reload()).exercises[0]!;
+
+  beforeEach(async () => {
+    ctx = createTestDb();
+    await runMigrations(ctx.db);
+    await ctx.db.run(
+      sql`INSERT INTO exercises (id,name,primary_muscle,secondary_muscles,
+            equipment,exercise_type,weight_applicable,is_custom,updated_at)
+          VALUES ('bench','Bench Press','chest','[]','barbell','strength',1,0,0),
+                 ('fly','Cable Fly','chest','[]','cable','strength',1,0,0)`,
+    );
+    await createPlan(ctx.db, {now: MONDAY});
+    await editPlan(
+      ctx.db,
+      d => addExercises(renameDay(d, 0, 'Push Day'), 0, ['bench']),
+      MONDAY,
+    );
+    await startWorkout(ctx.db, {now: MONDAY});
+  });
+  afterEach(() => ctx.close());
+
+  it('deletes a set that was added and never used', async () => {
+    const exercise = await first();
+    const added = await addSet(ctx.db, exercise.id);
+    expect((await first()).sets).toHaveLength(4);
+
+    await removeSet(ctx.db, added);
+
+    const sets = (await first()).sets;
+    expect(sets).toHaveLength(3);
+    expect(sets.map(s => s.id)).not.toContain(added);
+  });
+
+  // Erasing a planned set would shrink the denominator of "% of plan".
+  it('refuses a planned set, and says to skip it', async () => {
+    const exercise = await first();
+    await expect(removeSet(ctx.db, exercise.sets[0]!.id)).rejects.toThrow(
+      /skip/i,
+    );
+    expect((await first()).sets).toHaveLength(3);
+  });
+
+  it('refuses once the set has recorded something', async () => {
+    const exercise = await first();
+    const added = await addSet(ctx.db, exercise.id);
+    await completeSet(ctx.db, added, {actualReps: 8, actualWeight: 20});
+
+    await expect(removeSet(ctx.db, added)).rejects.toThrow(/recorded/i);
+    expect((await first()).sets).toHaveLength(4);
+  });
+
+  it('refuses a set that was skipped rather than left alone', async () => {
+    const exercise = await first();
+    const added = await addSet(ctx.db, exercise.id);
+    await skipSet(ctx.db, added);
+
+    await expect(removeSet(ctx.db, added)).rejects.toThrow(/recorded/i);
+  });
+
+  // An exercise with no sets can never be completed and draws as an empty
+  // card. Removing the exercise is the honest action there.
+  it('will not empty an exercise, and says to remove it instead', async () => {
+    const session = await reload();
+    const bonusId = await addExercise(ctx.db, session.id, 'fly');
+    const bonus = (await reload()).exercises.find(e => e.id === bonusId)!;
+    expect(bonus.sets).toHaveLength(1);
+
+    await expect(removeSet(ctx.db, bonus.sets[0]!.id)).rejects.toThrow(
+      /remove the exercise/i,
+    );
+  });
+
+  it('leaves the exercise finished when the last pending set goes', async () => {
+    const exercise = await first();
+    for (const set of exercise.sets) {
+      await completeSet(ctx.db, set.id, {actualReps: 10, actualWeight: 60});
+    }
+    // Adding a set reopens the exercise; removing it should close it again.
+    const added = await addSet(ctx.db, exercise.id);
+    expect((await first()).status).toBe('pending');
+
+    await removeSet(ctx.db, added);
+    expect((await first()).status).toBe('completed');
   });
 });

@@ -378,3 +378,61 @@ describe('WorkoutExerciseCard controls', () => {
     expect(view.queryByText(/swapped from/)).toBeNull();
   });
 });
+
+describe('removing a set you added', () => {
+  const bonus = (n: number, over: Partial<SessionSet> = {}) =>
+    set(n, {isUnplanned: true, targetReps: null, targetWeight: null, ...over});
+
+  it('offers a remove control on a bonus set nothing has touched', async () => {
+    const onRemoveSet = jest.fn();
+    const view = await renderCard({
+      expanded: true,
+      onRemoveSet,
+      exercise: exercise({sets: [set(1), bonus(2)]}),
+    });
+
+    await fireEvent.press(view.getByLabelText('Remove set 2'));
+    expect(onRemoveSet).toHaveBeenCalledWith('s2');
+  });
+
+  // A planned set you did not do is skipped, never erased: deleting it would
+  // shrink the denominator of "% of plan".
+  it('offers none on a planned set', async () => {
+    const view = await renderCard({
+      expanded: true,
+      onRemoveSet: jest.fn(),
+      exercise: exercise({sets: [set(1), set(2)]}),
+    });
+    expect(view.queryByLabelText('Remove set 1')).toBeNull();
+    expect(view.queryByLabelText('Remove set 2')).toBeNull();
+  });
+
+  it('offers none once the bonus set has recorded something', async () => {
+    const view = await renderCard({
+      expanded: true,
+      onRemoveSet: jest.fn(),
+      exercise: exercise({
+        sets: [set(1), bonus(2, {status: 'completed', actualReps: 8})],
+      }),
+    });
+    expect(view.queryByLabelText('Remove set 2')).toBeNull();
+  });
+
+  // An exercise with no sets can never be finished, and draws as an empty card.
+  it('offers none on the only set an exercise has', async () => {
+    const view = await renderCard({
+      expanded: true,
+      onRemoveSet: jest.fn(),
+      exercise: exercise({sets: [bonus(1)]}),
+    });
+    expect(view.queryByLabelText('Remove set 1')).toBeNull();
+  });
+
+  it('draws nothing when the screen offers no way to remove', async () => {
+    const view = await renderCard({
+      expanded: true,
+      exercise: exercise({sets: [set(1), bonus(2)]}),
+    });
+    expect(view.queryByLabelText('Remove set 2')).toBeNull();
+  });
+});

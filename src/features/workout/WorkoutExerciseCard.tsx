@@ -40,6 +40,7 @@ export function WorkoutExerciseCard({
   onSetReps,
   onCompleteSet,
   onEditSet,
+  onRemoveSet,
   onMore,
   onNote,
   children,
@@ -60,6 +61,8 @@ export function WorkoutExerciseCard({
   onCompleteSet?: () => void;
   /** U10: reopens a set that has already been recorded or skipped. */
   onEditSet?: (setId: string) => void;
+  /** Only ever called for a set that was added by hand and never used. */
+  onRemoveSet?: (setId: string) => void;
   /** Opens this exercise's menu. Absent means the card has no menu. */
   onMore?: () => void;
   /** Commits what was written in the note field. */
@@ -196,6 +199,16 @@ export function WorkoutExerciseCard({
                 onEdit={
                   !isActive && set.status !== 'pending' && onEditSet
                     ? () => onEditSet(set.id)
+                    : undefined
+                }
+                onRemove={
+                  // A bonus set with nothing on it yet, and never the last one
+                  // standing — an exercise with no sets can never be finished.
+                  set.isUnplanned &&
+                  set.status === 'pending' &&
+                  exercise.sets.length > 1 &&
+                  onRemoveSet
+                    ? () => onRemoveSet(set.id)
                     : undefined
                 }
               />

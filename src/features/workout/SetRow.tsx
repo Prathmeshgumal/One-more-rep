@@ -43,6 +43,7 @@ export function SetRow({
   onSetReps,
   onComplete,
   onEdit,
+  onRemove,
 }: {
   setNumber: number;
   targetReps: number | null;
@@ -71,6 +72,11 @@ export function SetRow({
    * finishing the sets before it, so there is nothing there to correct yet.
    */
   onEdit?: () => void;
+  /**
+   * Offered only on a set you added yourself and have not used. A planned set
+   * you did not do is skipped rather than erased — see `removeSet`.
+   */
+  onRemove?: () => void;
 }) {
   const {colors} = useTheme();
 
@@ -140,9 +146,24 @@ export function SetRow({
         <AppText variant="eyebrow" color={isActive ? 'plate' : 'muted'}>
           {`Set ${setNumber}`}
         </AppText>
-        <AppText variant="printed" color="muted">
-          {targetLabel}
-        </AppText>
+        <View style={styles.headRight}>
+          <AppText variant="printed" color="muted">
+            {targetLabel}
+          </AppText>
+          {onRemove ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Remove set ${setNumber}`}
+              accessibilityHint="Deletes this set, which you added"
+              // Drawn small; the slop is what makes it a thumb target.
+              hitSlop={space.md}
+              onPress={onRemove}>
+              <AppText variant="body" color="faint">
+                ✕
+              </AppText>
+            </Pressable>
+          ) : null}
+        </View>
       </View>
 
       <View style={styles.body}>
@@ -245,6 +266,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     marginBottom: space.sm,
   },
+  headRight: {flexDirection: 'row', alignItems: 'center', gap: space.md},
   head: {
     flexDirection: 'row',
     alignItems: 'center',

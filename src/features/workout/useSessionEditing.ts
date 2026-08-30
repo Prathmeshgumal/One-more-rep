@@ -2,6 +2,7 @@ import {
   setExerciseNotes,
   swapExercise,
   removeExercise,
+  removeSet,
   moveExercise,
 } from '@/repositories/sessionRepo';
 import {useSessionMutation} from './useSession';
@@ -29,6 +30,10 @@ export const useSwapExercise = () =>
 
 export const useRemoveExercise = () =>
   useSessionMutation<string>((db, id) => removeExercise(db, id));
+
+/** Deletes a set that was added by hand and never used. */
+export const useRemoveSet = () =>
+  useSessionMutation<string>((db, id) => removeSet(db, id));
 
 export const useMoveExercise = () =>
   useSessionMutation<{performedExerciseId: string; direction: -1 | 1}>(

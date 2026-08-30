@@ -659,6 +659,55 @@ export async function addSet(
 }
 
 /**
+ * Deletes a set that was added by hand and never used.
+ *
+ * The mirror of `removeExercise`, and it carries the same rule: only work you
+ * invented can be un-invented. A *planned* set you did not do is **skipped**,
+ * never erased — deleting it would shrink the denominator of "% of plan" and
+ * quietly flatter the workout, which is the one thing this app must not do.
+ *
+ * It also refuses once anything has been recorded on it. At that point the set
+ * happened, and a wrong number is a thing to correct rather than to delete —
+ * tapping a recorded set reopens it (U10).
+ *
+ * The last set on an exercise cannot go either. An exercise with no sets can
+ * never be completed and renders as an empty card; the honest action there is
+ * to remove the exercise, which the menu already offers.
+ */
+export async function removeSet(
+  db: AppDatabase,
+  setId: string,
+): Promise<void> {
+  const set = await requireSet(db, setId);
+
+  if (!set.isUnplanned) {
+    throw new Error(
+      'This set is part of the plan. Skip it rather than removing it.',
+    );
+  }
+  if (set.status !== 'pending') {
+    throw new Error(
+      'This set already recorded something, so it is part of the workout now.',
+    );
+  }
+
+  const siblings = await db
+    .select({id: performedSets.id})
+    .from(performedSets)
+    .where(eq(performedSets.performedExerciseId, set.performedExerciseId));
+  if (siblings.length <= 1) {
+    throw new Error(
+      'An exercise needs a set. Remove the exercise instead.',
+    );
+  }
+
+  await db.delete(performedSets).where(eq(performedSets.id, setId));
+  // The exercise may have just lost its last pending work, so its status is
+  // no longer whatever it was before.
+  await refreshExerciseStatus(db, set.performedExerciseId);
+}
+
+/**
  * An exercise added during the workout (D3).
  *
  * It arrives with one unplanned set already on it. Appending an exercise with

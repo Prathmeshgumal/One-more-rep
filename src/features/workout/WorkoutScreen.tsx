@@ -25,6 +25,7 @@ import {
 import {
   useSetExerciseNotes,
   useRemoveExercise,
+  useRemoveSet,
   useMoveExercise,
 } from './useSessionEditing';
 
@@ -43,6 +44,7 @@ export function WorkoutScreen() {
   const addSet = useAddSet();
   const setNotes = useSetExerciseNotes();
   const removeExercise = useRemoveExercise();
+  const removeSet = useRemoveSet();
   const moveExercise = useMoveExercise();
 
   // U1/U2: every exercise is on screen; exactly one is open. Keyed by
@@ -268,6 +270,7 @@ export function WorkoutScreen() {
               previous={isOpen ? previous : null}
               activeSetId={isOpen ? (activeSet?.id ?? null) : null}
               onEditSet={setEditingSetId}
+              onRemoveSet={setId => removeSet.mutate(setId)}
               onMore={() => setMenuFor(exercise.id)}
               onNote={notes =>
                 setNotes.mutate({performedExerciseId: exercise.id, notes})
@@ -299,6 +302,11 @@ export function WorkoutScreen() {
                 </View>
               </View>
               <ExerciseCloser
+                // Nothing pending means nothing to close: finishing would skip
+                // zero sets and derive the status it already has, so the
+                // control did nothing and read as broken. Reported from the
+                // phone as "Finish this exercise isn't working".
+                anyPending={exercise.sets.some(s => s.status === 'pending')}
                 anyRecorded={exercise.sets.some(s => s.status === 'completed')}
                 pending={skipExercise.isPending || finishExercise.isPending}
                 onPress={() => {
@@ -386,16 +394,25 @@ export function WorkoutScreen() {
  * pending and let the status derive, which reads as completed.
  *
  * Ochre in both states, never red. Neither is an error.
+ *
+ * Absent entirely once every set has been decided. There is nothing left to
+ * finish at that point, so the control could only do nothing — which is how it
+ * came back from the phone as "Finish this exercise isn't working".
  */
 function ExerciseCloser({
+  anyPending,
   anyRecorded,
   pending,
   onPress,
 }: {
+  anyPending: boolean;
   anyRecorded: boolean;
   pending: boolean;
   onPress: () => void;
 }) {
+  if (!anyPending) {
+    return null;
+  }
   return (
     <Pressable
       accessibilityRole="button"

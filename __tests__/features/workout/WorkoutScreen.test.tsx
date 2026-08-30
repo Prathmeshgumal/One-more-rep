@@ -199,6 +199,50 @@ describe('WorkoutScreen', () => {
     expect((await sets())[0]!.actualReps).toBeNull();
   });
 
+  // A set added by mistake had no way out: skipping it left a skipped row in
+  // history for work that was never intended.
+  it('removes a bonus set added by mistake', async () => {
+    const view = await renderScreen();
+    await fireEvent.press(await view.findByText('Add set'));
+    await waitFor(async () => expect(await sets()).toHaveLength(4));
+
+    await fireEvent.press(view.getByLabelText('Remove set 4'));
+
+    await waitFor(async () => expect(await sets()).toHaveLength(3));
+    // And the planned three are untouched.
+    expect((await sets()).every(s => !s.isUnplanned)).toBe(true);
+  });
+
+  // Reported from the phone: "Finish this exercise isn't working". It was
+  // still being offered on an exercise that had nothing left to finish, where
+  // it is a no-op -- so it looked broken rather than being absent.
+  it('stops offering to finish once there is nothing left', async () => {
+    const view = await renderScreen();
+    for (let i = 0; i < 3; i++) {
+      await fireEvent.press(await view.findByLabelText('Complete set'));
+    }
+    await waitFor(async () =>
+      expect((await sets()).every(s => s.status === 'completed')).toBe(true),
+    );
+
+    // Reopen the finished exercise; there is nothing there to close.
+    await fireEvent.press(view.getByLabelText('Bench Press'));
+    await waitFor(() =>
+      expect(
+        view.getByLabelText('Bench Press').props.accessibilityState.expanded,
+      ).toBe(true),
+    );
+    expect(view.queryByText('Finish this exercise')).toBeNull();
+    expect(view.queryByText('Skip this exercise')).toBeNull();
+  });
+
+  it('offers no way to remove a planned set', async () => {
+    const view = await renderScreen();
+    await view.findByText('Bench Press');
+    expect(view.queryByLabelText('Remove set 1')).toBeNull();
+    expect(view.queryByLabelText('Remove set 3')).toBeNull();
+  });
+
   it('adds a bonus set with no target', async () => {
     const view = await renderScreen();
     await fireEvent.press(await view.findByText('Add set'));
