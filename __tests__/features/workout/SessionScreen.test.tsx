@@ -287,7 +287,7 @@ describe('SessionScreen', () => {
    * `← set 2 · ▲ the whole session · set 1 →`, so three things that looked
    * like buttons all opened the peek. The arrows were labels, not controls.
    */
-  describe('the utility row', () => {
+  describe('the footer cluster', () => {
     it('offers one session button, not a row of arrows', async () => {
       const view = await renderScreen();
       await view.findByText('Bench Press');
@@ -299,7 +299,17 @@ describe('SessionScreen', () => {
 
     it('states how far through the session it is', async () => {
       const view = await renderScreen();
-      expect(await view.findByText('▲ session 0/6')).toBeTruthy();
+      expect(await view.findByText('0/6')).toBeTruthy();
+    });
+
+    // The menu came down out of the header, where it was 700dp from the
+    // thumb that needs it.
+    it('reaches the exercise menu from the cluster', async () => {
+      const view = await renderScreen();
+      await fireEvent.press(
+        await view.findByLabelText('Actions for Bench Press'),
+      );
+      expect(await view.findByText('Add a set')).toBeTruthy();
     });
 
     it('opens the peek', async () => {
@@ -341,6 +351,83 @@ describe('SessionScreen', () => {
     it('carries where the primary button goes next', async () => {
       const view = await renderScreen();
       expect(await view.findByText('then set 2')).toBeTruthy();
+    });
+  });
+
+  /**
+   * Reported from the phone: Ab Roller is body-only in the catalogue, the
+   * 3.5 kg target was set *after* the workout had started, and a session
+   * snapshots its targets at `startWorkout` — so the live set had no weight
+   * on it and no way to put one there.
+   */
+  describe('adding weight during the session', () => {
+    it('offers to add weight to a set that has none', async () => {
+      await bodyweight();
+      const view = await renderScreen();
+      await view.findByText('Bench Press');
+      expect(view.getByLabelText('Add weight to this set')).toBeTruthy();
+      expect(view.queryByLabelText('Increase weight by 0.5 kg')).toBeNull();
+    });
+
+    it('brings up the steppers once a weight is typed', async () => {
+      await bodyweight();
+      const view = await renderScreen();
+      await fireEvent.press(
+        await view.findByLabelText('Add weight to this set'),
+      );
+      await fireEvent.press(view.getByLabelText('3'));
+      await fireEvent.press(view.getByLabelText('Decimal point'));
+      await fireEvent.press(view.getByLabelText('5'));
+      await fireEvent.press(view.getByText('Set 3.5 kg'));
+      expect(await view.findByLabelText('Weight 3.5 kg')).toBeTruthy();
+      expect(view.queryByLabelText('Add weight to this set')).toBeNull();
+    });
+
+    it('records the weight that was added', async () => {
+      await bodyweight();
+      const view = await renderScreen();
+      await fireEvent.press(
+        await view.findByLabelText('Add weight to this set'),
+      );
+      await fireEvent.press(view.getByLabelText('5'));
+      await fireEvent.press(view.getByText('Set 5 kg'));
+      await fireEvent.press(await view.findByLabelText('Record 10 × 5 kg'));
+      await waitFor(async () => {
+        expect((await sets())[0]!.actualWeight).toBe(5);
+      });
+    });
+
+    // §26 survives the escape hatch: taking the plate off again has to leave
+    // the ledger empty, not claim you lifted nought kilos.
+    it('records no weight when the added weight is taken back to zero', async () => {
+      await bodyweight();
+      const view = await renderScreen();
+      await fireEvent.press(
+        await view.findByLabelText('Add weight to this set'),
+      );
+      await fireEvent.press(view.getByLabelText('0'));
+      await fireEvent.press(view.getByText('Set 0 kg'));
+      await fireEvent.press(await view.findByLabelText('Record 10 reps'));
+      await waitFor(async () => {
+        expect((await sets())[0]!.actualWeight).toBeNull();
+      });
+    });
+
+    // The next set of the same exercise inherits it, because you have not put
+    // the plate down between sets.
+    it('carries the added weight to the next set', async () => {
+      await bodyweight();
+      const view = await renderScreen();
+      await fireEvent.press(
+        await view.findByLabelText('Add weight to this set'),
+      );
+      await fireEvent.press(view.getByLabelText('5'));
+      await fireEvent.press(view.getByText('Set 5 kg'));
+      await fireEvent.press(await view.findByLabelText('Record 10 × 5 kg'));
+      expect(
+        await view.findByText('Exercise 1 of 2 · set 2 of 3'),
+      ).toBeTruthy();
+      expect(await view.findByLabelText('Weight 5 kg')).toBeTruthy();
     });
   });
 
@@ -422,7 +509,7 @@ describe('SessionScreen', () => {
     // §21: skipped, with actuals left empty. Never pretend it happened.
     it('records nothing when a set is skipped', async () => {
       const view = await renderScreen();
-      await fireEvent.press(await view.findByLabelText('Skip'));
+      await fireEvent.press(await view.findByLabelText('Skip this set'));
       await waitFor(async () => {
         const first = (await sets())[0]!;
         expect(first.status).toBe('skipped');
@@ -434,7 +521,7 @@ describe('SessionScreen', () => {
     // visible and can be taken back in one tap.
     it('stays on the skipped set and offers to undo it', async () => {
       const view = await renderScreen();
-      await fireEvent.press(await view.findByLabelText('Skip'));
+      await fireEvent.press(await view.findByLabelText('Skip this set'));
       expect(await view.findByText('Skipped')).toBeTruthy();
       expect(view.getByLabelText('Undo skip')).toBeTruthy();
       expect(view.getByText('Exercise 1 of 2 · set 1 of 3')).toBeTruthy();
@@ -442,7 +529,7 @@ describe('SessionScreen', () => {
 
     it('puts a skipped set back when the skip is undone', async () => {
       const view = await renderScreen();
-      await fireEvent.press(await view.findByLabelText('Skip'));
+      await fireEvent.press(await view.findByLabelText('Skip this set'));
       await fireEvent.press(await view.findByLabelText('Undo skip'));
       await waitFor(async () => {
         expect((await sets())[0]!.status).toBe('pending');
@@ -498,7 +585,7 @@ describe('SessionScreen', () => {
 
     it('offers to take back a skip too', async () => {
       const view = await renderScreen();
-      await fireEvent.press(await view.findByLabelText('Skip'));
+      await fireEvent.press(await view.findByLabelText('Skip this set'));
       expect(await view.findByText('Set 1 skipped')).toBeTruthy();
     });
   });
@@ -772,7 +859,7 @@ describe('SessionScreen', () => {
       const view = await renderScreen();
       await goToRecordedSet(view);
       await fireEvent.press(view.getByLabelText('One rep more'));
-      await fireEvent.press(view.getByLabelText('Cancel'));
+      await fireEvent.press(view.getByLabelText('Cancel the amendment'));
       expect(
         await view.findByText('Exercise 1 of 2 · set 2 of 3'),
       ).toBeTruthy();

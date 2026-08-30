@@ -3,7 +3,6 @@ import {Pressable, StyleSheet, View} from 'react-native';
 import {AppText} from '@/ui/Text';
 import {useTheme, space, radius, type ColorToken} from '@/theme';
 import type {SetCursor} from './sessionCursor';
-import {weightInPlay} from './weightInPlay';
 
 /** What the screen is doing, which is not what the set says about itself. */
 export type FocusMode = 'live' | 'amending' | 'skipped';
@@ -88,8 +87,10 @@ export function FocusSet({
   previousLabel,
   onStepReps,
   onStepWeight,
+  weightShown,
   onEditReps,
   onEditWeight,
+  onAddWeight,
   onUndoSkip,
 }: {
   cursor: SetCursor;
@@ -102,9 +103,14 @@ export function FocusSet({
   previousLabel: string | null;
   onStepReps: (delta: number) => void;
   onStepWeight: (delta: number) => void;
+  /** Whether this set has a weight at all — see `weightInPlay`, plus one
+      added during the session. */
+  weightShown: boolean;
   /** Both numbers are pressable; these open the pad on one of them. */
   onEditReps: () => void;
   onEditWeight: () => void;
+  /** Puts a weight on a set that had none. */
+  onAddWeight: () => void;
   onUndoSkip: () => void;
 }) {
   const {colors} = useTheme();
@@ -165,8 +171,9 @@ export function FocusSet({
         <>
           {/* A bodyweight movement gets no weight control at all, rather than
               a zero in one — §26's rule, kept. The set has the casting vote:
-              a plate planned onto a body-only movement is still a plate. */}
-          {weightInPlay(exercise, set) ? (
+              a plate planned onto a body-only movement is still a plate, and
+              so is one picked up halfway through the session. */}
+          {weightShown ? (
             <>
               <AppText variant="printed" color="faint" style={styles.loadLabel}>
                 weight
@@ -205,7 +212,22 @@ export function FocusSet({
                 />
               </View>
             </>
-          ) : null}
+          ) : (
+            /* The escape hatch. The catalogue's flag is about the movement in
+               general and the plan's target was fixed when the workout
+               started; neither knows you have just picked up a plate. This
+               does, and it needs no trip to the plan and no edit to the
+               catalogue. */
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Add weight to this set"
+              onPress={onAddWeight}
+              style={[styles.addWeight, {borderColor: colors.rule}]}>
+              <AppText variant="monoSmall" color="muted">
+                ＋ add weight
+              </AppText>
+            </Pressable>
+          )}
 
           <Pressable
             accessibilityRole="button"
@@ -265,6 +287,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   name: {marginTop: space.sm, textAlign: 'center'},
+  addWeight: {
+    marginTop: space.xl,
+    height: 44,
+    borderWidth: 1,
+    borderRadius: radius.pill,
+    paddingHorizontal: space.xl,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   loadLabel: {marginTop: space.xl},
   load: {
     flexDirection: 'row',

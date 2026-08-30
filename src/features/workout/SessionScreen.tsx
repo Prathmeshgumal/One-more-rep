@@ -8,8 +8,7 @@ import {useTheme, space, radius} from '@/theme';
 import {useSettingsQuery} from '@/features/settings/useSettings';
 import type {WorkoutStackParamList} from '@/navigation/types';
 import {FocusSet, targetLabel, type FocusMode} from './FocusSet';
-import {FocusActions} from './FocusActions';
-import {FocusUtility} from './FocusUtility';
+import {FocusFooter} from './FocusFooter';
 import {UndoBanner} from './UndoBanner';
 import {SetRail} from './SetRail';
 import {SessionPeek} from './SessionPeek';
@@ -60,6 +59,23 @@ import {snapshotSet, type SetSnapshot} from '@/repositories/sessionRepo';
  * of sets. "Next" then means the same thing whether the next set is in this
  * exercise or the one after it.
  */
+/**
+ * What actually gets written to `actualWeight`.
+ *
+ * Whatever is on screen, with one exception: a zero on a set that has no
+ * weight of its own is not a measurement. That is §26 — a bodyweight movement
+ * records no weight rather than a zero — and it still applies to a set that
+ * had weight added and then stepped back down to nothing. You took the plate
+ * off; the ledger should say so by staying empty, not by claiming you lifted
+ * nought kilos.
+ */
+function weightToWrite(cursor: SetCursor, onScreen: number | null) {
+  if (onScreen === 0 && !weightInPlay(cursor.exercise, cursor.set)) {
+    return null;
+  }
+  return onScreen;
+}
+
 export function SessionScreen() {
   const {colors} = useTheme();
   const insets = useSafeAreaInsets();
@@ -198,9 +214,7 @@ export function SessionScreen() {
     }
     // Read before the write, not after: this is what Undo restores.
     const snapshot = await snapshotSet(db, cursor.set.id);
-    const weight = weightInPlay(cursor.exercise, cursor.set)
-      ? active.weight
-      : null;
+    const weight = weightToWrite(cursor, active.weight);
     const reps = active.reps;
     complete.mutate(
       {setId: cursor.set.id, actualReps: reps, actualWeight: weight},
@@ -243,9 +257,7 @@ export function SessionScreen() {
       {
         setId: cursor.set.id,
         actualReps: active.reps,
-        actualWeight: weightInPlay(cursor.exercise, cursor.set)
-          ? active.weight
-          : null,
+        actualWeight: weightToWrite(cursor, active.weight),
       },
       {onSuccess: () => setFocusIndex(live)},
     );
@@ -401,6 +413,15 @@ export function SessionScreen() {
       }`
     : null;
 
+  /**
+   * Weight is on this set if the catalogue or the plan put it there, or if
+   * you put it there yourself during the session. The third case is why the
+   * store's `null` matters: `active.load` resolves to `null` exactly when no
+   * weight applies anywhere, so a non-null value is an answer, not a default.
+   */
+  const weightShown =
+    weightInPlay(cursor.exercise, cursor.set) || active.weight !== null;
+
   const padCaption = previousLabel
     ? `${targetLabel(cursor.set, unit)} · ${previousLabel}`
     : targetLabel(cursor.set, unit);
@@ -465,16 +486,6 @@ export function SessionScreen() {
             FINISH
           </AppText>
         </Pressable>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={`Actions for ${cursor.exercise.name}`}
-          hitSlop={space.md}
-          onPress={() => setMenuOpen(true)}
-          style={styles.icon}>
-          <AppText variant="h2" color="muted">
-            ⋯
-          </AppText>
-        </Pressable>
       </View>
 
       <SetRail
@@ -494,38 +505,36 @@ export function SessionScreen() {
         previousLabel={previousLabel}
         onStepReps={active.stepReps}
         onStepWeight={active.stepWeight}
+        weightShown={weightShown}
         onEditReps={() => setEditing('reps')}
         onEditWeight={() => setEditing('weight')}
+        onAddWeight={() => setEditing('weight')}
         onUndoSkip={onUndoSkip}
       />
 
-      {/* The peek is the only route to the shape of the day, so it gets a
-          visible control rather than relying on a gesture nobody is told
-          about — and exactly one, rather than three that all opened it. */}
-      <FocusUtility
-        done={done}
-        total={cursors.length}
-        exerciseName={cursor.exercise.name}
-        hasNote={Boolean(cursor.exercise.notes)}
-        nextLabel={nextLabel}
-        onOpenSession={() => setPeekOpen(true)}
-        onOpenNote={() => setNoteOpen(true)}
-      />
-
+      {/* Every control you can reach mid-set, in one thumb arc: the block you
+          press, and the four you rarely do. */}
       <View style={{paddingBottom: insets.bottom}}>
-        <FocusActions
+        <FocusFooter
           mode={mode}
           reps={active.reps}
           weight={active.weight}
           unit={unit}
-          weightInPlay={weightInPlay(cursor.exercise, cursor.set)}
+          weightInPlay={weightShown}
           nextLabel={nextLabel}
+          done={done}
+          total={cursors.length}
+          exerciseName={cursor.exercise.name}
+          hasNote={Boolean(cursor.exercise.notes)}
           busy={complete.isPending || skip.isPending || restore.isPending}
           onRecord={onRecord}
           onSkip={onSkip}
           onSaveAmendment={onSaveAmendment}
           onCancelAmendment={onCancelAmendment}
           onAdvance={onAdvance}
+          onOpenSession={() => setPeekOpen(true)}
+          onOpenNote={() => setNoteOpen(true)}
+          onOpenMenu={() => setMenuOpen(true)}
         />
       </View>
 
