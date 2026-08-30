@@ -725,6 +725,30 @@ anything; one fixed position is better than a control that relocates.
 
 ---
 
+## D40 · A primitive may not claim `flex` on its parent's behalf
+
+`AmendSetSheet` — the sheet that corrects one set on a saved day — drew its
+reps and weight controls as two empty rounded outlines: no number, no label,
+no shoulders, overlapping each other and the Save button. Found on the phone,
+on two screens (the finished day and the day detail) that both open it.
+
+`Stepper` carried `flex: 1` in its own stylesheet. That is a statement about
+the parent, not about the component, and it was true in exactly one of the
+three places it is used: the target editor's weight/reps **row**, where it
+splits the width. In a **column** with no definite height — this sheet —
+`flex: 1` means `flexBasis: 0`, so both steppers measured nothing and
+collapsed.
+
+`flex` moved out to the one call site that means it. Whoever puts two of these
+side by side is the one who gets to say so.
+
+The deeper fault is that `AmendSetSheet` had no test file at all, which is how
+a component that renders nothing usable shipped twice. It has nine now,
+including one that asserts both controls carry their numbers and their
+shoulders — the thing a screenshot showed and no assertion did.
+
+---
+
 ## Outstanding
 
 **The device walk for v4.** D35–D39 are verified against 868 tests and
