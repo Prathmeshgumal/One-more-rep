@@ -10,7 +10,8 @@ import type {WorkoutStackParamList} from '@/navigation/types';
 import {FocusSet, targetLabel, type FocusMode} from './FocusSet';
 import {FocusFooter} from './FocusFooter';
 import {UndoBanner} from './UndoBanner';
-import {SetRail} from './SetRail';
+import {SetRail, RAIL_HEIGHT} from './SetRail';
+import {SetTapZones} from './SetTapZones';
 import {SessionPeek} from './SessionPeek';
 import {NoteSheet} from './NoteSheet';
 import {NumberPad} from '@/ui/NumberPad';
@@ -464,15 +465,15 @@ export function SessionScreen() {
           hitSlop={space.md}
           onPress={() => navigation.goBack()}
           style={styles.icon}>
-          <AppText variant="h2" color="muted">
+          <AppText variant="h1" color="muted">
             ✕
           </AppText>
         </Pressable>
         <View style={styles.title}>
-          <AppText variant="bodyStrong" numberOfLines={1}>
+          <AppText variant="h2" numberOfLines={1}>
             {session.dayName}
           </AppText>
-          <AppText variant="monoSmall" color="muted">
+          <AppText variant="mono" color="muted">
             {`${done} of ${cursors.length} recorded`}
           </AppText>
         </View>
@@ -493,7 +494,7 @@ export function SessionScreen() {
             },
           ]}>
           <AppText
-            variant="monoSmall"
+            variant="mono"
             style={{color: everythingDecided ? colors.plateInk : colors.plate}}>
             FINISH
           </AppText>
@@ -507,22 +508,34 @@ export function SessionScreen() {
         onJump={setFocusIndex}
       />
 
-      <FocusSet
-        cursor={cursor}
-        mode={mode}
-        reps={active.reps}
-        weight={active.weight}
-        unit={unit}
-        increment={increment}
-        previousLabel={previousLabel}
-        onStepReps={active.stepReps}
-        onStepWeight={active.stepWeight}
-        weightShown={weightShown}
-        onEditReps={() => setEditing('reps')}
-        onEditWeight={() => setEditing('weight')}
-        onAddWeight={() => setEditing('weight')}
-        onUndoSkip={onUndoSkip}
-      />
+      {/* The zones span the body and nothing else — never the header, never
+          the action block — and are drawn first, so the steppers, the numeral
+          and the footer all sit above them and win any overlap. */}
+      <View style={styles.body}>
+        <SetTapZones
+          canGoBack={focusIndex > 0}
+          canGoForward={focusIndex < cursors.length - 1}
+          onBack={() => setFocusIndex(focusIndex - 1)}
+          onForward={() => setFocusIndex(focusIndex + 1)}
+        />
+
+        <FocusSet
+          cursor={cursor}
+          mode={mode}
+          reps={active.reps}
+          weight={active.weight}
+          unit={unit}
+          increment={increment}
+          previousLabel={previousLabel}
+          onStepReps={active.stepReps}
+          onStepWeight={active.stepWeight}
+          weightShown={weightShown}
+          onEditReps={() => setEditing('reps')}
+          onEditWeight={() => setEditing('weight')}
+          onAddWeight={() => setEditing('weight')}
+          onUndoSkip={onUndoSkip}
+        />
+      </View>
 
       {/* Every control you can reach mid-set, in one thumb arc: the block you
           press, and the four you rarely do. */}
@@ -661,7 +674,11 @@ export function SessionScreen() {
         // Keyed on the message: recording a second set inside the window
         // restarts the timer against the new one rather than inheriting
         // whatever was left of the old one's four seconds.
-        <View style={[styles.undo, {top: insets.top + 52}]}>
+        <View
+          style={[
+            styles.undo,
+            {top: insets.top + HEADER_HEIGHT + RAIL_HEIGHT + space.sm},
+          ]}>
           <UndoBanner
             key={undo.message}
             message={undo.message}
@@ -674,27 +691,38 @@ export function SessionScreen() {
   );
 }
 
+/** The bar above the rail. The undo banner clears both. */
+const HEADER_HEIGHT = 56;
+
 const styles = StyleSheet.create({
   root: {flex: 1},
+  body: {flex: 1},
+  /**
+   * 56, not 45. Everything in this bar was a size below what it should have
+   * been — a 15px day name over an 11px count, beside an 11px FINISH — against
+   * a 112px numeral and a 96dp Record block. It read as a caption strip rather
+   * than as the header of the screen you are working on.
+   */
   bar: {
-    height: 45,
+    height: 56,
     flexDirection: 'row',
     alignItems: 'center',
     gap: space.sm,
     paddingHorizontal: space.md,
   },
   icon: {
-    width: 36,
-    height: 36,
+    width: 44,
+    height: 44,
     borderRadius: radius.sm,
     alignItems: 'center',
     justifyContent: 'center',
   },
   title: {flex: 1},
   finish: {
-    paddingHorizontal: space.md,
-    paddingVertical: space.sm,
-    borderRadius: radius.sm,
+    minHeight: 44,
+    paddingHorizontal: space.lg,
+    justifyContent: 'center',
+    borderRadius: radius.pill,
   },
   undo: {position: 'absolute', left: 0, right: 0},
 });

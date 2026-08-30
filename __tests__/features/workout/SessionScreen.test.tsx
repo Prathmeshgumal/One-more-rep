@@ -453,6 +453,77 @@ describe('SessionScreen', () => {
     expect(await view.findByText('Exercise 2 of 2 · set 2 of 2')).toBeTruthy();
   });
 
+  /**
+   * The rail reads as a row of story segments, so the gesture it implies has
+   * to work. Plain movement, not "the next set still to do": a story does not
+   * skip the frames you have already seen.
+   */
+  describe('tapping the edges', () => {
+    it('goes forward a set', async () => {
+      const view = await renderScreen();
+      await view.findByText('Exercise 1 of 2 · set 1 of 3');
+      await fireEvent.press(view.getByLabelText('Next set'));
+      expect(
+        await view.findByText('Exercise 1 of 2 · set 2 of 3'),
+      ).toBeTruthy();
+    });
+
+    it('goes back a set', async () => {
+      const view = await renderScreen();
+      await view.findByText('Exercise 1 of 2 · set 1 of 3');
+      await fireEvent.press(view.getByLabelText('Next set'));
+      await fireEvent.press(await view.findByLabelText('Previous set'));
+      expect(
+        await view.findByText('Exercise 1 of 2 · set 1 of 3'),
+      ).toBeTruthy();
+    });
+
+    it('offers no way back from the first set', async () => {
+      const view = await renderScreen();
+      await view.findByText('Exercise 1 of 2 · set 1 of 3');
+      expect(view.queryByLabelText('Previous set')).toBeNull();
+    });
+
+    it('offers no way forward from the last set', async () => {
+      const session = (await getActiveSession(ctx.db))!;
+      const all = session.exercises.flatMap(e => e.sets);
+      for (const set of all.slice(0, -1)) {
+        await completeSet(ctx.db, set.id, {actualReps: 10, actualWeight: 30});
+      }
+      const view = await renderScreen();
+      await view.findByText('Exercise 2 of 2 · set 3 of 3');
+      expect(view.queryByLabelText('Next set')).toBeNull();
+    });
+
+    // Forward, not "forward to something pending": a recorded set opens in
+    // amend mode, which is the story frame you have already seen.
+    it('lands on a recorded set in amend mode', async () => {
+      const session = (await getActiveSession(ctx.db))!;
+      const first = session.exercises[0]!.sets[0]!;
+      await completeSet(ctx.db, first.id, {actualReps: 12, actualWeight: 30});
+
+      const view = await renderScreen();
+      await view.findByText('Exercise 1 of 2 · set 2 of 3');
+      await fireEvent.press(view.getByLabelText('Previous set'));
+      expect(await view.findByText('amending a recorded set')).toBeTruthy();
+    });
+  });
+
+  // A pill that turns ochre says a note exists and then makes you open a
+  // sheet to find out what it says.
+  it('shows the note on the set screen, not just that there is one', async () => {
+    const view = await renderScreen();
+    await fireEvent.press(
+      await view.findByLabelText('Add a note to Bench Press'),
+    );
+    await fireEvent.changeText(
+      await view.findByLabelText('Note'),
+      'left shoulder tight',
+    );
+    await fireEvent.press(view.getByText('Save note'));
+    expect(await view.findByText('left shoulder tight')).toBeTruthy();
+  });
+
   it('leaves the workout when closed', async () => {
     const view = await renderScreen();
     await fireEvent.press(await view.findByLabelText('Close workout'));

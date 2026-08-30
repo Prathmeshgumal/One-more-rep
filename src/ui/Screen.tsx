@@ -4,6 +4,7 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useTheme, space} from '@/theme';
 import {AppText} from './Text';
 import {BackButton} from './BackButton';
+import {ScrollFade, FADE_HEIGHT} from './ScrollFade';
 
 export function Screen({
   title,
@@ -46,6 +47,12 @@ export function Screen({
         </View>
         {children}
       </ScrollView>
+      {/* Content scrolling up into the status bar was being sliced on a hard
+          horizontal line, mid-letter, which reads as a rendering fault rather
+          than as an edge. The fade covers the inset as well as the first
+          28dp, so a heading dissolves into the bar instead of being cut by
+          it. */}
+      <ScrollFade height={insets.top + FADE_HEIGHT} />
     </View>
   );
 }

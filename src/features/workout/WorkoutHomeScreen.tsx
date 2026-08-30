@@ -8,6 +8,7 @@ import {Button} from '@/ui/Button';
 import {Card} from '@/ui/Card';
 import {IconButton} from '@/ui/IconButton';
 import {ProgressBar} from '@/ui/ProgressBar';
+import {ScrollFade} from '@/ui/ScrollFade';
 import {useTheme, space, radius} from '@/theme';
 import {WEEKDAY_NAMES, weekdayIndex} from '@/domain/weekday';
 import {targetLine} from '@/domain/format';
@@ -88,13 +89,11 @@ export function WorkoutHomeScreen() {
    * day has to say — the past behind you, the routine ahead.
    */
   const frame = (children: React.ReactNode) => (
-    <ScrollView
-      style={{backgroundColor: colors.paper}}
-      contentContainerStyle={[
-        styles.content,
-        {paddingTop: insets.top + space.md},
-      ]}>
-      <View style={styles.bar}>
+    <View style={[styles.root, {backgroundColor: colors.paper}]}>
+      {/* Outside the ScrollView. These are the only two ways off this screen,
+          and scrolling a long finished day used to carry them away — you had
+          to scroll back up to reach the plan. */}
+      <View style={[styles.bar, {paddingTop: insets.top + space.md}]}>
         <IconButton
           glyph="calendar"
           label="History"
@@ -110,8 +109,15 @@ export function WorkoutHomeScreen() {
           />
         ) : null}
       </View>
-      {children}
-    </ScrollView>
+      <View style={styles.scroller}>
+        <ScrollView contentContainerStyle={styles.content}>
+          {children}
+        </ScrollView>
+        {/* Content ran out under the pinned bar on a hard line straight
+            through a row of type, which reads as a rendering fault. */}
+        <ScrollFade />
+      </View>
+    </View>
   );
 
   // ---- The workout is already in progress (§20, design 08) ----------------
@@ -430,8 +436,10 @@ export function WorkoutHomeScreen() {
 
 const styles = StyleSheet.create({
   root: {flex: 1},
+  scroller: {flex: 1},
   content: {
     paddingHorizontal: space.xl,
+    paddingTop: space.sm,
     paddingBottom: space.xxxl,
     gap: space.md,
   },
@@ -439,7 +447,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: space.xs,
+    paddingHorizontal: space.xl,
+    paddingBottom: space.sm,
   },
   headerBlock: {gap: 2, marginBottom: space.sm},
   line: {flexDirection: 'row', alignItems: 'center', gap: space.md},

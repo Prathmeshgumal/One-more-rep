@@ -5,17 +5,8 @@ import {AppText} from '@/ui/Text';
 import {Button} from '@/ui/Button';
 import {useTheme, space, radius} from '@/theme';
 import {sessionVolume} from '@/domain/sessionProgress';
+import {formatDuration} from '@/domain/format';
 import type {Session} from '@/repositories/sessionRepo';
-
-/** Whole minutes, because nobody cares that it was 42:37. */
-const elapsed = (from: number, to: number): string => {
-  const minutes = Math.max(0, Math.round((to - from) / 60000));
-  if (minutes < 60) {
-    return `${minutes} min`;
-  }
-  const hours = Math.floor(minutes / 60);
-  return `${hours} h ${minutes % 60} min`;
-};
 
 /**
  * Ending the workout, as a sheet over it rather than a screen after it.
@@ -65,7 +56,7 @@ export function FinishSheet({
   const facts = [
     `${done} of ${sets.length} recorded`,
     volume > 0 ? `${volume} ${unit} lifted` : null,
-    elapsed(session.startedAt, now),
+    formatDuration(now - session.startedAt),
   ].filter(Boolean);
 
   return (

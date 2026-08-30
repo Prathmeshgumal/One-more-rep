@@ -1,5 +1,12 @@
 import React, {useEffect, useState} from 'react';
-import {Modal, Pressable, StyleSheet, TextInput, View} from 'react-native';
+import {
+  Keyboard,
+  Modal,
+  Pressable,
+  StyleSheet,
+  TextInput,
+  View,
+} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {AppText} from '@/ui/Text';
 import {Button} from '@/ui/Button';
@@ -30,6 +37,18 @@ export function NoteSheet({
   const {colors} = useTheme();
   const insets = useSafeAreaInsets();
   const [draft, setDraft] = useState(note ?? '');
+  const [keyboard, setKeyboard] = useState(0);
+
+  useEffect(() => {
+    const show = Keyboard.addListener('keyboardDidShow', e =>
+      setKeyboard(e.endCoordinates.height),
+    );
+    const hide = Keyboard.addListener('keyboardDidHide', () => setKeyboard(0));
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
 
   // Reopening on a different exercise, or after a save, must not show the
   // previous one's text.
@@ -57,7 +76,10 @@ export function NoteSheet({
           {
             backgroundColor: colors.surface,
             borderColor: colors.rule,
-            paddingBottom: Math.max(insets.bottom, space.lg),
+            paddingBottom:
+              keyboard > 0
+                ? keyboard + space.lg
+                : Math.max(insets.bottom, space.lg),
           },
         ]}>
         <AppText variant="eyebrow" color="muted">
@@ -68,6 +90,7 @@ export function NoteSheet({
           onChangeText={setDraft}
           multiline
           autoFocus
+          scrollEnabled
           placeholder="How did it feel? What did you change?"
           placeholderTextColor={colors.faint}
           accessibilityLabel="Note"

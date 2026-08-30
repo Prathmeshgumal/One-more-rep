@@ -138,6 +138,17 @@ export function FocusSet({
       <AppText variant="h1" style={styles.name} numberOfLines={2}>
         {exercise.name}
       </AppText>
+      {/* The note itself, not just the fact that there is one. A pill that
+          turns ochre tells you a note exists and then makes you open a sheet
+          to find out what it says — which is the opposite of the point of
+          writing "left shoulder tight" down in the first place. */}
+      {exercise.notes ? (
+        <View style={[styles.note, {borderLeftColor: colors.short}]}>
+          <AppText variant="small" color="ink2" numberOfLines={3}>
+            {exercise.notes}
+          </AppText>
+        </View>
+      ) : null}
 
       {mode === 'skipped' ? (
         <>
@@ -287,6 +298,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   name: {marginTop: space.sm, textAlign: 'center'},
+  note: {
+    marginTop: space.md,
+    borderLeftWidth: 2,
+    paddingLeft: space.md,
+    alignSelf: 'stretch',
+  },
   addWeight: {
     marginTop: space.xl,
     height: 44,
