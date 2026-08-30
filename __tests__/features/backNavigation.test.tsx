@@ -22,7 +22,6 @@ const read = (relative: string): string =>
 const PUSHED: readonly string[] = [
   'features/exercises/ExerciseListScreen.tsx',
   'features/plan/PlanWeekScreen.tsx',
-  'features/history/HistoryTimelineScreen.tsx',
   'features/exercises/ExerciseDetailScreen.tsx',
   'features/exercises/ExerciseEditorScreen.tsx',
   'features/plan/PlanDayScreen.tsx',
@@ -51,7 +50,7 @@ const NO_BACK: readonly string[] = [
  * Stack roots: the tab already is the way back.
  *
  * There are two of these now rather than four. PlanWeekScreen,
- * HistoryTimelineScreen and ExerciseListScreen were roots of their own tabs
+ * PlanWeekScreen and ExerciseListScreen were roots of their own tabs
  * until those tabs became buttons; all three are pushed now, and all three had
  * to grow a back control they never needed before.
  */

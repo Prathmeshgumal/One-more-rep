@@ -12,7 +12,6 @@ import {ExercisePickerScreen} from '@/features/plan/ExercisePickerScreen';
 import {TargetEditorScreen} from '@/features/plan/TargetEditorScreen';
 import {CopyDayScreen} from '@/features/plan/CopyDayScreen';
 import {PlanHistoryScreen} from '@/features/plan/PlanHistoryScreen';
-import {HistoryTimelineScreen} from '@/features/history/HistoryTimelineScreen';
 import {CalendarScreen} from '@/features/history/CalendarScreen';
 import {DayDetailScreen} from '@/features/history/DayDetailScreen';
 import {ExerciseHistoryScreen} from '@/features/history/ExerciseHistoryScreen';
@@ -52,7 +51,6 @@ export function TodayStack() {
       <Stack.Screen name="PlanCopyDay" component={CopyDayScreen} />
       <Stack.Screen name="PlanHistory" component={PlanHistoryScreen} />
 
-      <Stack.Screen name="HistoryTimeline" component={HistoryTimelineScreen} />
       <Stack.Screen name="HistoryCalendar" component={CalendarScreen} />
       <Stack.Screen name="DayDetail" component={DayDetailScreen} />
       <Stack.Screen name="ExerciseHistory" component={ExerciseHistoryScreen} />

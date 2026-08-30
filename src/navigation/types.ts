@@ -52,7 +52,10 @@ export type TodayStackParamList = {
   PlanHistory: undefined;
 
   // ---- history, reached by the button on Today's left ----
-  HistoryTimeline: undefined;
+  //
+  // One screen, not two. The rolling-fortnight timeline and the calendar
+  // listed the same days twice over, so the list moved onto the calendar and
+  // the timeline went with it.
   HistoryCalendar: undefined;
   /** Local midnight of the day to open. */
   DayDetail: {date: number};

@@ -97,9 +97,9 @@ export function TodayScreen() {
       ]}>
       <View style={styles.bar}>
         <IconButton
-          glyph="history"
+          glyph="calendar"
           label="History"
-          onPress={() => navigation.navigate('HistoryTimeline')}
+          onPress={() => navigation.navigate('HistoryCalendar')}
         />
         <IconButton
           glyph="plan"

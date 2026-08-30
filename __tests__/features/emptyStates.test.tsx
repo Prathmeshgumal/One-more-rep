@@ -8,7 +8,7 @@ import {ThemeProvider} from '@/theme';
 import {DatabaseContextTestProvider} from '@/providers/DatabaseGate';
 import {PlanWeekScreen} from '@/features/plan/PlanWeekScreen';
 import {TodayScreen} from '@/features/workout/TodayScreen';
-import {HistoryTimelineScreen} from '@/features/history/HistoryTimelineScreen';
+import {CalendarScreen} from '@/features/history/CalendarScreen';
 import {ExerciseHistoryScreen} from '@/features/history/ExerciseHistoryScreen';
 import {createTestDb} from '../helpers/testDb';
 
@@ -78,7 +78,7 @@ describe('empty states', () => {
   });
 
   it('says completed workouts will appear in History', async () => {
-    const view = await wrap(<HistoryTimelineScreen />);
+    const view = await wrap(<CalendarScreen />);
     expect(
       await view.findByText(/completed workouts will appear here/i),
     ).toBeTruthy();

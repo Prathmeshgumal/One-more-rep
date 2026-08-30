@@ -386,6 +386,31 @@ alone — but they are not the same thing, and this section says which was which
 
 ## Design departures — navigation
 
+### The history timeline and the calendar became one screen
+
+**Added:** 2026-08-30, at the user's request.
+
+Today's left-hand button now carries a calendar glyph and opens the calendar
+directly. The timeline's content — the adherence card and the day-by-day list —
+moved onto the calendar below its totals, and `HistoryTimelineScreen` was
+deleted rather than left unreachable.
+
+They were showing the same days twice over, which is the argument. Three
+consequences:
+
+1. **The month is the unit throughout.** The timeline listed a rolling
+   fortnight with "Show earlier"; the list now describes the month in the
+   heading, so the grid, the totals and the list agree. The chevrons that
+   already page the month replace "Show earlier".
+2. **Adherence is now monthly, not weekly.** That is a real change in meaning —
+   the same workout can read 100% for the week and 25% for the month. It is
+   the honest number for a screen headed with a month.
+3. **The adherence card lost its "1 of 1 workouts / 2 of 12 sets" row**,
+   because the totals directly above say exactly that. The Sets total gained
+   its planned denominator in exchange, so nothing was lost.
+
+The timeline's tests moved onto the calendar rather than being deleted with it.
+
 ### Five tabs became two
 
 **Added:** 2026-08-30, at the user's request.
