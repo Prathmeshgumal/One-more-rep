@@ -2,8 +2,6 @@ import React from 'react';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {WorkoutHomeScreen} from '@/features/workout/WorkoutHomeScreen';
 import {SessionScreen} from '@/features/workout/SessionScreen';
-import {ExerciseSummaryScreen} from '@/features/workout/ExerciseSummaryScreen';
-import {WorkoutCompleteScreen} from '@/features/workout/WorkoutCompleteScreen';
 import {WorkoutExercisePickerScreen} from '@/features/workout/WorkoutExercisePickerScreen';
 import {ExerciseEditorScreen} from '@/features/exercises/ExerciseEditorScreen';
 import {PlanWeekScreen} from '@/features/plan/PlanWeekScreen';
@@ -33,8 +31,6 @@ export function WorkoutStack() {
     <Stack.Navigator screenOptions={{headerShown: false}}>
       <Stack.Screen name="WorkoutHome" component={WorkoutHomeScreen} />
       <Stack.Screen name="Session" component={SessionScreen} />
-      <Stack.Screen name="ExerciseSummary" component={ExerciseSummaryScreen} />
-      <Stack.Screen name="WorkoutComplete" component={WorkoutCompleteScreen} />
       <Stack.Screen
         name="WorkoutExercisePicker"
         component={WorkoutExercisePickerScreen}

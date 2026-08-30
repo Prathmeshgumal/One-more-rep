@@ -33,8 +33,6 @@ export type WorkoutStackParamList = {
    * is taken twice over already.
    */
   Session: undefined;
-  ExerciseSummary: {exerciseIndex: number};
-  WorkoutComplete: undefined;
   /**
    * `swap` replaces the movement in one slot rather than appending a new
    * exercise (U6); `performedExerciseId` names the slot.

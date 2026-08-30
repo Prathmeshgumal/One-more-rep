@@ -250,4 +250,4 @@ line below is ticked.
 | reopens a recorded set so a wrong number can be corrected | 4.3 ✅ |
 | goes back to the first pending set once the correction is saved | 4.3 ✅ |
 | offers no edit on a set that has not happened yet | n/a — every set is reachable now |
-| stops offering to finish once there is nothing left | 5.1 |
+| stops offering to finish once there is nothing left | 5.1 ✅ — the sheet arrives on its own |

@@ -14,11 +14,13 @@ import {SetRail} from './SetRail';
 import {SessionPeek} from './SessionPeek';
 import {NoteSheet} from './NoteSheet';
 import {ExerciseActions} from './ExerciseActions';
+import {FinishSheet} from './FinishSheet';
 import {useActiveSet} from './useActiveSet';
 import {
   flattenSets,
   firstPendingIndex,
   nextPendingAfter,
+  allDecided,
   recordedCount,
   type SetCursor,
 } from './sessionCursor';
@@ -30,6 +32,7 @@ import {
   useSkipExercise,
   useFinishExercise,
   useAddSet,
+  useFinishWorkout,
 } from './useSession';
 import {
   useRestoreSet,
@@ -74,11 +77,13 @@ export function SessionScreen() {
   const removeExercise = useRemoveExercise();
   const removeSet = useRemoveSet();
   const moveExercise = useMoveExercise();
+  const finishWorkout = useFinishWorkout();
 
   const [focusIndex, setFocusIndex] = useState(0);
   const [peekOpen, setPeekOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [noteOpen, setNoteOpen] = useState(false);
+  const [finishOpen, setFinishOpen] = useState(false);
 
   // Memoised because the record and advance callbacks close over it: a fresh
   // array every render would rebuild them every render, and the undo timer
@@ -203,7 +208,12 @@ export function SessionScreen() {
           const next = nextPendingAfter(cursors, cursor.index);
           if (next !== null) {
             setFocusIndex(next);
+            return;
           }
+          // Nothing pending anywhere: this was the last set. In a flow with no
+          // list to fall back to there is no other natural end, so the sheet
+          // arrives on its own rather than waiting to be found.
+          setFinishOpen(true);
         },
       },
     );
@@ -383,6 +393,7 @@ export function SessionScreen() {
     : null;
 
   const done = recordedCount(cursors);
+  const everythingDecided = allDecided(cursors);
 
   // Names where the primary button goes, so it can say so. Crossing into
   // another exercise names the exercise; staying inside one names the set.
@@ -419,6 +430,28 @@ export function SessionScreen() {
             {`${done} of ${cursors.length} recorded`}
           </AppText>
         </View>
+        {/* Ending early is always available — the sheet says what saving will
+            do to whatever is left. It stands out only once the work is
+            genuinely done. */}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Finish workout"
+          hitSlop={space.sm}
+          onPress={() => setFinishOpen(true)}
+          style={[
+            styles.finish,
+            {
+              backgroundColor: everythingDecided
+                ? colors.plate
+                : colors.plateSoft,
+            },
+          ]}>
+          <AppText
+            variant="monoSmall"
+            style={{color: everythingDecided ? colors.plateInk : colors.plate}}>
+            FINISH
+          </AppText>
+        </Pressable>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={`Actions for ${cursor.exercise.name}`}
@@ -531,6 +564,23 @@ export function SessionScreen() {
         }
       />
 
+      <FinishSheet
+        visible={finishOpen}
+        session={session}
+        unit={unit}
+        busy={finishWorkout.isPending}
+        onSave={() =>
+          finishWorkout.mutate(session.id, {
+            onSuccess: () => {
+              setFinishOpen(false);
+              // Back to the tab home, which now renders the finished day.
+              navigation.goBack();
+            },
+          })
+        }
+        onClose={() => setFinishOpen(false)}
+      />
+
       <NoteSheet
         visible={noteOpen}
         exerciseName={cursor.exercise.name}
@@ -579,6 +629,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   title: {flex: 1},
+  finish: {
+    paddingHorizontal: space.md,
+    paddingVertical: space.sm,
+    borderRadius: radius.sm,
+  },
   hints: {
     flexDirection: 'row',
     justifyContent: 'space-between',

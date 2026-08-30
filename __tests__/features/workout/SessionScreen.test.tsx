@@ -546,6 +546,47 @@ describe('SessionScreen', () => {
     });
   });
 
+  describe('finishing', () => {
+    /**
+     * In a flow with no list to fall back to there is no other natural end,
+     * so the sheet arrives on its own rather than waiting to be found.
+     */
+    it('offers to finish once the last set is recorded', async () => {
+      const session = (await getActiveSession(ctx.db))!;
+      const all = session.exercises.flatMap(e => e.sets);
+      for (const set of all.slice(0, all.length - 1)) {
+        await completeSet(ctx.db, set.id, {actualReps: 10, actualWeight: 30});
+      }
+      const view = await renderScreen();
+      await view.findByText('Exercise 2 of 2 · set 3 of 3');
+      await fireEvent.press(view.getByLabelText('Record 10 × 30 kg'));
+      expect(await view.findByText('That was the last set.')).toBeTruthy();
+    });
+
+    it('can be ended early from the header', async () => {
+      const view = await renderScreen();
+      await fireEvent.press(await view.findByLabelText('Finish workout'));
+      expect(await view.findByText('Finish this workout?')).toBeTruthy();
+    });
+
+    it('saves the session and leaves', async () => {
+      const view = await renderScreen();
+      await fireEvent.press(await view.findByLabelText('Finish workout'));
+      await fireEvent.press(await view.findByText('Save workout'));
+      await waitFor(async () => {
+        expect(await getActiveSession(ctx.db)).toBeUndefined();
+      });
+      expect(mockGoBack).toHaveBeenCalled();
+    });
+
+    it('goes back into the workout rather than saving', async () => {
+      const view = await renderScreen();
+      await fireEvent.press(await view.findByLabelText('Finish workout'));
+      await fireEvent.press(await view.findByText('Go back in'));
+      expect(await getActiveSession(ctx.db)).toBeDefined();
+    });
+  });
+
   describe('amending a recorded set', () => {
     const goToRecordedSet = async (
       view: Awaited<ReturnType<typeof render>>,

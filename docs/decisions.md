@@ -285,3 +285,42 @@ was moved down to `UndoBanner`, where the question can be asked without
 rendering the workout. Ask a question at the level that can answer it.
 
 **`ui/Button` sets no `accessibilityLabel`** — query it by text.
+
+---
+
+## D21 · Finishing is a sheet, and it arrives on its own
+
+**Decided:** `FinishSheet` over the workout; `WorkoutCompleteScreen` deleted.
+
+**Why:** the screen it replaces pushed a whole view carrying a 56px percentage,
+a completion bar, four verdict counts, volume, a warning and a Save button — and
+then Today showed the same summary again the moment you landed. Two screens and
+two taps to end a session, for information nobody acts on at that moment.
+
+**It opens itself after the last set** because a focus flow has no list to fall
+back to; there is no other natural end. It is also always reachable from the
+header, which stands out only once everything is decided.
+
+**The wording follows the trigger:** "That was the last set." when it arrived on
+its own, "Finish this workout?" when you opened it early. A question you did not
+ask is not a question.
+
+**The warning names the exercises**, not just a count: "3 sets on Cable Fly were
+never recorded" can be acted on; "3 sets were never recorded" sends you hunting.
+
+**Volume is omitted rather than printed as zero** on a bodyweight-only session —
+`0 kg lifted` reads as a failure rather than an inapplicable number.
+
+---
+
+## D22 · `ExerciseSummaryScreen` was deleted outright
+
+**Decided:** removed, with no replacement.
+
+**Why:** it lost its automatic push in an earlier round and has since been
+reachable only from a `⋯` menu, so almost nobody would ever open it. With the
+whole session visible in the peek, a per-exercise screen has nothing left to
+add.
+
+**Checked before deleting:** the image export it shared with the finish screen
+also lives on `DayDetailScreen`, so nothing was lost with them.

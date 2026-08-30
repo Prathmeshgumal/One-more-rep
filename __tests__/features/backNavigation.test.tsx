@@ -32,7 +32,6 @@ const PUSHED: readonly string[] = [
   'features/history/CalendarScreen.tsx',
   'features/history/DayDetailScreen.tsx',
   'features/history/ExerciseHistoryScreen.tsx',
-  'features/workout/ExerciseSummaryScreen.tsx',
   'features/workout/WorkoutExercisePickerScreen.tsx',
 ];
 
@@ -42,7 +41,6 @@ const PUSHED: readonly string[] = [
  */
 const NO_BACK: readonly string[] = [
   'features/workout/SessionScreen.tsx',
-  'features/workout/WorkoutCompleteScreen.tsx',
 ];
 
 /** Stack roots: the tab already is the way back. */
