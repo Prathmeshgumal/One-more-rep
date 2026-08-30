@@ -535,7 +535,12 @@ export async function completeSet(
       actualReps: actuals.actualReps,
       actualWeight: actuals.actualWeight,
       status: 'completed',
-      completedAt: opts.now ?? Date.now(),
+      // Kept, not restamped. This is when the set was *performed*, and
+      // correcting a number afterwards does not move when you lifted it —
+      // amending Tuesday's set 2 on Thursday would otherwise write Thursday
+      // into the record of Tuesday's workout. A set being recorded for the
+      // first time, or one coming back from skipped, has nothing to keep.
+      completedAt: set.completedAt ?? opts.now ?? Date.now(),
     })
     .where(eq(performedSets.id, setId));
   await refreshExerciseStatus(db, set.performedExerciseId);
