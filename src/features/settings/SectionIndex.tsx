@@ -33,13 +33,20 @@ export function useSectionIndex<K extends string>(keys: readonly K[]) {
    * The chip follows the scroll as well as driving it, or the index would lie
    * the moment you scrolled by hand. A section counts as reached a little
    * before its top edge, so the heading you are reading is the one lit.
+   *
+   * A section still sitting at zero has not really been measured — every one
+   * of them reports `0` on its first pass, before its siblings have taken up
+   * any height. Counting those made the *last* section the one reached at a
+   * scroll of nothing, which is how a freshly opened Settings opened with
+   * `About` lit. Only the first section may honestly be at zero.
    */
   const onScrollY = React.useCallback(
     (y: number) => {
       let reached = keys[0]!;
       for (const key of keys) {
         const offset = offsets.current[key];
-        if (offset !== undefined && y >= offset - 48) reached = key;
+        if (offset === undefined || offset <= 0) continue;
+        if (y >= offset - 48) reached = key;
       }
       setActive(current => (current === reached ? current : reached));
     },
