@@ -8,6 +8,7 @@ import {
   type ItemStatus,
 } from '@/db/schema';
 import type {AppDatabase} from '@/db/types';
+import {NOTE_MAX_LENGTH} from '@/constants';
 import {startOfLocalDay, weekdayIndex, WEEKDAY_NAMES} from '@/domain/weekday';
 import {getPlanForDate} from './planRepo';
 
@@ -708,6 +709,14 @@ export async function setExerciseNotes(
   notes: string | null,
 ): Promise<void> {
   const trimmed = notes?.trim() ?? '';
+  // The sheet caps the field at this, so reaching here means a caller that
+  // did not. Refusing is louder than truncating, and truncating would throw
+  // away words somebody wrote without telling them.
+  if (trimmed.length > NOTE_MAX_LENGTH) {
+    throw new Error(
+      `A note is at most ${NOTE_MAX_LENGTH} characters. That one is ${trimmed.length}.`,
+    );
+  }
   await db
     .update(performedExercises)
     // Empty is NULL, never '': a note nobody wrote and a note somebody erased

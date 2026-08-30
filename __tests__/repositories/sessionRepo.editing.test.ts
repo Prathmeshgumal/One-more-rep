@@ -18,6 +18,7 @@ import {
   skipSet,
 } from '@/repositories/sessionRepo';
 import {createTestDb} from '../helpers/testDb';
+import {NOTE_MAX_LENGTH} from '@/constants';
 
 const MONDAY = new Date(2026, 7, 17, 9).getTime();
 
@@ -290,6 +291,36 @@ describe('editing a workout while it is running', () => {
    * door to them was lost. The anchor is the other half of the request —
    * you add a movement standing in front of it, part way down the day.
    */
+  describe('the note on an exercise', () => {
+    const long = (n: number) => 'x'.repeat(n);
+
+    it('keeps a note of exactly the limit', async () => {
+      const id = (await first()).id;
+      await setExerciseNotes(ctx.db, id, long(NOTE_MAX_LENGTH));
+      expect((await first()).notes).toHaveLength(NOTE_MAX_LENGTH);
+    });
+
+    /**
+     * The sheet caps the field, so reaching here means a caller that did not.
+     * Refusing is louder than truncating, and truncating would throw away
+     * words somebody wrote without telling them.
+     */
+    it('refuses one past it rather than silently cutting it', async () => {
+      const id = (await first()).id;
+      await expect(
+        setExerciseNotes(ctx.db, id, long(NOTE_MAX_LENGTH + 1)),
+      ).rejects.toThrow(/at most 1000 characters/);
+      expect((await first()).notes).toBeNull();
+    });
+
+    /** The limit is on what is stored, and what is stored is trimmed. */
+    it('measures the trimmed note, not the whitespace around it', async () => {
+      const id = (await first()).id;
+      await setExerciseNotes(ctx.db, id, `   ${long(NOTE_MAX_LENGTH)}   `);
+      expect((await first()).notes).toHaveLength(NOTE_MAX_LENGTH);
+    });
+  });
+
   describe('addExercise', () => {
     const names = async () => (await reload()).exercises.map(e => e.name);
 
