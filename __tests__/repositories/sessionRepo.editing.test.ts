@@ -284,6 +284,58 @@ describe('editing a workout while it is running', () => {
     });
   });
 
+  /**
+   * Reported from the phone: there was no way to add an exercise mid-workout
+   * at all. The picker and this function survived the focus flow; only the
+   * door to them was lost. The anchor is the other half of the request —
+   * you add a movement standing in front of it, part way down the day.
+   */
+  describe('addExercise', () => {
+    const names = async () => (await reload()).exercises.map(e => e.name);
+
+    it('appends to the end when nothing anchors it', async () => {
+      await addExercise(ctx.db, (await reload()).id, 'pullup');
+      expect(await names()).toEqual(['Bench Press', 'Cable Fly', 'Pull-up']);
+    });
+
+    it('lands directly behind the exercise it was added from', async () => {
+      const session = await reload();
+      await addExercise(ctx.db, session.id, 'pullup', {
+        after: session.exercises[0]!.id,
+      });
+      expect(await names()).toEqual(['Bench Press', 'Pull-up', 'Cable Fly']);
+    });
+
+    it('leaves the order contiguous, so a later move has somewhere to go', async () => {
+      const session = await reload();
+      await addExercise(ctx.db, session.id, 'pullup', {
+        after: session.exercises[0]!.id,
+      });
+      const rows = await ctx.db.all<{order_index: number}>(
+        sql`SELECT order_index FROM performed_exercises
+            WHERE workout_session_id = ${session.id} ORDER BY order_index`,
+      );
+      expect(rows.map(r => r.order_index)).toEqual([0, 1, 2]);
+    });
+
+    it('appends when the anchor is not in this session', async () => {
+      await addExercise(ctx.db, (await reload()).id, 'pullup', {after: 'nope'});
+      expect(await names()).toEqual(['Bench Press', 'Cable Fly', 'Pull-up']);
+    });
+
+    it('arrives with one set, pending and unplanned', async () => {
+      const session = await reload();
+      const id = await addExercise(ctx.db, session.id, 'pullup', {
+        after: session.exercises[0]!.id,
+      });
+      const added = (await reload()).exercises.find(e => e.id === id)!;
+      expect(added.sets).toHaveLength(1);
+      expect(added.sets[0]!.status).toBe('pending');
+      expect(added.sets[0]!.isUnplanned).toBe(true);
+      expect(added.plannedExerciseId).toBeNull();
+    });
+  });
+
   describe('removeExercise', () => {
     it('deletes an unplanned exercise with nothing recorded', async () => {
       const id = await addExercise(ctx.db, (await reload()).id, 'fly');

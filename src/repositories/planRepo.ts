@@ -1,4 +1,15 @@
-import {and, asc, desc, eq, inArray, isNull, or, gt, lte, sql} from 'drizzle-orm';
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  inArray,
+  isNull,
+  or,
+  gt,
+  lte,
+  sql,
+} from 'drizzle-orm';
 import {
   planVersions,
   planDays,
@@ -194,7 +205,9 @@ export async function createPlan(
 ): Promise<Plan> {
   const existing = await getActivePlan(db);
   if (existing) {
-    throw new Error('A plan is already active. Edit it instead of creating another.');
+    throw new Error(
+      'A plan is already active. Edit it instead of creating another.',
+    );
   }
 
   const now = opts.now ?? Date.now();
@@ -364,7 +377,9 @@ export async function savePlanDraft(
   try {
     if (inPlace) {
       // The cascade takes days, exercises, and sets with it.
-      await db.delete(planDays).where(eq(planDays.planVersionId, active.version.id));
+      await db
+        .delete(planDays)
+        .where(eq(planDays.planVersionId, active.version.id));
       await db
         .update(planVersions)
         .set({name: draft.name})

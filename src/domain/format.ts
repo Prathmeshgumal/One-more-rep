@@ -26,6 +26,18 @@ export function formatDuration(ms: number): string {
   return rest === 0 ? `${hours} h` : `${hours} h ${rest} min`;
 }
 
+/**
+ * A rest between sets, where whole minutes are too coarse to be useful.
+ *
+ * 92 seconds and 148 seconds are both "2 min" to `formatDuration`, and the
+ * difference between them is the whole point of looking. Past two minutes the
+ * precision stops mattering and minutes read faster.
+ */
+export function formatRest(ms: number): string {
+  const seconds = Math.max(0, Math.round(ms / 1000));
+  return seconds < 120 ? `${seconds} s` : formatDuration(ms);
+}
+
 /** Just enough of a set to describe what it is aiming at. */
 export type TargetLineSet = {
   targetReps: number;

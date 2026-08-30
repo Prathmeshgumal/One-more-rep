@@ -15,7 +15,11 @@ import {createTestDb} from '../../helpers/testDb';
 const mockGoBack = jest.fn();
 jest.mock('@react-navigation/native', () => ({
   ...jest.requireActual('@react-navigation/native'),
-  useNavigation: () => ({goBack: mockGoBack, navigate: jest.fn(), addListener: () => () => {}}),
+  useNavigation: () => ({
+    goBack: mockGoBack,
+    navigate: jest.fn(),
+    addListener: () => () => {},
+  }),
   useRoute: () => ({params: {weekday: 0, exerciseIndex: 0}}),
 }));
 

@@ -4,6 +4,8 @@ import {
   removeExercise,
   removeSet,
   moveExercise,
+  restoreSet,
+  type SetSnapshot,
 } from '@/repositories/sessionRepo';
 import {useSessionMutation} from './useSession';
 
@@ -34,6 +36,18 @@ export const useRemoveExercise = () =>
 /** Deletes a set that was added by hand and never used. */
 export const useRemoveSet = () =>
   useSessionMutation<string>((db, id) => removeSet(db, id));
+
+/**
+ * Undo, for a screen that leaves.
+ *
+ * The focus flow replaces the whole screen with the next set the moment one is
+ * recorded, so what you just wrote is off screen before you can check it. That
+ * makes an unreversible tap unacceptable here in a way it was not on a list.
+ */
+export const useRestoreSet = () =>
+  useSessionMutation<{setId: string; snapshot: SetSnapshot}>(
+    (db, {setId, snapshot}) => restoreSet(db, setId, snapshot),
+  );
 
 export const useMoveExercise = () =>
   useSessionMutation<{performedExerciseId: string; direction: -1 | 1}>(

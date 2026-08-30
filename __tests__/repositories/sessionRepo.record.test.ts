@@ -178,9 +178,9 @@ describe('recording a workout', () => {
     const session = await reload();
     await addSet(ctx.db, session.exercises[0]!.id);
     await addSet(ctx.db, session.exercises[0]!.id);
-    expect(
-      (await reload()).exercises[0]!.sets.map(s => s.setNumber),
-    ).toEqual([1, 2, 3, 4, 5]);
+    expect((await reload()).exercises[0]!.sets.map(s => s.setNumber)).toEqual([
+      1, 2, 3, 4, 5,
+    ]);
   });
 
   it('reopens an exercise that had been finished when a set is added', async () => {

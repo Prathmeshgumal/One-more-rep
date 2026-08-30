@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {ScrollView, StyleSheet, View} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
@@ -8,47 +8,25 @@ import {Button} from '@/ui/Button';
 import {Card} from '@/ui/Card';
 import {IconButton} from '@/ui/IconButton';
 import {ProgressBar} from '@/ui/ProgressBar';
+import {ScrollFade, useScrollFade} from '@/ui/ScrollFade';
 import {useTheme, space, radius} from '@/theme';
 import {WEEKDAY_NAMES, weekdayIndex} from '@/domain/weekday';
 import {targetLine} from '@/domain/format';
-import {compareSet, describeComparison} from '@/domain/setComparison';
-import {LedgerTable, type LedgerRow} from '@/ui/LedgerTable';
 import {SessionCounts} from './SessionSummary';
-import type {SessionExercise} from '@/repositories/sessionRepo';
+import {SessionLedger} from './SessionLedger';
+import {AmendSetSheet} from './AmendSetSheet';
+import type {SessionSet} from '@/repositories/sessionRepo';
 import {useSettingsQuery} from '@/features/settings/useSettings';
 import {useCreatePlan} from '@/features/plan/usePlan';
-import type {TodayStackParamList} from '@/navigation/types';
+import type {WorkoutStackParamList} from '@/navigation/types';
 import {
   useTodaySessionQuery,
   useTodayPlanQuery,
   useStartWorkout,
   useFinishWorkout,
+  useCompleteSet,
+  useSkipSet,
 } from './useSession';
-
-/** "10 × 30.0", or an em dash where nothing was recorded — as design 14. */
-const pair = (reps: number | null, weight: number | null): string => {
-  if (reps === null) {
-    return '—';
-  }
-  return weight === null ? `${reps}` : `${reps} × ${weight.toFixed(1)}`;
-};
-
-/** The same rows the day-detail ledger draws, from a live session. */
-function ledgerRows(exercise: SessionExercise, unit: string): LedgerRow[] {
-  return exercise.sets.map(set => {
-    const comparison = compareSet(set);
-    return {
-      setNumber: set.setNumber,
-      target: set.isUnplanned ? '—' : pair(set.targetReps, set.targetWeight),
-      actual: pair(set.actualReps, set.actualWeight),
-      result:
-        comparison.status === 'skipped'
-          ? 'Skipped'
-          : describeComparison(comparison, unit),
-      status: comparison.status,
-    };
-  });
-}
 
 const plural = (n: number, one: string, many: string) =>
   `${n} ${n === 1 ? one : many}`;
@@ -60,11 +38,12 @@ const longDate = (ms: number) =>
     month: 'long',
   });
 
-export function TodayScreen() {
+export function WorkoutHomeScreen() {
   const {colors} = useTheme();
   const insets = useSafeAreaInsets();
+  const fade = useScrollFade();
   const navigation =
-    useNavigation<NativeStackNavigationProp<TodayStackParamList>>();
+    useNavigation<NativeStackNavigationProp<WorkoutStackParamList>>();
 
   const {data: session, isPending: sessionPending} = useTodaySessionQuery();
   const {data: plan, isPending: planPending} = useTodayPlanQuery();
@@ -73,6 +52,26 @@ export function TodayScreen() {
   const createPlan = useCreatePlan();
   const start = useStartWorkout();
   const finish = useFinishWorkout();
+  const correct = useCompleteSet();
+  const skipSet = useSkipSet();
+
+  /**
+   * The set being corrected on a day that is already saved.
+   *
+   * completeSet has always overwritten regardless of the session status --
+   * nothing in the data model was stopping this. Only the screens declined to
+   * offer it, so a number typed wrong on Tuesday was wrong forever.
+   */
+  const [amending, setAmending] = useState<{
+    set: SessionSet;
+    performedExerciseId: string;
+  } | null>(null);
+  const amendingExercise = session?.exercises.find(
+    e => e.id === amending?.performedExerciseId,
+  );
+  const amendingNumber = amendingExercise
+    ? amendingExercise.sets.findIndex(s => s.id === amending?.set.id) + 1
+    : 0;
 
   const now = Date.now();
   const weekday = weekdayIndex(new Date(now));
@@ -91,13 +90,11 @@ export function TodayScreen() {
    * day has to say — the past behind you, the routine ahead.
    */
   const frame = (children: React.ReactNode) => (
-    <ScrollView
-      style={{backgroundColor: colors.paper}}
-      contentContainerStyle={[
-        styles.content,
-        {paddingTop: insets.top + space.md},
-      ]}>
-      <View style={styles.bar}>
+    <View style={[styles.root, {backgroundColor: colors.paper}]}>
+      {/* Outside the ScrollView. These are the only two ways off this screen,
+          and scrolling a long finished day used to carry them away — you had
+          to scroll back up to reach the plan. */}
+      <View style={[styles.bar, {paddingTop: insets.top + space.md}]}>
         <IconButton
           glyph="calendar"
           label="History"
@@ -113,8 +110,19 @@ export function TodayScreen() {
           />
         ) : null}
       </View>
-      {children}
-    </ScrollView>
+      <View style={styles.scroller}>
+        <ScrollView
+          {...fade.scrollProps}
+          contentContainerStyle={styles.content}>
+          {children}
+        </ScrollView>
+        {/* Content ran out under the pinned bar on a hard line straight
+            through a row of type, which reads as a rendering fault. Only
+            while there is something under it: at rest it sat directly on the
+            date line and half-erased it. */}
+        <ScrollFade visible={fade.faded} />
+      </View>
+    </View>
   );
 
   // ---- The workout is already in progress (§20, design 08) ----------------
@@ -144,12 +152,16 @@ export function TodayScreen() {
               {`of ${sets.length} sets recorded`}
             </AppText>
           </View>
-          <ProgressBar value={done} total={sets.length} label="Workout progress" />
+          <ProgressBar
+            value={done}
+            total={sets.length}
+            label="Workout progress"
+          />
         </View>
 
         <Button
           label="Continue workout"
-          onPress={() => navigation.navigate('Workout')}
+          onPress={() => navigation.navigate('Session')}
         />
         <Button
           label="Finish here"
@@ -204,7 +216,7 @@ export function TodayScreen() {
     );
   }
 
-  // ---- Today is already done ---------------------------------------------
+  // ---- the day is already done ---------------------------------------------
   //
   // Complaint 10 put the summary here rather than behind a button. It then
   // turned out to be too much of one: a percentage, four verdict chips and a
@@ -229,23 +241,62 @@ export function TodayScreen() {
         <SessionCounts session={session} />
 
         <AppText variant="eyebrow" color="muted">
-          Every set
+          Every set · tap one to correct it
         </AppText>
-        {session.exercises.map(exercise => (
-          <View key={exercise.id} style={styles.block}>
-            <AppText variant="printed" color="muted">
-              {exercise.name}
-            </AppText>
-            <LedgerTable rows={ledgerRows(exercise, unit)} />
-          </View>
-        ))}
+        {/* The same ledger the workout and the calendar draw, and the rows are
+            live: a wrong number recorded on Tuesday used to be wrong forever,
+            because no screen offered a way back in. */}
+        <SessionLedger
+          session={session}
+          unit={unit}
+          onSelectSet={(set, performedExerciseId) =>
+            setAmending({set, performedExerciseId})
+          }
+        />
 
         <Button
-          label="All exercises"
+          label="Edit workout"
           variant="secondary"
+          // For the jobs a single correction cannot do — undoing a skip,
+          // adding an exercise. The session stays completed; the focus screen
+          // opens every set in amend mode, which is exactly right for a day
+          // that is already saved.
+          onPress={() => navigation.navigate('Session')}
+        />
+        <Button
+          label="All exercises"
+          variant="ghost"
+          size="sm"
           // History is in this stack now, so the full day is a plain push
           // rather than a jump across tabs.
           onPress={() => navigation.navigate('DayDetail', {date: session.date})}
+        />
+
+        <AmendSetSheet
+          visible={amending !== null}
+          set={amending?.set ?? null}
+          setNumber={amendingNumber}
+          exerciseName={amendingExercise?.name ?? ''}
+          weightApplicable={amendingExercise?.weightApplicable ?? false}
+          unit={unit}
+          increment={settings?.defaultIncrement ?? 0.5}
+          busy={correct.isPending || skipSet.isPending}
+          onSave={actuals => {
+            if (amending) {
+              correct.mutate(
+                {setId: amending.set.id, ...actuals},
+                {onSuccess: () => setAmending(null)},
+              );
+            }
+          }}
+          onSkip={() => {
+            if (amending) {
+              skipSet.mutate(amending.set.id, {
+                onSuccess: () => setAmending(null),
+              });
+            }
+          }}
+          onClose={() => setAmending(null)}
         />
       </>,
     );
@@ -261,8 +312,7 @@ export function TodayScreen() {
       <View style={styles.blank}>
         <AppText variant="h2">No plan yet</AppText>
         <AppText variant="body" color="muted" style={styles.centred}>
-          Set up a weekly routine, then track what you actually lift against
-          it.
+          Set up a weekly routine, then track what you actually lift against it.
         </AppText>
         <View style={styles.fullWidth}>
           <Button
@@ -305,7 +355,7 @@ export function TodayScreen() {
             <AppText variant="bodyStrong">
               {tomorrow.isRestDay
                 ? 'Rest day'
-                : (tomorrow.customName ?? WEEKDAY_NAMES[tomorrow.weekday]!)}
+                : tomorrow.customName ?? WEEKDAY_NAMES[tomorrow.weekday]!}
             </AppText>
             {!tomorrow.isRestDay && tomorrow.exercises.length > 0 ? (
               <AppText variant="printed" color="muted">
@@ -381,7 +431,7 @@ export function TodayScreen() {
         disabled={start.isPending}
         onPress={() =>
           start.mutate(undefined, {
-            onSuccess: () => navigation.navigate('Workout'),
+            onSuccess: () => navigation.navigate('Session'),
           })
         }
       />
@@ -391,8 +441,10 @@ export function TodayScreen() {
 
 const styles = StyleSheet.create({
   root: {flex: 1},
+  scroller: {flex: 1},
   content: {
     paddingHorizontal: space.xl,
+    paddingTop: space.sm,
     paddingBottom: space.xxxl,
     gap: space.md,
   },
@@ -400,10 +452,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: space.xs,
+    paddingHorizontal: space.xl,
+    paddingBottom: space.sm,
   },
   headerBlock: {gap: 2, marginBottom: space.sm},
-  block: {gap: space.sm},
   line: {flexDirection: 'row', alignItems: 'center', gap: space.md},
   grow: {flex: 1},
   stack: {gap: space.sm, marginBottom: space.sm},

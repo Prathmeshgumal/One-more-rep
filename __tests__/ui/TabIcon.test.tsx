@@ -3,7 +3,7 @@ import {render} from '@testing-library/react-native';
 import {TabIcon} from '@/ui/TabIcon';
 import type {RootTabParamList} from '@/navigation/types';
 
-const TABS: ReadonlyArray<keyof RootTabParamList> = ['Today', 'Settings'];
+const TABS: ReadonlyArray<keyof RootTabParamList> = ['Workout', 'Settings'];
 
 type Node = {props?: Record<string, unknown>; children?: unknown} | null;
 
@@ -56,7 +56,7 @@ describe('TabIcon', () => {
   });
 
   it('takes its colour from the caller, so the active tint drives it', async () => {
-    const view = await render(<TabIcon name="Today" color="#123456" />);
+    const view = await render(<TabIcon name="Workout" color="#123456" />);
     const strokes = strokeColours(view.toJSON());
     expect(strokes).toContain('#123456');
   });

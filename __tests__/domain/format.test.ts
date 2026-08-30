@@ -58,7 +58,9 @@ describe('targetLine', () => {
   });
 
   it('notices a difference in weight alone', () => {
-    expect(targetLine([set(10, 20), set(10, 25)], 'kg')).toBe('2 sets · varied');
+    expect(targetLine([set(10, 20), set(10, 25)], 'kg')).toBe(
+      '2 sets · varied',
+    );
   });
 
   it('has something to say about no sets at all', () => {

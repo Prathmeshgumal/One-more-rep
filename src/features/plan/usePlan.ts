@@ -2,6 +2,7 @@ import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useDatabase} from '@/providers/DatabaseGate';
 import {historyKeys} from '@/features/history/useHistory';
 import {sessionKeys} from '@/features/workout/useSession';
+import {syncActiveSessionFromPlan} from '@/repositories/sessionRepo';
 import {
   getActivePlan,
   createPlan,
@@ -51,7 +52,7 @@ export function useCreatePlan() {
       await client.invalidateQueries({queryKey: planKeys.all});
       // A plan edit changes which future days count as rest or training.
       await client.invalidateQueries({queryKey: historyKeys.all});
-      // The Today tab reads the plan through the session branch, not this one,
+      // The Workout tab reads the plan through the session branch, not this one,
       // and it caches forever. Without this it kept saying "No plan yet" after
       // a plan was created, until the app was restarted.
       await client.invalidateQueries({queryKey: sessionKeys.all});
@@ -63,22 +64,33 @@ export function useCreatePlan() {
  * Every plan edit goes through here, so every edit invalidates both the active
  * plan and the version list — an edit that forks must make the new version
  * visible in plan history immediately, or the versioning looks broken.
+ *
+ * It is also where a running workout catches up with the plan. Raising a
+ * target while the session is open used to reach nothing at all: the targets
+ * were copied in at `startWorkout` and never looked at the plan again.
  */
 export function useEditPlan() {
   const db = useDatabase();
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (mutate: (draft: PlanDraft) => PlanDraft) =>
-      editPlan(db, mutate),
+    // The sync runs inside the mutation, not in onSuccess, so the session
+    // query is invalidated below against a database that has already caught
+    // up. Doing it the other way round refetches the old targets and then
+    // has nothing left to trigger a second read.
+    mutationFn: async (mutate: (draft: PlanDraft) => PlanDraft) => {
+      const plan = await editPlan(db, mutate);
+      await syncActiveSessionFromPlan(db);
+      return plan;
+    },
     // Awaited for the same reason as the workout mutations: callers run their
     // own onSuccess only once the promise returned from here settles.
     onSuccess: async () => {
       await client.invalidateQueries({queryKey: planKeys.all});
       // A plan edit changes which future days count as rest or training.
       await client.invalidateQueries({queryKey: historyKeys.all});
-      // Today previews the plan through the session branch (see above). An
-      // exercise added to today's plan has to appear there without a restart —
-      // this is half of complaint 4, found on the device at the R1 gate.
+      // The Workout tab previews the plan through the session branch (see
+      // above). An exercise added to today's plan has to appear there without
+      // a restart — this is half of complaint 4, found on the device at R1.
       await client.invalidateQueries({queryKey: sessionKeys.all});
     },
   });

@@ -21,6 +21,17 @@ type ActiveSetState = {
    */
   setWeight: (value: number) => void;
   setReps: (value: number) => void;
+  /**
+   * Deltas, applied to whatever is in the store *now*.
+   *
+   * A caller computing `setReps(reps + 1)` from a rendered value reads a
+   * snapshot, and two presses inside one render frame both resolve against the
+   * same stale number — the second one silently undoes the first. The stepper
+   * shoulders are the fastest-tapped controls in the app, so they go through
+   * here instead.
+   */
+  stepReps: (delta: number) => void;
+  stepWeight: (delta: number) => void;
   reset: () => void;
 };
 
@@ -36,5 +47,9 @@ export const useActiveSet = create<ActiveSetState>(set => ({
   // so this floors at zero rather than at the increment.
   setWeight: value => set({weight: Math.max(0, round(value))}),
   setReps: value => set({reps: Math.max(1, Math.round(value))}),
+  stepReps: delta =>
+    set(state => ({reps: Math.max(1, Math.round(state.reps + delta))})),
+  stepWeight: delta =>
+    set(state => ({weight: Math.max(0, round((state.weight ?? 0) + delta))})),
   reset: () => set({setId: null, weight: null, reps: 10}),
 }));

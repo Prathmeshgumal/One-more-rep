@@ -1,13 +1,13 @@
 import React from 'react';
-import { render, fireEvent, waitFor } from '@testing-library/react-native';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { NavigationContainer } from '@react-navigation/native';
-import { runMigrations } from '@/db/migrate';
-import { getSettings } from '@/repositories/settingsRepo';
-import { ThemeProvider, useThemeMode } from '@/theme';
-import { SettingsScreen } from '@/features/settings/SettingsScreen';
-import { DatabaseContextTestProvider } from '@/providers/DatabaseGate';
-import { createTestDb } from '../../helpers/testDb';
+import {render, fireEvent, waitFor} from '@testing-library/react-native';
+import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
+import {NavigationContainer} from '@react-navigation/native';
+import {runMigrations} from '@/db/migrate';
+import {getSettings} from '@/repositories/settingsRepo';
+import {ThemeProvider, useThemeMode} from '@/theme';
+import {SettingsScreen} from '@/features/settings/SettingsScreen';
+import {DatabaseContextTestProvider} from '@/providers/DatabaseGate';
+import {createTestDb} from '../../helpers/testDb';
 
 describe('SettingsScreen', () => {
   let ctx: ReturnType<typeof createTestDb>;
@@ -33,14 +33,14 @@ describe('SettingsScreen', () => {
     await runMigrations(ctx.db);
     // gcTime 0 so no collection timer outlives the test and hangs the run.
     client = new QueryClient({
-      defaultOptions: { queries: { retry: false, gcTime: 0 } },
+      defaultOptions: {queries: {retry: false, gcTime: 0}},
     });
   });
 
   afterEach(() => {
     client.clear();
     ctx.close();
-    useThemeMode.setState({ mode: 'system' });
+    useThemeMode.setState({mode: 'system'});
   });
 
   /** The controls are disabled until the first query lands. */
@@ -89,9 +89,9 @@ describe('SettingsScreen', () => {
   it('starts on the system theme', async () => {
     const view = await renderScreen();
     await settled(view);
-    expect(view.getByLabelText('System').props.accessibilityState.selected).toBe(
-      true,
-    );
+    expect(
+      view.getByLabelText('System').props.accessibilityState.selected,
+    ).toBe(true);
   });
 
   it('writes a theme choice and applies it immediately', async () => {
@@ -101,9 +101,9 @@ describe('SettingsScreen', () => {
     await fireEvent.press(view.getByLabelText('Dark'));
 
     await waitFor(() => {
-      expect(view.getByLabelText('Dark').props.accessibilityState.selected).toBe(
-        true,
-      );
+      expect(
+        view.getByLabelText('Dark').props.accessibilityState.selected,
+      ).toBe(true);
     });
     // Written to the database, so it survives a relaunch...
     expect((await getSettings(ctx.db)).themeMode).toBe('dark');
@@ -138,5 +138,45 @@ describe('SettingsScreen', () => {
     const view = await renderScreen();
     await settled(view);
     expect(view.getByText('Exercise library')).toBeTruthy();
+  });
+  /**
+   * The index is the whole point of this layout: three sections today, and
+   * the fourth — your data — is what makes it earn its keep.
+   */
+  describe('the section index', () => {
+    it('names a chip per section', async () => {
+      const view = await renderScreen();
+      await settled(view);
+      for (const label of ['Lifting', 'Appearance', 'About']) {
+        expect(view.getByLabelText(`Jump to ${label}`)).toBeTruthy();
+      }
+    });
+
+    it('starts on the first section', async () => {
+      const view = await renderScreen();
+      await settled(view);
+      expect(
+        view.getByLabelText('Jump to Lifting').props.accessibilityState
+          .selected,
+      ).toBe(true);
+      expect(
+        view.getByLabelText('Jump to About').props.accessibilityState.selected,
+      ).toBe(false);
+    });
+
+    it('lights the chip you jump to', async () => {
+      const view = await renderScreen();
+      await settled(view);
+
+      await fireEvent.press(view.getByLabelText('Jump to About'));
+
+      expect(
+        view.getByLabelText('Jump to About').props.accessibilityState.selected,
+      ).toBe(true);
+      expect(
+        view.getByLabelText('Jump to Lifting').props.accessibilityState
+          .selected,
+      ).toBe(false);
+    });
   });
 });

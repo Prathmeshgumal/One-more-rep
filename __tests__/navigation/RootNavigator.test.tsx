@@ -1,12 +1,12 @@
 import React from 'react';
-import { render, fireEvent, waitFor } from '@testing-library/react-native';
-import { NavigationContainer } from '@react-navigation/native';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { runMigrations } from '@/db/migrate';
-import { ThemeProvider } from '@/theme';
-import { DatabaseContextTestProvider } from '@/providers/DatabaseGate';
-import { RootNavigator } from '@/navigation/RootNavigator';
-import { createTestDb } from '../helpers/testDb';
+import {render, fireEvent, waitFor} from '@testing-library/react-native';
+import {NavigationContainer} from '@react-navigation/native';
+import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
+import {runMigrations} from '@/db/migrate';
+import {ThemeProvider} from '@/theme';
+import {DatabaseContextTestProvider} from '@/providers/DatabaseGate';
+import {RootNavigator} from '@/navigation/RootNavigator';
+import {createTestDb} from '../helpers/testDb';
 
 describe('RootNavigator', () => {
   let ctx: ReturnType<typeof createTestDb>;
@@ -29,7 +29,7 @@ describe('RootNavigator', () => {
     ctx = createTestDb();
     await runMigrations(ctx.db);
     client = new QueryClient({
-      defaultOptions: { queries: { retry: false, gcTime: 0 } },
+      defaultOptions: {queries: {retry: false, gcTime: 0}},
     });
   });
 
@@ -49,9 +49,10 @@ describe('RootNavigator', () => {
     const view = await renderApp();
     // Asserted on each screen's own copy rather than its title, because a tab
     // label and its heading can read the same.
-    await fireEvent.press(view.getByRole('button', { name: /Settings/ }));
+    await fireEvent.press(view.getByRole('button', {name: /Settings/}));
     await waitFor(() => {
-      expect(view.getAllByText(/weight unit/i).length).toBeGreaterThan(0);
+      // The section index, which nothing else in the app draws.
+      expect(view.getByLabelText('Jump to Lifting')).toBeTruthy();
     });
   });
 
@@ -79,7 +80,7 @@ describe('RootNavigator', () => {
 
   it('reaches the exercise library through Settings', async () => {
     const view = await renderApp();
-    await fireEvent.press(view.getByRole('button', { name: /Settings/ }));
+    await fireEvent.press(view.getByRole('button', {name: /Settings/}));
     await waitFor(() => {
       expect(view.getByText('Exercise library')).toBeTruthy();
     });

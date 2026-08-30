@@ -71,7 +71,9 @@ describe('getDayRange', () => {
       {now: AUG(24)},
     );
     expect(days).toHaveLength(7);
-    expect(days.map(d => d.date)).toEqual([10, 11, 12, 13, 14, 15, 16].map(AUG));
+    expect(days.map(d => d.date)).toEqual(
+      [10, 11, 12, 13, 14, 15, 16].map(AUG),
+    );
   });
 
   it('reads rest days and unconfigured days out of the plan', async () => {

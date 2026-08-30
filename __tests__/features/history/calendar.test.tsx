@@ -65,9 +65,11 @@ describe('CalendarScreen', () => {
     await editPlan(
       ctx.db,
       d =>
-        addExercises(renameDay(d, weekdayOf(TODAY), 'Push Day'), weekdayOf(TODAY), [
-          'bench',
-        ]),
+        addExercises(
+          renameDay(d, weekdayOf(TODAY), 'Push Day'),
+          weekdayOf(TODAY),
+          ['bench'],
+        ),
       daysAgo(60),
     );
     const session = await startWorkout(ctx.db, {now: TODAY + 9 * 3600_000});

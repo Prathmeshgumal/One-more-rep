@@ -68,7 +68,10 @@ async function loadContext(
     .where(
       and(
         lte(planVersions.effectiveFrom, to),
-        or(isNull(planVersions.effectiveTo), gt(planVersions.effectiveTo, from)),
+        or(
+          isNull(planVersions.effectiveTo),
+          gt(planVersions.effectiveTo, from),
+        ),
       ),
     )
     // Newest first, matching `getPlanForDate`, so the resolver's `find` picks

@@ -1,6 +1,10 @@
 import React, {useState} from 'react';
 import {FlatList, StyleSheet, View} from 'react-native';
-import {useNavigation, useRoute, useFocusEffect} from '@react-navigation/native';
+import {
+  useNavigation,
+  useRoute,
+  useFocusEffect,
+} from '@react-navigation/native';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {AppText} from '@/ui/Text';
@@ -17,7 +21,8 @@ import {weekdayIndex} from '@/domain/weekday';
 import {addExercises} from '@/domain/planDraft';
 import {useEditPlan} from '@/features/plan/usePlan';
 import {useLastCreatedExercise} from '@/features/exercises/useLastCreatedExercise';
-import type {TodayStackParamList} from '@/navigation/types';
+import {CreateExerciseRow} from '@/features/exercises/CreateExerciseRow';
+import type {WorkoutStackParamList} from '@/navigation/types';
 import {useTodaySessionQuery, useAddExercise} from './useSession';
 import {useSwapExercise} from './useSessionEditing';
 
@@ -32,10 +37,10 @@ export function WorkoutExercisePickerScreen() {
   const {colors} = useTheme();
   const insets = useSafeAreaInsets();
   const navigation =
-    useNavigation<NativeStackNavigationProp<TodayStackParamList>>();
+    useNavigation<NativeStackNavigationProp<WorkoutStackParamList>>();
 
   const params = useRoute().params as
-    | {mode?: 'add' | 'swap'; performedExerciseId?: string}
+    | {mode?: 'add' | 'swap'; performedExerciseId?: string; after?: string}
     | undefined;
   const isSwap = params?.mode === 'swap';
 
@@ -95,7 +100,7 @@ export function WorkoutExercisePickerScreen() {
         return;
       }
       add.mutate(
-        {sessionId: session.id, exerciseId: created},
+        {sessionId: session.id, exerciseId: created, after: params?.after},
         {onSuccess: () => navigation.goBack()},
       );
       // Intentionally not reactive: this runs on the focus that follows the
@@ -142,6 +147,12 @@ export function WorkoutExercisePickerScreen() {
           />
         ))}
       </View>
+      {/* Above the results, not under four hundred of them. */}
+      <CreateExerciseRow
+        search={search}
+        destination={isSwap ? 'this slot' : 'this workout'}
+        onPress={openEditor}
+      />
     </View>
   );
 
@@ -156,9 +167,6 @@ export function WorkoutExercisePickerScreen() {
           styles.content,
           {paddingTop: insets.top + space.xl},
         ]}
-        ListFooterComponent={
-          <CreateExerciseCard search={search} onPress={openEditor} />
-        }
         renderItem={({item}) => (
           <Card
             onPress={() => {
@@ -176,7 +184,13 @@ export function WorkoutExercisePickerScreen() {
                 return;
               }
               add.mutate(
-                {sessionId: session.id, exerciseId: item.id},
+                {
+                  sessionId: session.id,
+                  exerciseId: item.id,
+                  // Behind the exercise you were standing on, not at the end
+                  // of a day you have not reached yet.
+                  after: params?.after,
+                },
                 {
                   onSuccess: () => {
                     if (!alsoPlan) {
@@ -191,7 +205,9 @@ export function WorkoutExercisePickerScreen() {
                     // reading two rows in plan_versions later — that is why.
                     editPlan.mutate(
                       draft =>
-                        addExercises(draft, weekdayIndex(new Date()), [item.id]),
+                        addExercises(draft, weekdayIndex(new Date()), [
+                          item.id,
+                        ]),
                       {onSuccess: () => navigation.goBack()},
                     );
                   },
@@ -224,25 +240,3 @@ const styles = StyleSheet.create({
   header: {gap: space.md, marginBottom: space.xs},
   chips: {flexDirection: 'row', flexWrap: 'wrap', gap: space.sm},
 });
-
-/** The same escape hatch the plan's picker offers (complaint 5). */
-function CreateExerciseCard({
-  search,
-  onPress,
-}: {
-  search: string;
-  onPress: () => void;
-}) {
-  return (
-    <Card onPress={onPress}>
-      <AppText variant="bodyStrong" color="plate">
-        {search.trim() === ''
-          ? 'Create a new exercise'
-          : `Create "${search.trim()}"`}
-      </AppText>
-      <AppText variant="small" color="muted">
-        Adds it to your library, and to this workout
-      </AppText>
-    </Card>
-  );
-}

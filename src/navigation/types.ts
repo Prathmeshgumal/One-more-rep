@@ -4,35 +4,41 @@ import type {NavigatorScreenParams} from '@react-navigation/native';
  * Two tabs, not five.
  *
  * Plan and History were sections of their own until they became buttons on
- * Today's header, and the exercise library moved inside Settings. The screens
- * did not change — only how you reach them — so each former section is now a
- * span of the stack it was folded into.
+ * the Workout tab's header, and the exercise library moved inside Settings.
+ * The screens did not change — only how you reach them — so each former
+ * section is now a span of the stack it was folded into.
  */
 export type RootTabParamList = {
-  Today: NavigatorScreenParams<TodayStackParamList> | undefined;
+  Workout: NavigatorScreenParams<WorkoutStackParamList> | undefined;
   Settings: NavigatorScreenParams<SettingsStackParamList> | undefined;
 };
 
 /**
- * Everything reachable from Today: the workout itself, the whole plan builder,
- * and the whole of history.
+ * Everything reachable from the Workout tab: the session itself, the whole
+ * plan builder, and the whole of history.
  *
  * One stack rather than three, because a button that pushes is the only reason
- * any of them is on screen — and back then returns to Today, which is what a
- * button implies and what a tab could never do.
+ * any of them is on screen — and back then returns to the tab's home screen,
+ * which is what a button implies and what a tab could never do.
  */
-export type TodayStackParamList = {
-  /** Renamed from `Today`: sharing the tab's name made navigate() ambiguous. */
-  TodayHome: undefined;
-  Workout: undefined;
-  ExerciseSummary: {exerciseIndex: number};
-  WorkoutComplete: undefined;
+export type WorkoutStackParamList = {
+  /**
+   * The tab's landing screen. It cannot simply be called `Workout` — that is
+   * the tab, and sharing the name made navigate() ambiguous.
+   */
+  WorkoutHome: undefined;
+  /**
+   * The session you are inside: one set at a time, full screen. Named for the
+   * thing it operates on rather than the tab it belongs to, because `Workout`
+   * is taken twice over already.
+   */
+  Session: undefined;
   /**
    * `swap` replaces the movement in one slot rather than appending a new
    * exercise (U6); `performedExerciseId` names the slot.
    */
   WorkoutExercisePicker:
-    | {mode?: 'add'}
+    | {mode?: 'add'; after?: string}
     | {mode: 'swap'; performedExerciseId: string}
     | undefined;
   /**
@@ -43,7 +49,7 @@ export type TodayStackParamList = {
    */
   ExerciseEditor: {id?: string; initialName?: string} | undefined;
 
-  // ---- the plan, reached by the button on Today's right ----
+  // ---- the plan, reached by the button on the top right ----
   PlanWeek: undefined;
   PlanDay: {weekday: number};
   PlanExercisePicker: {weekday: number};
@@ -51,7 +57,7 @@ export type TodayStackParamList = {
   PlanCopyDay: {weekday: number};
   PlanHistory: undefined;
 
-  // ---- history, reached by the button on Today's left ----
+  // ---- history, reached by the button on the top left ----
   //
   // One screen, not two. The rolling-fortnight timeline and the calendar
   // listed the same days twice over, so the list moved onto the calendar and
@@ -63,14 +69,14 @@ export type TodayStackParamList = {
 };
 
 /**
- * The plan and history screens live in the Today stack now, so these are the
+ * The plan and history screens live in the Workout stack now, so these are the
  * same list under the names those screens already use. Kept rather than
  * renamed because the names still say something true about which part of the
  * app a screen belongs to — and because being one stack is precisely what
  * lets a plan screen open a day of history without crossing a navigator.
  */
-export type PlanStackParamList = TodayStackParamList;
-export type HistoryStackParamList = TodayStackParamList;
+export type PlanStackParamList = WorkoutStackParamList;
+export type HistoryStackParamList = WorkoutStackParamList;
 
 /** Settings, and the exercise library that now sits inside it. */
 export type SettingsStackParamList = {

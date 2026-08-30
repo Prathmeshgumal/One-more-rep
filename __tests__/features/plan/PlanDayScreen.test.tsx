@@ -194,7 +194,9 @@ describe('PlanDayScreen', () => {
     const view = await renderScreen();
 
     await fireEvent.press(await view.findByText('Add exercise'));
-    expect(mockNavigate).toHaveBeenCalledWith('PlanExercisePicker', {weekday: 0});
+    expect(mockNavigate).toHaveBeenCalledWith('PlanExercisePicker', {
+      weekday: 0,
+    });
 
     await fireEvent.press(view.getByText('Bench Press'));
     expect(mockNavigate).toHaveBeenCalledWith('PlanTargetEditor', {

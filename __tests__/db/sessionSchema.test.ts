@@ -113,7 +113,9 @@ describe('session schema', () => {
     const rows = await ctx.db.all<{
       actual_reps: number | null;
       actual_weight: number | null;
-    }>(sql`SELECT actual_reps, actual_weight FROM performed_sets WHERE id='ps1'`);
+    }>(
+      sql`SELECT actual_reps, actual_weight FROM performed_sets WHERE id='ps1'`,
+    );
     expect(rows[0]?.actual_reps).toBeNull();
     expect(rows[0]?.actual_weight).toBeNull();
   });

@@ -4,6 +4,7 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useTheme, space} from '@/theme';
 import {AppText} from './Text';
 import {BackButton} from './BackButton';
+import {ScrollFade, FADE_HEIGHT, useScrollFade} from './ScrollFade';
 
 export function Screen({
   title,
@@ -22,10 +23,12 @@ export function Screen({
 }) {
   const {colors} = useTheme();
   const insets = useSafeAreaInsets();
+  const fade = useScrollFade();
 
   return (
     <View style={[styles.root, {backgroundColor: colors.paper}]}>
       <ScrollView
+        {...fade.scrollProps}
         contentContainerStyle={[
           styles.content,
           {paddingTop: insets.top + space.xl},
@@ -46,6 +49,13 @@ export function Screen({
         </View>
         {children}
       </ScrollView>
+      {/* Content scrolling up into the status bar was being sliced on a hard
+          horizontal line, mid-letter, which reads as a rendering fault rather
+          than as an edge. The fade covers the inset as well as the first
+          28dp, so a heading dissolves into the bar instead of being cut by
+          it — and only once something is actually under there, or it would
+          wash out the eyebrow of a page nobody has scrolled. */}
+      <ScrollFade height={insets.top + FADE_HEIGHT} visible={fade.faded} />
     </View>
   );
 }

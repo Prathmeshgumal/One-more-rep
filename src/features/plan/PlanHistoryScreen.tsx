@@ -42,7 +42,9 @@ export function PlanHistoryScreen() {
       <View style={styles.headerBlock}>
         <AppText variant="eyebrow" color="muted">
           {versions && versions.length > 0
-            ? `${versions.length} ${versions.length === 1 ? 'version' : 'versions'}`
+            ? `${versions.length} ${
+                versions.length === 1 ? 'version' : 'versions'
+              }`
             : 'Nothing yet'}
         </AppText>
         <AppText variant="h1">Plan history</AppText>

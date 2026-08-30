@@ -56,7 +56,11 @@ describe('bundled exercise seed', () => {
   });
 
   it('keeps pure band work unweighted even when tagged powerlifting', () => {
-    for (const name of ['Band Good Morning', 'Hip Lift with Band', 'Band Pull Apart']) {
+    for (const name of [
+      'Band Good Morning',
+      'Hip Lift with Band',
+      'Band Pull Apart',
+    ]) {
       const found = seedExerciseData.find(e => e.name === name);
       expect(found).toBeDefined();
       expect(found!.weightApplicable).toBe(false);
@@ -64,7 +68,9 @@ describe('bundled exercise seed', () => {
   });
 
   it('treats assisted machines as unweighted and added load as weighted', () => {
-    const assisted = seedExerciseData.find(e => e.name === 'Band Assisted Pull-Up');
+    const assisted = seedExerciseData.find(
+      e => e.name === 'Band Assisted Pull-Up',
+    );
     expect(assisted?.weightApplicable).toBe(false);
     const weighted = seedExerciseData.find(e => e.name === 'Weighted Pull Ups');
     expect(weighted?.weightApplicable).toBe(true);
@@ -98,7 +104,9 @@ describe('muscle filters', () => {
 
   it('never repeats a muscle within the secondary list', () => {
     const offenders = seedExerciseData
-      .filter(e => new Set(e.secondaryMuscles).size !== e.secondaryMuscles.length)
+      .filter(
+        e => new Set(e.secondaryMuscles).size !== e.secondaryMuscles.length,
+      )
       .map(e => e.name);
     expect(offenders).toEqual([]);
   });

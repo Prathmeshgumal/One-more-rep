@@ -138,9 +138,7 @@ export function sessionVolume(
  * be a percentage of, and 0% would read as total failure for a workout where
  * everything went right.
  */
-export function completionPercent(
-  sets: readonly ProgressSet[],
-): number | null {
+export function completionPercent(sets: readonly ProgressSet[]): number | null {
   const planned = sets.filter(s => !s.isUnplanned);
   if (planned.length === 0) {
     return null;

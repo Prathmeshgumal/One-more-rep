@@ -6,8 +6,7 @@ const compare = (
   actualReps: number | null,
   actualWeight: number | null,
   status: 'pending' | 'completed' | 'skipped' = 'completed',
-) =>
-  compareSet({targetReps, targetWeight, actualReps, actualWeight, status});
+) => compareSet({targetReps, targetWeight, actualReps, actualWeight, status});
 
 describe('compareSet', () => {
   it('calls an exact match achieved', () => {

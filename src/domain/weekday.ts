@@ -68,7 +68,11 @@ export function addLocalDays(ms: number, days: number): number {
 export function eachLocalDay(from: number, to: number): number[] {
   const end = startOfLocalDay(to);
   const days: number[] = [];
-  for (let day = startOfLocalDay(from); day <= end; day = addLocalDays(day, 1)) {
+  for (
+    let day = startOfLocalDay(from);
+    day <= end;
+    day = addLocalDays(day, 1)
+  ) {
     days.push(day);
   }
   return days;

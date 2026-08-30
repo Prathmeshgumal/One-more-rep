@@ -1,12 +1,24 @@
 import React, {createContext, useContext, useEffect, useState} from 'react';
-import {ActivityIndicator, ScrollView, StyleSheet, Text, View} from 'react-native';
+import {
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import {getDatabase} from '@/db/client';
 import {runMigrations} from '@/db/migrate';
 import {seedExercises} from '@/db/seed/seedExercises';
 import {rollOverStaleSessions} from '@/repositories/sessionRepo';
 import {getSettings} from '@/repositories/settingsRepo';
 import type {AppDatabase} from '@/db/types';
-import {useTheme, useThemeMode, type as typeScale, space, radius} from '@/theme';
+import {
+  useTheme,
+  useThemeMode,
+  type as typeScale,
+  space,
+  radius,
+} from '@/theme';
 
 const DatabaseContext = createContext<AppDatabase | null>(null);
 
@@ -91,7 +103,8 @@ export function DatabaseGate({
         <Text style={[typeScale.h1, {color: colors.ink, marginTop: space.sm}]}>
           We couldn't open your data
         </Text>
-        <Text style={[typeScale.body, {color: colors.ink2, marginTop: space.md}]}>
+        <Text
+          style={[typeScale.body, {color: colors.ink2, marginTop: space.md}]}>
           Your workouts are still on this device. Reopen the app to try again —
           if this keeps happening, reinstalling will start a fresh database.
         </Text>

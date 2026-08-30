@@ -13,7 +13,8 @@ export const historyKeys = {
   range: (from: number, to: number) => ['history', 'range', from, to] as const,
   day: (date: number) => ['history', 'day', date] as const,
   session: (date: number) => ['history', 'session', date] as const,
-  exercise: (exerciseId: string) => ['history', 'exercise', exerciseId] as const,
+  exercise: (exerciseId: string) =>
+    ['history', 'exercise', exerciseId] as const,
 };
 
 export function useDayRangeQuery(range: DayRange) {

@@ -174,7 +174,8 @@ export async function updateCustomExercise(
   if (patch.weightApplicable !== undefined) {
     values.weightApplicable = patch.weightApplicable;
   }
-  if (patch.instructions !== undefined) values.instructions = patch.instructions;
+  if (patch.instructions !== undefined)
+    values.instructions = patch.instructions;
 
   await db.update(exercises).set(values).where(eq(exercises.id, id));
 

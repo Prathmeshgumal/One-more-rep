@@ -32,7 +32,6 @@ const PUSHED: readonly string[] = [
   'features/history/CalendarScreen.tsx',
   'features/history/DayDetailScreen.tsx',
   'features/history/ExerciseHistoryScreen.tsx',
-  'features/workout/ExerciseSummaryScreen.tsx',
   'features/workout/WorkoutExercisePickerScreen.tsx',
 ];
 
@@ -40,10 +39,7 @@ const PUSHED: readonly string[] = [
  * The two exceptions, each with a reason. A back chevron mid-workout reads as
  * "cancel this", and the finish screen has nothing sensible behind it.
  */
-const NO_BACK: readonly string[] = [
-  'features/workout/WorkoutScreen.tsx',
-  'features/workout/WorkoutCompleteScreen.tsx',
-];
+const NO_BACK: readonly string[] = ['features/workout/SessionScreen.tsx'];
 
 /** Stack roots: the tab already is the way back. */
 /**
@@ -54,7 +50,7 @@ const NO_BACK: readonly string[] = [
  * until those tabs became buttons; all three are pushed now, and all three had
  * to grow a back control they never needed before.
  */
-const ROOTS: readonly string[] = ['TodayScreen', 'SettingsScreen'];
+const ROOTS: readonly string[] = ['WorkoutHomeScreen', 'SettingsScreen'];
 
 const offersBack = (source: string): boolean =>
   source.includes('<BackButton') || /<Screen[\s\S]{0,80}?\bback\b/.test(source);
@@ -69,7 +65,7 @@ describe('back navigation', () => {
   });
 
   it('classifies every screen registered in a stack', () => {
-    const stacks = ['TodayStack', 'SettingsStack']
+    const stacks = ['WorkoutStack', 'SettingsStack']
       .map(name => read(`navigation/${name}.tsx`))
       .join('\n');
     const registered = [...stacks.matchAll(/component=\{(\w+)\}/g)].map(

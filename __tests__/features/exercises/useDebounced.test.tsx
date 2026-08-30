@@ -7,7 +7,13 @@ import {useDebounced} from '@/features/exercises/useDebounced';
  * Renders the hook and reports every value it has settled on, so the test can
  * assert on how many queries *would* have been issued, not just the final one.
  */
-function Probe({value, onSettle}: {value: string; onSettle: (v: string) => void}) {
+function Probe({
+  value,
+  onSettle,
+}: {
+  value: string;
+  onSettle: (v: string) => void;
+}) {
   const settled = useDebounced(value, 250);
   React.useEffect(() => onSettle(settled), [settled, onSettle]);
   return <Text>{settled}</Text>;

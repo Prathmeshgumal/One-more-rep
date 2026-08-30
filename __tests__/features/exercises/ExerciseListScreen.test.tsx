@@ -1,13 +1,13 @@
 import React from 'react';
-import { render, fireEvent, waitFor } from '@testing-library/react-native';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { NavigationContainer } from '@react-navigation/native';
-import { runMigrations } from '@/db/migrate';
-import { createCustomExercise } from '@/repositories/exerciseRepo';
-import { ThemeProvider } from '@/theme';
-import { DatabaseContextTestProvider } from '@/providers/DatabaseGate';
-import { ExerciseListScreen } from '@/features/exercises/ExerciseListScreen';
-import { createTestDb } from '../../helpers/testDb';
+import {render, fireEvent, waitFor} from '@testing-library/react-native';
+import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
+import {NavigationContainer} from '@react-navigation/native';
+import {runMigrations} from '@/db/migrate';
+import {createCustomExercise} from '@/repositories/exerciseRepo';
+import {ThemeProvider} from '@/theme';
+import {DatabaseContextTestProvider} from '@/providers/DatabaseGate';
+import {ExerciseListScreen} from '@/features/exercises/ExerciseListScreen';
+import {createTestDb} from '../../helpers/testDb';
 
 describe('ExerciseListScreen', () => {
   let ctx: ReturnType<typeof createTestDb>;
@@ -30,7 +30,7 @@ describe('ExerciseListScreen', () => {
     ctx = createTestDb();
     await runMigrations(ctx.db);
     client = new QueryClient({
-      defaultOptions: { queries: { retry: false, gcTime: 0 } },
+      defaultOptions: {queries: {retry: false, gcTime: 0}},
     });
 
     await createCustomExercise(ctx.db, {

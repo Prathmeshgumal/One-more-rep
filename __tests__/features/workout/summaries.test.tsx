@@ -1,5 +1,5 @@
 import React from 'react';
-import {render, fireEvent, waitFor} from '@testing-library/react-native';
+import {render, fireEvent} from '@testing-library/react-native';
 import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
 import {NavigationContainer} from '@react-navigation/native';
 import {sql} from 'drizzle-orm';
@@ -8,16 +8,13 @@ import {createPlan, editPlan} from '@/repositories/planRepo';
 import {addExercises, renameDay, setTargets} from '@/domain/planDraft';
 import {
   startWorkout,
-  addExercise,
   completeSet,
-  skipSet,
   getActiveSession,
   getSessionForDate,
 } from '@/repositories/sessionRepo';
 import {ThemeProvider} from '@/theme';
 import {DatabaseContextTestProvider} from '@/providers/DatabaseGate';
-import {ExerciseSummaryScreen} from '@/features/workout/ExerciseSummaryScreen';
-import {WorkoutCompleteScreen} from '@/features/workout/WorkoutCompleteScreen';
+import {FinishSheet} from '@/features/workout/FinishSheet';
 import {createTestDb} from '../../helpers/testDb';
 
 const mockNavigate = jest.fn();
@@ -34,7 +31,7 @@ jest.mock('@react-navigation/native', () => ({
   useRoute: () => ({params: mockParams}),
 }));
 
-describe('the workout summaries', () => {
+describe('finishing a workout', () => {
   let ctx: ReturnType<typeof createTestDb>;
   let client: QueryClient;
 
@@ -65,7 +62,10 @@ describe('the workout summaries', () => {
     );
     await createPlan(ctx.db);
     await editPlan(ctx.db, d =>
-      addExercises(renameDay(d, today(), 'Push Day'), today(), ['bench', 'fly']),
+      addExercises(renameDay(d, today(), 'Push Day'), today(), [
+        'bench',
+        'fly',
+      ]),
     );
     // Real targets, so set 3 below is a genuine mixed case decided by volume
     // rather than a bodyweight comparison on reps alone.
@@ -101,138 +101,138 @@ describe('the workout summaries', () => {
     await completeSet(ctx.db, c!.id, {actualReps: 8, actualWeight: 32.5});
   };
 
-  describe('ExerciseSummaryScreen', () => {
-    it('reads out every set against its target', async () => {
-      await recordBench();
-      const view = await wrap(<ExerciseSummaryScreen />);
+  const finish = async (
+    props: Partial<React.ComponentProps<typeof FinishSheet>> = {},
+  ) => {
+    const session = (await getSessionForDate(ctx.db, Date.now()))!;
+    return wrap(
+      <FinishSheet
+        visible
+        session={session}
+        unit="kg"
+        onSave={jest.fn()}
+        onClose={jest.fn()}
+        {...props}
+      />,
+    );
+  };
 
-      expect(await view.findByText('Bench Press')).toBeTruthy();
-      expect(view.getByText('3 of 3 sets recorded')).toBeTruthy();
-      expect(view.getByText('even')).toBeTruthy();
-      expect(view.getByText('+2 reps')).toBeTruthy();
-      // 8 x 32.5 = 260 against 300: heavier but shorter is still below.
-      expect(view.getByText('−40 kg vol')).toBeTruthy();
-    });
-
-    it('totals the volume and the gap to target', async () => {
-      await recordBench();
-      const view = await wrap(<ExerciseSummaryScreen />);
-      // 300 + 360 + 260 = 920 against a target of 900.
-      expect(await view.findByText('920 kg')).toBeTruthy();
-      expect(view.getByText('+20')).toBeTruthy();
-    });
-
-    it('reports a skipped set rather than hiding it', async () => {
-      const session = (await getActiveSession(ctx.db))!;
-      const [a, b, c] = session.exercises[0]!.sets;
-      await completeSet(ctx.db, a!.id, {actualReps: 10, actualWeight: 30});
-      await skipSet(ctx.db, b!.id);
-      await skipSet(ctx.db, c!.id);
-
-      const view = await wrap(<ExerciseSummaryScreen />);
-      expect(await view.findByText('1 of 3 sets recorded')).toBeTruthy();
-      expect(view.getAllByText('Skipped').length).toBe(2);
-    });
-
-    // Found on the device: an exercise added on the day has nothing planned,
-    // and the line read "0 of 0 sets recorded · 1 bonus". Accurate, and it
-    // reads like a bug.
-    it('names bonus work plainly when nothing was planned', async () => {
-      const session = await getActiveSession(ctx.db);
-      await addExercise(ctx.db, session!.id, 'fly');
-      const withBonus = await getSessionForDate(ctx.db, Date.now());
-      const added = withBonus!.exercises.find(
-        e => e.plannedExerciseId === null,
-      )!;
-      await completeSet(ctx.db, added.sets[0]!.id, {
-        actualReps: 10,
-        actualWeight: 20,
-      });
-      mockParams.exerciseIndex = withBonus!.exercises.indexOf(added);
-
-      const view = await wrap(<ExerciseSummaryScreen />);
-      expect(await view.findByText('1 bonus set')).toBeTruthy();
-      expect(view.queryByText(/0 of 0/)).toBeNull();
-    });
-
-    it('moves on to the next exercise', async () => {
-      await recordBench();
-      const view = await wrap(<ExerciseSummaryScreen />);
-      await fireEvent.press(await view.findByText(/Next — Cable Fly/));
-      expect(mockGoBack).toHaveBeenCalled();
-    });
+  /**
+   * The screen this replaces was a whole pushed screen carrying a 56px
+   * percentage, a completion bar, four verdict counts, volume, a warning and
+   * a Save button — and then Today showed the same summary again the moment
+   * you landed. The full report is not deleted, only moved to the finished
+   * day, where you go to read it.
+   */
+  it('states what happened rather than asking a question you did not ask', async () => {
+    const session = (await getActiveSession(ctx.db))!;
+    for (const e of session.exercises) {
+      for (const s of e.sets) {
+        await completeSet(ctx.db, s.id, {actualReps: 10, actualWeight: 30});
+      }
+    }
+    const view = await finish();
+    expect(await view.findByText('That was the last set.')).toBeTruthy();
   });
 
-  describe('WorkoutCompleteScreen', () => {
-    it('reports the completion percentage of the plan', async () => {
-      await recordBench();
-      const view = await wrap(<WorkoutCompleteScreen />);
-      // Three of six planned sets recorded.
-      expect(await view.findByText('50')).toBeTruthy();
-      expect(view.getByText('% of plan')).toBeTruthy();
+  it('asks instead when the workout is being ended early', async () => {
+    await recordBench();
+    const view = await finish();
+    expect(await view.findByText('Finish this workout?')).toBeTruthy();
+  });
+
+  it('counts what was recorded and totals the volume', async () => {
+    await recordBench();
+    const view = await finish();
+    // Three of six recorded; 10x30 + 12x30 + 8x32.5 = 920.
+    expect(await view.findByText(/3 of 6 recorded/)).toBeTruthy();
+    expect(view.getByText(/920 kg lifted/)).toBeTruthy();
+  });
+
+  /**
+   * §19: finishing with sets outstanding says so rather than silently
+   * recording them as skipped — and names the exercises they are on, so the
+   * warning can be acted on without dismissing it first.
+   */
+  it('warns about what has not been recorded, and where', async () => {
+    await recordBench();
+    const view = await finish();
+    const warning = await view.findByText(/never recorded/);
+    expect(warning).toBeTruthy();
+    expect(view.getByText(/3 sets on Cable Fly/)).toBeTruthy();
+    expect(view.getByText(/marks them skipped/)).toBeTruthy();
+  });
+
+  it('says nothing about unrecorded sets when there are none', async () => {
+    const session = (await getActiveSession(ctx.db))!;
+    for (const e of session.exercises) {
+      for (const s of e.sets) {
+        await completeSet(ctx.db, s.id, {actualReps: 10, actualWeight: 30});
+      }
+    }
+    const view = await finish();
+    await view.findByText('That was the last set.');
+    expect(view.queryByText(/never recorded/)).toBeNull();
+  });
+
+  it('speaks in the singular for one outstanding set', async () => {
+    const session = (await getActiveSession(ctx.db))!;
+    const all = session.exercises.flatMap(e => e.sets);
+    for (const s of all.slice(0, all.length - 1)) {
+      await completeSet(ctx.db, s.id, {actualReps: 10, actualWeight: 30});
+    }
+    const view = await finish();
+    expect(await view.findByText(/1 set on Cable Fly was never/)).toBeTruthy();
+    expect(view.getByText(/marks it skipped/)).toBeTruthy();
+  });
+
+  it('saves when asked', async () => {
+    await recordBench();
+    const onSave = jest.fn();
+    const view = await finish({onSave});
+    await fireEvent.press(await view.findByText('Save workout'));
+    expect(onSave).toHaveBeenCalledTimes(1);
+  });
+
+  // Not "Cancel" — you are not cancelling anything, you are going back to a
+  // workout that is still running.
+  it('offers a way back into the workout', async () => {
+    const onClose = jest.fn();
+    const view = await finish({onClose});
+    await fireEvent.press(await view.findByText('Go back in'));
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('will not save twice while the first is in flight', async () => {
+    const onSave = jest.fn();
+    const view = await finish({busy: true, onSave});
+    await fireEvent.press(await view.findByText('Save workout'));
+    expect(onSave).not.toHaveBeenCalled();
+  });
+
+  // A bodyweight-only session has no volume to report, and printing "0 kg
+  // lifted" would read as a failure rather than as an inapplicable number.
+  it('omits volume when nothing carried weight', async () => {
+    await ctx.db.run(sql`UPDATE exercises SET weight_applicable = 0`);
+    const session = (await getActiveSession(ctx.db))!;
+    await completeSet(ctx.db, session.exercises[0]!.sets[0]!.id, {
+      actualReps: 10,
+      actualWeight: null,
     });
+    const view = await finish();
+    await view.findByText(/1 of 6 recorded/);
+    expect(view.queryByText(/kg lifted/)).toBeNull();
+  });
 
-    it('breaks the session down against target', async () => {
-      await recordBench();
-      const view = await wrap(<WorkoutCompleteScreen />);
-      await view.findByText('50');
-      expect(view.getByText('Achieved')).toBeTruthy();
-      expect(view.getByText('Exceeded')).toBeTruthy();
-      expect(view.getByText('Below')).toBeTruthy();
-    });
+  it('reports how long the session took', async () => {
+    const session = (await getSessionForDate(ctx.db, Date.now()))!;
+    const view = await finish({now: session.startedAt + 42 * 60000});
+    expect(await view.findByText(/42 min/)).toBeTruthy();
+  });
 
-    it('counts exercises and sets', async () => {
-      await recordBench();
-      const view = await wrap(<WorkoutCompleteScreen />);
-      expect(await view.findByText('3 / 6')).toBeTruthy();
-    });
-
-    it('totals the volume lifted', async () => {
-      await recordBench();
-      const view = await wrap(<WorkoutCompleteScreen />);
-      expect(await view.findByText('920 kg')).toBeTruthy();
-    });
-
-    it('saves the workout and leaves', async () => {
-      await recordBench();
-      const view = await wrap(<WorkoutCompleteScreen />);
-      await fireEvent.press(await view.findByText('Save workout'));
-
-      await waitFor(async () => {
-        expect(await getActiveSession(ctx.db)).toBeUndefined();
-      });
-      expect(mockPopToTop).toHaveBeenCalled();
-    });
-
-    // §19: finishing with sets outstanding says so rather than silently
-    // recording them as skipped.
-    it('warns about what has not been recorded before finishing', async () => {
-      const view = await wrap(<WorkoutCompleteScreen />);
-      expect(
-        await view.findByText(/6 sets not recorded/i),
-      ).toBeTruthy();
-    });
-
-    it('reads a session that is already finished without offering to save', async () => {
-      await recordBench();
-      const session = (await getActiveSession(ctx.db))!;
-      const {finishWorkout} = require('@/repositories/sessionRepo');
-      await finishWorkout(ctx.db, session.id);
-
-      const view = await wrap(<WorkoutCompleteScreen />);
-      expect(await view.findByText('Done')).toBeTruthy();
-      expect(view.queryByText('Save workout')).toBeNull();
-    });
-
-    // A fully ad-hoc session has no plan to be a percentage of, so the screen
-    // must not print a confident 0%.
-    it('says so when there was no plan to measure against', async () => {
-      await ctx.db.run(sql`DELETE FROM performed_sets`);
-      const session = (await getSessionForDate(ctx.db, Date.now()))!;
-      expect(session.exercises.every(e => e.sets.length === 0)).toBe(true);
-
-      const view = await wrap(<WorkoutCompleteScreen />);
-      expect(await view.findByText(/Nothing was planned/i)).toBeTruthy();
-    });
+  it('reads an hour and over in hours', async () => {
+    const session = (await getSessionForDate(ctx.db, Date.now()))!;
+    const view = await finish({now: session.startedAt + 75 * 60000});
+    expect(await view.findByText(/1 h 15 min/)).toBeTruthy();
   });
 });

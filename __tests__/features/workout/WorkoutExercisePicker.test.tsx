@@ -14,10 +14,11 @@ import {WorkoutExercisePickerScreen} from '@/features/workout/WorkoutExercisePic
 import {createTestDb} from '../../helpers/testDb';
 
 const mockGoBack = jest.fn();
+const mockNavigate = jest.fn();
 let mockParams: object | undefined;
 jest.mock('@react-navigation/native', () => ({
   ...jest.requireActual('@react-navigation/native'),
-  useNavigation: () => ({goBack: mockGoBack, navigate: jest.fn()}),
+  useNavigation: () => ({goBack: mockGoBack, navigate: mockNavigate}),
   useRoute: () => ({params: mockParams}),
 }));
 
@@ -209,14 +210,12 @@ describe('WorkoutExercisePickerScreen, adding to the plan as well', () => {
     const view = await renderScreen();
     await fireEvent.press(await view.findByLabelText('Also add to the plan'));
     await fireEvent.press(view.getByText('Parallel Bar Dip'));
-    await waitFor(async () =>
-      expect(await planNames()).toHaveLength(2),
-    );
+    await waitFor(async () => expect(await planNames()).toHaveLength(2));
 
     const after = (await getActiveSession(ctx.db))!;
-    expect(
-      after.exercises.filter(e => e.plannedExerciseId !== null),
-    ).toEqual(plannedBefore);
+    expect(after.exercises.filter(e => e.plannedExerciseId !== null)).toEqual(
+      plannedBefore,
+    );
   });
 
   it('in swap mode, replaces rather than appends', async () => {
@@ -246,5 +245,81 @@ describe('WorkoutExercisePickerScreen, adding to the plan as well', () => {
     const view = await renderScreen();
     await view.findByText('Dumbbell Press');
     expect(view.queryByLabelText('Also add to the plan')).toBeNull();
+  });
+  /**
+   * Reported from the phone: "I don't see an option to add a custom
+   * exercise". It was there — as the list's footer, under four hundred
+   * exercises, which is the same as not being there.
+   */
+  describe('creating one that is not in the library', () => {
+    const readingOrder = (tree: unknown): string[] => {
+      const strings: string[] = [];
+      const walk = (node: unknown): void => {
+        if (typeof node === 'string') {
+          strings.push(node);
+          return;
+        }
+        if (Array.isArray(node)) {
+          node.forEach(walk);
+          return;
+        }
+        if (node && typeof node === 'object' && 'children' in node) {
+          walk((node as {children: unknown}).children);
+        }
+      };
+      walk(tree);
+      return strings;
+    };
+
+    it('offers it above the results, not under them', async () => {
+      const view = await renderScreen();
+      await view.findByText('Dumbbell Press');
+
+      const order = readingOrder(view.toJSON());
+      expect(order.indexOf('Create a new exercise')).toBeGreaterThan(-1);
+      expect(order.indexOf('Create a new exercise')).toBeLessThan(
+        order.indexOf('Dumbbell Press'),
+      );
+    });
+
+    it('names what you typed, so it need not be typed twice', async () => {
+      const view = await renderScreen();
+      await view.findByText('Dumbbell Press');
+      await fireEvent.changeText(
+        view.getByPlaceholderText('Search exercises'),
+        'Zercher Squat',
+      );
+      await waitFor(() =>
+        expect(view.getByText('Create "Zercher Squat"')).toBeTruthy(),
+      );
+    });
+
+    it('carries the search into the editor', async () => {
+      const view = await renderScreen();
+      await view.findByText('Dumbbell Press');
+      await fireEvent.changeText(
+        view.getByPlaceholderText('Search exercises'),
+        'Zercher Squat',
+      );
+      await waitFor(() =>
+        expect(view.getByText('Create "Zercher Squat"')).toBeTruthy(),
+      );
+      await fireEvent.press(view.getByLabelText('Create "Zercher Squat"'));
+      expect(mockNavigate).toHaveBeenCalledWith('ExerciseEditor', {
+        initialName: 'Zercher Squat',
+      });
+    });
+
+    /** Swapping is still a pick, and the movement may still not exist. */
+    it('offers it in swap mode too', async () => {
+      const session = (await getActiveSession(ctx.db))!;
+      mockParams = {
+        mode: 'swap',
+        performedExerciseId: session.exercises[0]!.id,
+      };
+      const view = await renderScreen();
+      await view.findByText('Dumbbell Press');
+      expect(view.getByLabelText('Create a new exercise')).toBeTruthy();
+    });
   });
 });

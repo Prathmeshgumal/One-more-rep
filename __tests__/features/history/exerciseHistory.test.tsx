@@ -52,7 +52,10 @@ describe('ExerciseHistoryScreen', () => {
   const trainAt = async (date: number, weight: number | null, reps = 10) => {
     const session = await startWorkout(ctx.db, {now: date + 9 * 3600_000});
     for (const set of session.exercises[0]!.sets) {
-      await completeSet(ctx.db, set.id, {actualReps: reps, actualWeight: weight});
+      await completeSet(ctx.db, set.id, {
+        actualReps: reps,
+        actualWeight: weight,
+      });
     }
     await finishWorkout(ctx.db, session.id);
   };

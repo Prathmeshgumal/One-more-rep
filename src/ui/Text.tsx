@@ -25,6 +25,9 @@ export function AppText({
 }: Props) {
   const {colors} = useTheme();
   return (
-    <RNText {...rest} style={[typeScale[variant], {color: colors[color]}, style]} />
+    <RNText
+      {...rest}
+      style={[typeScale[variant], {color: colors[color]}, style]}
+    />
   );
 }

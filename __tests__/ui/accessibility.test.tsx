@@ -61,7 +61,11 @@ describe('controls announce themselves', () => {
 
   it('names an icon-only button, which has no text of its own', async () => {
     const view = await wrap(
-      <IconButton glyph="calendar" label="Open the calendar" onPress={jest.fn()} />,
+      <IconButton
+        glyph="calendar"
+        label="Open the calendar"
+        onPress={jest.fn()}
+      />,
     );
     expect(view.getByLabelText('Open the calendar')).toBeTruthy();
   });
@@ -70,7 +74,11 @@ describe('controls announce themselves', () => {
 describe('controls are big enough to hit', () => {
   it('gives the 38px icon button enough slop to clear the minimum', async () => {
     const view = await wrap(
-      <IconButton glyph="calendar" label="Open the calendar" onPress={jest.fn()} />,
+      <IconButton
+        glyph="calendar"
+        label="Open the calendar"
+        onPress={jest.fn()}
+      />,
     );
     const button = view.getByLabelText('Open the calendar');
     expect(effective(38, button.props.hitSlop)).toBeGreaterThanOrEqual(

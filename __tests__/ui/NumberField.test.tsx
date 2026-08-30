@@ -27,7 +27,11 @@ describe('NumberField', () => {
   });
 
   it('prints a count naturally when no precision is asked for', async () => {
-    const view = await renderField({value: 3, decimals: undefined, label: 'Sets'});
+    const view = await renderField({
+      value: 3,
+      decimals: undefined,
+      label: 'Sets',
+    });
     expect(view.getByLabelText('Sets').props.value).toBe('3');
   });
 
@@ -108,7 +112,13 @@ describe('NumberField', () => {
       const [value, setValue] = React.useState<number | null>(20);
       return (
         <ThemeProvider>
-          <NumberField label="Weight" value={value} step={0.5} decimals={1} onChange={setValue} />
+          <NumberField
+            label="Weight"
+            value={value}
+            step={0.5}
+            decimals={1}
+            onChange={setValue}
+          />
           <Pressable accessibilityLabel="jump" onPress={() => setValue(80)}>
             <Text>jump</Text>
           </Pressable>

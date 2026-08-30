@@ -105,7 +105,9 @@ export function ExerciseListScreen() {
         }
         renderItem={({item}) => (
           <Card
-            onPress={() => navigation.navigate('ExerciseDetail', {id: item.id})}>
+            onPress={() =>
+              navigation.navigate('ExerciseDetail', {id: item.id})
+            }>
             <View style={styles.row}>
               <View style={styles.grow}>
                 <AppText variant="bodyStrong">{item.name}</AppText>

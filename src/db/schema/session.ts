@@ -128,9 +128,7 @@ export const performedSets = sqliteTable(
     isUnplanned: integer('is_unplanned', {mode: 'boolean'}).notNull(),
     completedAt: integer('completed_at'),
   },
-  table => [
-    index('performed_sets_exercise_idx').on(table.performedExerciseId),
-  ],
+  table => [index('performed_sets_exercise_idx').on(table.performedExerciseId)],
 );
 
 export type WorkoutSessionRow = typeof workoutSessions.$inferSelect;

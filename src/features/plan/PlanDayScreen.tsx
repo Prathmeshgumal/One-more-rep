@@ -88,8 +88,8 @@ export function PlanDayScreen() {
   const heading = day.isRestDay
     ? 'Rest day'
     : isNew
-      ? `Set up ${weekdayName}`
-      : (day.customName ?? weekdayName);
+    ? `Set up ${weekdayName}`
+    : day.customName ?? weekdayName;
 
   return (
     <ScrollView
@@ -109,8 +109,8 @@ export function PlanDayScreen() {
           {day.isRestDay
             ? 'Recovery day. No workout planned.'
             : isNew
-              ? 'Give it a name, then add exercises'
-              : 'Tap the name to rename this day'}
+            ? 'Give it a name, then add exercises'
+            : 'Tap the name to rename this day'}
         </AppText>
       </View>
 
@@ -118,7 +118,9 @@ export function PlanDayScreen() {
         <Button
           label={`Make ${weekdayName} a workout day`}
           variant="secondary"
-          onPress={() => edit.mutate(draft => setRestDay(draft, weekday, false))}
+          onPress={() =>
+            edit.mutate(draft => setRestDay(draft, weekday, false))
+          }
         />
       ) : (
         <>
@@ -210,9 +212,7 @@ export function PlanDayScreen() {
             label="Add exercise"
             variant={isNew ? 'primary' : 'ghost'}
             size={isNew ? 'md' : 'sm'}
-            onPress={() =>
-              navigation.navigate('PlanExercisePicker', {weekday})
-            }
+            onPress={() => navigation.navigate('PlanExercisePicker', {weekday})}
           />
 
           {!isNew ? (

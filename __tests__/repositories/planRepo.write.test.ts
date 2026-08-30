@@ -50,7 +50,10 @@ describe('planRepo writes', () => {
   it('persists exercises with their targets and order', async () => {
     await editPlan(ctx.db, d => addExercises(d, 0, ['bench', 'fly']), MON_9AM);
     const day = (await getActivePlan(ctx.db))!.days[0]!;
-    expect(day.exercises.map(e => e.name)).toEqual(['Bench Press', 'Cable Fly']);
+    expect(day.exercises.map(e => e.name)).toEqual([
+      'Bench Press',
+      'Cable Fly',
+    ]);
     expect(day.exercises[0]!.sets).toEqual([
       {setNumber: 1, targetReps: 10, targetWeight: null},
       {setNumber: 2, targetReps: 10, targetWeight: null},

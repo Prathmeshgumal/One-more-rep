@@ -19,5 +19,7 @@ export function canEditInPlace(args: {
   /** Workout sessions referencing this version. See the note in planRepo. */
   sessionCount: number;
 }): boolean {
-  return args.sessionCount === 0 && isSameLocalDay(args.effectiveFrom, args.now);
+  return (
+    args.sessionCount === 0 && isSameLocalDay(args.effectiveFrom, args.now)
+  );
 }

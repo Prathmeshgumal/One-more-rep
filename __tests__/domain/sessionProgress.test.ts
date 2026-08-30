@@ -53,7 +53,11 @@ describe('aggregateExercise', () => {
   // achieved. Its target still stands, which is what drags the total below.
   it('leaves a skipped set counting against the target', () => {
     const result = aggregateExercise(
-      [set(), set(), set({status: 'skipped', actualReps: null, actualWeight: null})],
+      [
+        set(),
+        set(),
+        set({status: 'skipped', actualReps: null, actualWeight: null}),
+      ],
       true,
     );
     expect(result.actualVolume).toBe(600);
@@ -134,7 +138,10 @@ describe('sessionVolume', () => {
     expect(
       sessionVolume([
         {sets: [set(), set()], weightApplicable: true},
-        {sets: [set({actualWeight: 20, actualReps: 5})], weightApplicable: true},
+        {
+          sets: [set({actualWeight: 20, actualReps: 5})],
+          weightApplicable: true,
+        },
       ]),
     ).toBe(700);
   });
@@ -249,10 +256,38 @@ describe('countByStatus', () => {
   it('counts completed planned sets separately from completed bonus sets', () => {
     const aggregate = aggregateExercise(
       [
-        {targetReps: 12, targetWeight: 7.5, actualReps: 8, actualWeight: 10, status: 'completed', isUnplanned: false},
-        {targetReps: 12, targetWeight: 7.5, actualReps: null, actualWeight: null, status: 'skipped', isUnplanned: false},
-        {targetReps: 12, targetWeight: 7.5, actualReps: 12, actualWeight: 7.5, status: 'completed', isUnplanned: false},
-        {targetReps: null, targetWeight: null, actualReps: 12, actualWeight: 7.5, status: 'completed', isUnplanned: true},
+        {
+          targetReps: 12,
+          targetWeight: 7.5,
+          actualReps: 8,
+          actualWeight: 10,
+          status: 'completed',
+          isUnplanned: false,
+        },
+        {
+          targetReps: 12,
+          targetWeight: 7.5,
+          actualReps: null,
+          actualWeight: null,
+          status: 'skipped',
+          isUnplanned: false,
+        },
+        {
+          targetReps: 12,
+          targetWeight: 7.5,
+          actualReps: 12,
+          actualWeight: 7.5,
+          status: 'completed',
+          isUnplanned: false,
+        },
+        {
+          targetReps: null,
+          targetWeight: null,
+          actualReps: 12,
+          actualWeight: 7.5,
+          status: 'completed',
+          isUnplanned: true,
+        },
       ],
       true,
     );

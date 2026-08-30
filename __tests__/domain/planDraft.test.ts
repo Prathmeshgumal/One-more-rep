@@ -66,7 +66,11 @@ describe('planDraft', () => {
 
   it('appends rather than replacing, and keeps the given order', () => {
     const d = addExercises(addExercises(emptyDraft(), 0, ['a']), 0, ['b', 'c']);
-    expect(d.days[0]!.exercises.map(e => e.exerciseId)).toEqual(['a', 'b', 'c']);
+    expect(d.days[0]!.exercises.map(e => e.exerciseId)).toEqual([
+      'a',
+      'b',
+      'c',
+    ]);
   });
 
   // The same movement twice in one session is legitimate, so this is allowed
@@ -163,7 +167,9 @@ describe('planDraft', () => {
   // Deep copy, not shared references: editing Thursday must not change Monday.
   it('copies deeply, so editing the copy leaves the source alone', () => {
     const copied = copyDay(withPush(), 0, [3]);
-    const edited = setTargets(copied, 3, 0, [{targetReps: 5, targetWeight: 60}]);
+    const edited = setTargets(copied, 3, 0, [
+      {targetReps: 5, targetWeight: 60},
+    ]);
     expect(edited.days[0]!.exercises[0]!.sets).toHaveLength(DEFAULT_SETS);
     expect(edited.days[3]!.exercises[0]!.sets).toEqual([
       {targetReps: 5, targetWeight: 60},

@@ -77,11 +77,11 @@ export function CopyDayScreen() {
           </AppText>
           <AppText variant="h1">{sourceName}</AppText>
           <AppText variant="small" color="muted">
-            {`${plural(source.exercises.length, 'exercise', 'exercises')} · ${plural(
-              sourceSets,
-              'set',
-              'sets',
-            )} · targets included`}
+            {`${plural(
+              source.exercises.length,
+              'exercise',
+              'exercises',
+            )} · ${plural(sourceSets, 'set', 'sets')} · targets included`}
           </AppText>
         </View>
 
@@ -103,7 +103,9 @@ export function CopyDayScreen() {
                       variant="bodyStrong"
                       // The accessible name carries the action, so the test and
                       // a screen reader both address the row by what it does.
-                      accessibilityLabel={`Copy to ${WEEKDAY_NAMES[day.weekday]}`}>
+                      accessibilityLabel={`Copy to ${
+                        WEEKDAY_NAMES[day.weekday]
+                      }`}>
                       {WEEKDAY_NAMES[day.weekday]}
                     </AppText>
                     <AppText variant="small" color="muted">
@@ -115,7 +117,9 @@ export function CopyDayScreen() {
                       </AppText>
                     ) : null}
                   </View>
-                  <AppText variant="bodyStrong" color={picked ? 'plate' : 'faint'}>
+                  <AppText
+                    variant="bodyStrong"
+                    color={picked ? 'plate' : 'faint'}>
                     {picked ? '✓' : '+'}
                   </AppText>
                 </View>

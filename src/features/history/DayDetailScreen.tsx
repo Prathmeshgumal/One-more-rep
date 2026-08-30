@@ -11,12 +11,16 @@ import {space} from '@/theme';
 import {compareSet, describeComparison} from '@/domain/setComparison';
 import {sessionVolume} from '@/domain/sessionProgress';
 import {formatLongDate} from '@/domain/dateLabels';
-import {formatDuration, groupDigits} from '@/domain/format';
+import {formatDuration, formatRest, groupDigits} from '@/domain/format';
+import {sessionTiming} from '@/domain/sessionTiming';
 import type {ResolvedDay} from '@/domain/dayResolver';
 import type {Session} from '@/repositories/sessionRepo';
 import {useSettingsQuery} from '@/features/settings/useSettings';
 import type {HistoryStackParamList} from '@/navigation/types';
 import {useDayQuery, useDaySessionQuery} from './useHistory';
+import {AmendSetSheet} from '@/features/workout/AmendSetSheet';
+import {useCompleteSet, useSkipSet} from '@/features/workout/useSession';
+import type {SessionSet} from '@/repositories/sessionRepo';
 import {DayImageCard, CARD_WIDTH} from './DayImageCard';
 import {useSaveDayImage} from './useSaveDayImage';
 
@@ -28,12 +32,36 @@ const pair = (reps: number | null, weight: number | null): string => {
   return weight === null ? `${reps}` : `${reps} × ${weight.toFixed(1)}`;
 };
 
-/** The one line under the heading: how long it took, and how much moved. */
+/**
+ * The one line under the heading: how long it took, and how much moved.
+ *
+ * The working span leads, because it is the honest one. Start-to-Save runs
+ * from whenever you opened the app to whenever you remembered to close it —
+ * it counted changing, warming up and the drive home — so it keeps its place
+ * only as the wider figure beside the span you were actually lifting across.
+ *
+ * A session abandoned overnight never gets a `completedAt`, and used to show
+ * no duration at all. Its sets still carry theirs.
+ */
 function subtitleFor(session: Session, unit: string): string {
+  const timing = sessionTiming(session);
   const parts: string[] = [];
-  if (session.completedAt !== null) {
-    parts.push(formatDuration(session.completedAt - session.startedAt));
+
+  if (timing.working !== null) {
+    parts.push(`${formatDuration(timing.working)} lifting`);
+    if (timing.total !== null) {
+      parts.push(`${formatDuration(timing.total)} in the gym`);
+    }
+  } else if (timing.total !== null) {
+    parts.push(formatDuration(timing.total));
   }
+
+  // The number that can change how you train, and it was already in the
+  // database. Median, so one trip to the water fountain cannot move it.
+  if (timing.medianRest !== null) {
+    parts.push(`${formatRest(timing.medianRest)} typical rest`);
+  }
+
   const volume = sessionVolume(session.exercises);
   if (volume > 0) {
     parts.push(`${groupDigits(volume)} ${unit} total volume`);
@@ -64,6 +92,22 @@ export function DayDetailScreen() {
   const {data: day} = useDayQuery(date);
   const {data: session, isPending} = useDaySessionQuery(date);
   const {data: settings} = useSettingsQuery();
+  const correct = useCompleteSet();
+  const skipSet = useSkipSet();
+
+  /**
+   * The set being corrected.
+   *
+   * This screen is where a mistake is actually noticed — days later, looking
+   * back. Nobody spots a typo with their heart rate at 150, so making the
+   * table correctable here matters more than making it correctable in the
+   * workout. The session stays completed throughout: no reopening, so
+   * adherence, the calendar and the resolver are untouched.
+   */
+  const [amending, setAmending] = useState<{
+    set: SessionSet;
+    performedExerciseId: string;
+  } | null>(null);
   const unit = settings?.unit ?? 'kg';
 
   const shot = useRef<React.ComponentRef<typeof View>>(null);
@@ -170,18 +214,58 @@ export function DayDetailScreen() {
                 </AppText>
               ) : null}
             </View>
-            <LedgerTable rows={rows} />
+            <LedgerTable
+              rows={rows}
+              caption={exercise.name}
+              onSelectRow={setNumber => {
+                const set = exercise.sets.find(x => x.setNumber === setNumber);
+                if (set) {
+                  setAmending({set, performedExerciseId: exercise.id});
+                }
+              }}
+            />
             {exercise.notes ? (
-              <AppText
-                testID="exercise-note"
-                variant="printed"
-                color="muted">
+              <AppText testID="exercise-note" variant="printed" color="muted">
                 {exercise.notes}
               </AppText>
             ) : null}
           </View>
         );
       })}
+
+      {(() => {
+        const ex = session.exercises.find(
+          e => e.id === amending?.performedExerciseId,
+        );
+        return (
+          <AmendSetSheet
+            visible={amending !== null}
+            set={amending?.set ?? null}
+            setNumber={amending?.set.setNumber ?? 0}
+            exerciseName={ex?.name ?? ''}
+            weightApplicable={ex?.weightApplicable ?? false}
+            unit={unit}
+            increment={settings?.defaultIncrement ?? 0.5}
+            busy={correct.isPending || skipSet.isPending}
+            onSave={actuals => {
+              if (amending) {
+                correct.mutate(
+                  {setId: amending.set.id, ...actuals},
+                  {onSuccess: () => setAmending(null)},
+                );
+              }
+            }}
+            onSkip={() => {
+              if (amending) {
+                skipSet.mutate(amending.set.id, {
+                  onSuccess: () => setAmending(null),
+                });
+              }
+            }}
+            onClose={() => setAmending(null)}
+          />
+        );
+      })()}
 
       <Button
         label={capturing ? 'Saving…' : 'Save image'}

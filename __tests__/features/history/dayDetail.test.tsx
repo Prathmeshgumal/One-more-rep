@@ -139,6 +139,63 @@ describe('DayDetailScreen', () => {
     expect(view.getByText(/780 kg total volume/)).toBeTruthy();
   });
 
+  /**
+   * Start-to-Save ran from whenever the app was opened to whenever it was
+   * closed, so it counted changing, warming up and the drive home. The sets
+   * carry their own timestamps and nothing used to read them.
+   */
+  describe('the timing line', () => {
+    /** Sets at +5:00, +6:30 and +8:00; the session saved 30 minutes in. */
+    const trainOnAClock = async () => {
+      const start = TRAINED + 9 * 3600_000;
+      const session = await startWorkout(ctx.db, {now: start});
+      const sets = session.exercises[0]!.sets;
+      await completeSet(
+        ctx.db,
+        sets[0]!.id,
+        {actualReps: 10, actualWeight: 30},
+        {now: start + 5 * 60_000},
+      );
+      await completeSet(
+        ctx.db,
+        sets[1]!.id,
+        {actualReps: 12, actualWeight: 30},
+        {now: start + 6.5 * 60_000},
+      );
+      await completeSet(
+        ctx.db,
+        sets[2]!.id,
+        {actualReps: 12, actualWeight: 30},
+        {now: start + 8 * 60_000},
+      );
+      await finishWorkout(ctx.db, session.id, {now: start + 30 * 60_000});
+    };
+
+    it('leads with the span the sets were actually lifted across', async () => {
+      await trainOnAClock();
+      const view = await renderScreen();
+      await view.findByText('Push Day');
+      expect(view.getByText(/3 min lifting/)).toBeTruthy();
+    });
+
+    it('keeps start-to-save as the wider figure beside it', async () => {
+      await trainOnAClock();
+      const view = await renderScreen();
+      await view.findByText('Push Day');
+      expect(view.getByText(/30 min in the gym/)).toBeTruthy();
+    });
+
+    // Both gaps are 90 seconds, which whole-minute rounding would call
+    // "2 min" — the same answer it gives for 148 seconds. This is what
+    // formatRest exists for.
+    it('reports the typical rest between sets', async () => {
+      await trainOnAClock();
+      const view = await renderScreen();
+      await view.findByText('Push Day');
+      expect(view.getByText(/90 s typical rest/)).toBeTruthy();
+    });
+  });
+
   it('lays every exercise out as a ledger of target against actual', async () => {
     await trainWithAGap();
     const view = await renderScreen();
@@ -147,6 +204,49 @@ describe('DayDetailScreen', () => {
     expect(view.getAllByText('10 × 30.0').length).toBeGreaterThan(0);
     expect(view.getByText('12 × 30.0')).toBeTruthy();
     expect(view.getByText('+2 reps')).toBeTruthy();
+  });
+
+  /**
+   * This screen is where a mistake is actually noticed — days later, looking
+   * back. Nobody spots a typo with their heart rate at 150, so making the
+   * table correctable here matters more than making it correctable mid-set.
+   */
+  it('corrects a set recorded days ago', async () => {
+    await trainWithAGap();
+    const view = await renderScreen();
+    await view.findByText('Push Day');
+
+    await fireEvent.press(
+      view.getByLabelText('Correct set 1 of Machine Chest Press'),
+    );
+    expect(await view.findByText(/Machine Chest Press · set 1/)).toBeTruthy();
+    expect(view.getByText(/recorded as 10/)).toBeTruthy();
+
+    await fireEvent.press(view.getByLabelText('Increase Reps'));
+    await fireEvent.press(view.getByText('Save change'));
+
+    await waitFor(async () => {
+      const after = (await getSessionForDate(ctx.db, TRAINED))!;
+      expect(after.exercises[0]!.sets[0]!.actualReps).toBe(11);
+    });
+  });
+
+  // The session stays completed throughout: no reopening, so adherence, the
+  // calendar and the day resolver are untouched by a correction.
+  it('leaves the day finished while correcting it', async () => {
+    await trainWithAGap();
+    const view = await renderScreen();
+    await view.findByText('Push Day');
+
+    await fireEvent.press(
+      view.getByLabelText('Correct set 1 of Machine Chest Press'),
+    );
+    await fireEvent.press(await view.findByText('Save change'));
+
+    await waitFor(async () => {
+      const after = (await getSessionForDate(ctx.db, TRAINED))!;
+      expect(after.status).toBe('completed');
+    });
   });
 
   it('writes an em dash where a set was skipped', async () => {
@@ -231,7 +331,9 @@ describe('DayDetailScreen', () => {
     await finishWorkout(ctx.db, session.id, {now: TRAINED + 10 * 3600_000});
 
     const view = await renderScreen();
-    expect(await view.findByText(/swapped from Machine Chest Press/)).toBeTruthy();
+    expect(
+      await view.findByText(/swapped from Machine Chest Press/),
+    ).toBeTruthy();
     expect(view.getByText('Cable Fly')).toBeTruthy();
   });
 

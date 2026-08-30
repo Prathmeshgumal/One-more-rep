@@ -1,6 +1,10 @@
 import React, {useState} from 'react';
 import {FlatList, StyleSheet, View} from 'react-native';
-import {useNavigation, useRoute, useFocusEffect} from '@react-navigation/native';
+import {
+  useNavigation,
+  useRoute,
+  useFocusEffect,
+} from '@react-navigation/native';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {AppText} from '@/ui/Text';
@@ -16,6 +20,7 @@ import {MUSCLE_FILTERS} from '@/features/exercises/muscles';
 import {useDebounced} from '@/features/exercises/useDebounced';
 import {useExerciseListQuery} from '@/features/exercises/useExercises';
 import {useLastCreatedExercise} from '@/features/exercises/useLastCreatedExercise';
+import {CreateExerciseRow} from '@/features/exercises/CreateExerciseRow';
 import type {PlanStackParamList} from '@/navigation/types';
 import {usePlanQuery, useEditPlan} from './usePlan';
 
@@ -36,7 +41,8 @@ export function ExercisePickerScreen() {
   const [selected, setSelected] = useState<string[]>([]);
 
   const settledSearch = useDebounced(search, 250);
-  const filter = MUSCLE_FILTERS.find(f => f.label === group) ?? MUSCLE_FILTERS[0]!;
+  const filter =
+    MUSCLE_FILTERS.find(f => f.label === group) ?? MUSCLE_FILTERS[0]!;
   const {data: exercises} = useExerciseListQuery({
     search: settledSearch || undefined,
     muscles: filter.values.length ? filter.values : undefined,
@@ -102,6 +108,12 @@ export function ExercisePickerScreen() {
           />
         ))}
       </View>
+      {/* Above the results, not under four hundred of them. */}
+      <CreateExerciseRow
+        search={search}
+        destination="this day"
+        onPress={openEditor}
+      />
     </View>
   );
 
@@ -110,21 +122,7 @@ export function ExercisePickerScreen() {
       <FlatList
         data={exercises ?? []}
         keyExtractor={item => item.id}
-        ListHeaderComponent={
-          <>
-            {header}
-            {(exercises?.length ?? 0) === 0 ? (
-              <CreateExerciseCard search={search} onPress={openEditor} />
-            ) : null}
-          </>
-        }
-        ListFooterComponent={
-          (exercises?.length ?? 0) === 0 ? (
-            <View />
-          ) : (
-            <CreateExerciseCard search={search} onPress={openEditor} />
-          )
-        }
+        ListHeaderComponent={header}
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={[
           styles.content,
@@ -199,31 +197,3 @@ const styles = StyleSheet.create({
   },
   centred: {textAlign: 'center'},
 });
-
-/**
- * The way out of "it is not in the library" (complaint 5).
- *
- * Sits at the top when the search found nothing — that is the moment you know
- * you need it — and at the foot otherwise, where it is available without
- * competing with the results.
- */
-function CreateExerciseCard({
-  search,
-  onPress,
-}: {
-  search: string;
-  onPress: () => void;
-}) {
-  return (
-    <Card onPress={onPress}>
-      <AppText variant="bodyStrong" color="plate">
-        {search.trim() === ''
-          ? 'Create a new exercise'
-          : `Create "${search.trim()}"`}
-      </AppText>
-      <AppText variant="small" color="muted">
-        Adds it to your library, and to this list
-      </AppText>
-    </Card>
-  );
-}

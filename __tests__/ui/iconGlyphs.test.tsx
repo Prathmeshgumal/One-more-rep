@@ -34,7 +34,9 @@ function pathData(node: unknown): string[] {
   return [...here, ...pathData(children)];
 }
 
-const glyphFor = async (glyph: React.ComponentProps<typeof IconButton>['glyph']) =>
+const glyphFor = async (
+  glyph: React.ComponentProps<typeof IconButton>['glyph'],
+) =>
   pathData(
     (
       await render(

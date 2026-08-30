@@ -48,11 +48,16 @@ function metaFor(day: ResolvedDay): string | null {
   switch (day.status) {
     case 'completed':
     case 'partial':
-      return `${plural(day.exerciseCount, 'exercise')} · ${day.completedSets} of ${day.plannedSets} sets`;
+      return `${plural(day.exerciseCount, 'exercise')} · ${
+        day.completedSets
+      } of ${day.plannedSets} sets`;
     case 'missed':
       return 'Nothing recorded';
     case 'upcoming':
-      return `${plural(day.exerciseCount, 'exercise')} · ${plural(day.plannedSets, 'set')}`;
+      return `${plural(day.exerciseCount, 'exercise')} · ${plural(
+        day.plannedSets,
+        'set',
+      )}`;
     default:
       return null;
   }
@@ -89,7 +94,7 @@ export function DayCard({
               {formatDayLabel(day.date)}
             </AppText>
             <AppText variant="bodyStrong" color={nameColorFor(day)}>
-              {isRest ? 'Rest day' : (day.name ?? '')}
+              {isRest ? 'Rest day' : day.name ?? ''}
             </AppText>
             {meta ? (
               <AppText variant="monoSmall" color="muted">
