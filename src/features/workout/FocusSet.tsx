@@ -9,8 +9,12 @@ import {weightInPlay} from './weightInPlay';
 export type FocusMode = 'live' | 'amending' | 'skipped';
 
 /**
- * A stepper shoulder. 64dp for reps, 40dp for weight — reps change between
+ * A stepper shoulder. 64dp for reps, 44dp for weight — reps change between
  * every set, weight changes between exercises, and the sizes say so.
+ *
+ * 44 rather than the 40 this started at: everything else in the app sits on
+ * that floor, and a shoulder you miss with a chalked thumb costs more than the
+ * four pixels saved.
  */
 function Step({
   label,
@@ -20,7 +24,7 @@ function Step({
 }: {
   label: string;
   glyph: string;
-  size: 40 | 64;
+  size: 44 | 64;
   onPress: () => void;
 }) {
   const {colors} = useTheme();
@@ -146,30 +150,38 @@ export function FocusSet({
               a zero in one — §26's rule, kept. The set has the casting vote:
               a plate planned onto a body-only movement is still a plate. */}
           {weightInPlay(exercise, set) ? (
-            <View style={styles.load}>
-              <Step
-                label={`Decrease weight by ${increment} ${unit}`}
-                glyph="−"
-                size={40}
-                onPress={() => onStepWeight(-increment)}
-              />
-              <View
-                style={[
-                  styles.weight,
-                  {backgroundColor: colors.surface2, borderColor: colors.rule},
-                ]}>
-                <AppText variant="h2">{String(weight ?? 0)}</AppText>
-                <AppText variant="monoSmall" color="muted">
-                  {unit}
-                </AppText>
+            <>
+              <AppText variant="printed" color="faint" style={styles.loadLabel}>
+                weight
+              </AppText>
+              <View style={styles.load}>
+                <Step
+                  label={`Decrease weight by ${increment} ${unit}`}
+                  glyph="−"
+                  size={44}
+                  onPress={() => onStepWeight(-increment)}
+                />
+                <View
+                  style={[
+                    styles.weight,
+                    {
+                      backgroundColor: colors.surface2,
+                      borderColor: colors.rule,
+                    },
+                  ]}>
+                  <AppText variant="h2">{String(weight ?? 0)}</AppText>
+                  <AppText variant="monoSmall" color="muted">
+                    {unit}
+                  </AppText>
+                </View>
+                <Step
+                  label={`Increase weight by ${increment} ${unit}`}
+                  glyph="＋"
+                  size={44}
+                  onPress={() => onStepWeight(increment)}
+                />
               </View>
-              <Step
-                label={`Increase weight by ${increment} ${unit}`}
-                glyph="＋"
-                size={40}
-                onPress={() => onStepWeight(increment)}
-              />
-            </View>
+            </>
           ) : null}
 
           <AppText
@@ -227,15 +239,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   name: {marginTop: space.sm, textAlign: 'center'},
+  loadLabel: {marginTop: space.xl},
   load: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: space.md,
-    marginTop: space.lg,
+    marginTop: space.sm,
   },
   weight: {
-    minWidth: 110,
-    height: 40,
+    minWidth: 118,
+    height: 44,
     borderRadius: radius.md,
     borderWidth: 1,
     flexDirection: 'row',
