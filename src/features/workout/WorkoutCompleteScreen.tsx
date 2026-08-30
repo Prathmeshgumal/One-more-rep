@@ -10,7 +10,7 @@ import {SessionSummary} from './SessionSummary';
 import {DayImageCard, CARD_WIDTH} from '@/features/history/DayImageCard';
 import {useSaveDayImage} from '@/features/history/useSaveDayImage';
 import {useSettingsQuery} from '@/features/settings/useSettings';
-import type {TodayStackParamList} from '@/navigation/types';
+import type {WorkoutStackParamList} from '@/navigation/types';
 import {useTodaySessionQuery, useFinishWorkout} from './useSession';
 
 const longDate = (ms: number) =>
@@ -26,7 +26,7 @@ export function WorkoutCompleteScreen() {
   const insets = useSafeAreaInsets();
   // Typed, because popToTop only exists on a stack navigator's prop.
   const navigation =
-    useNavigation<NativeStackNavigationProp<TodayStackParamList>>();
+    useNavigation<NativeStackNavigationProp<WorkoutStackParamList>>();
 
   const {data: session} = useTodaySessionQuery();
   const {data: settings} = useSettingsQuery();

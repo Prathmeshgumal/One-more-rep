@@ -48,7 +48,7 @@ export function WorkoutExerciseCard({
   exercise: SessionExercise;
   expanded: boolean;
   onToggle: () => void;
-  /** Feeds the screen's auto-scroll; see WorkoutScreen. */
+  /** Feeds the screen's auto-scroll; see SessionScreen. */
   onLayoutY: (y: number) => void;
   unit: string;
   increment: number;

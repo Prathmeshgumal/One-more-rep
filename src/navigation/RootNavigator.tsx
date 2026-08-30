@@ -1,7 +1,7 @@
 import React from 'react';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {TodayStack} from './TodayStack';
+import {WorkoutStack} from './WorkoutStack';
 import {SettingsStack} from './SettingsStack';
 import {TAB_ICON} from '@/ui/TabIcon';
 import {useTheme, font} from '@/theme';
@@ -49,7 +49,7 @@ export function RootNavigator() {
         tabBarIconStyle: {marginBottom: 1},
         tabBarIcon: TAB_ICON[route.name],
       })}>
-      <Tab.Screen name="Today" component={TodayStack} />
+      <Tab.Screen name="Workout" component={WorkoutStack} />
       <Tab.Screen name="Settings" component={SettingsStack} />
     </Tab.Navigator>
   );

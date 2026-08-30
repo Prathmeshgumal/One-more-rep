@@ -51,7 +51,7 @@ export function useCreatePlan() {
       await client.invalidateQueries({queryKey: planKeys.all});
       // A plan edit changes which future days count as rest or training.
       await client.invalidateQueries({queryKey: historyKeys.all});
-      // The Today tab reads the plan through the session branch, not this one,
+      // The Workout tab reads the plan through the session branch, not this one,
       // and it caches forever. Without this it kept saying "No plan yet" after
       // a plan was created, until the app was restarted.
       await client.invalidateQueries({queryKey: sessionKeys.all});
@@ -76,9 +76,9 @@ export function useEditPlan() {
       await client.invalidateQueries({queryKey: planKeys.all});
       // A plan edit changes which future days count as rest or training.
       await client.invalidateQueries({queryKey: historyKeys.all});
-      // Today previews the plan through the session branch (see above). An
-      // exercise added to today's plan has to appear there without a restart —
-      // this is half of complaint 4, found on the device at the R1 gate.
+      // The Workout tab previews the plan through the session branch (see
+      // above). An exercise added to today's plan has to appear there without
+      // a restart — this is half of complaint 4, found on the device at R1.
       await client.invalidateQueries({queryKey: sessionKeys.all});
     },
   });

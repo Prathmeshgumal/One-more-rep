@@ -14,7 +14,7 @@ import {
 import {updateSettings} from '@/repositories/settingsRepo';
 import {ThemeProvider} from '@/theme';
 import {DatabaseContextTestProvider} from '@/providers/DatabaseGate';
-import {WorkoutScreen} from '@/features/workout/WorkoutScreen';
+import {SessionScreen} from '@/features/workout/SessionScreen';
 import {useActiveSet} from '@/features/workout/useActiveSet';
 import {createTestDb} from '../../helpers/testDb';
 
@@ -35,7 +35,7 @@ jest.mock('@react-navigation/native', () => ({
   },
 }));
 
-describe('WorkoutScreen', () => {
+describe('SessionScreen', () => {
   let ctx: ReturnType<typeof createTestDb>;
   let client: QueryClient;
 
@@ -45,7 +45,7 @@ describe('WorkoutScreen', () => {
         <QueryClientProvider client={client}>
           <DatabaseContextTestProvider db={ctx.db}>
             <NavigationContainer>
-              <WorkoutScreen />
+              <SessionScreen />
             </NavigationContainer>
           </DatabaseContextTestProvider>
         </QueryClientProvider>

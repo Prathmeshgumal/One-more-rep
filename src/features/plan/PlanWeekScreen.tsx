@@ -93,7 +93,7 @@ export function PlanWeekScreen() {
         {paddingTop: insets.top + space.xl},
       ]}>
       {/* The plan was a tab, where the tab itself was the way back. It is
-          pushed from Today now, so it needs one of its own. */}
+          pushed from the Workout tab now, so it needs one of its own. */}
       <BackButton />
       <View style={styles.header}>
         <View style={styles.grow}>

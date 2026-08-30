@@ -17,7 +17,7 @@ import {SessionCounts} from './SessionSummary';
 import type {SessionExercise} from '@/repositories/sessionRepo';
 import {useSettingsQuery} from '@/features/settings/useSettings';
 import {useCreatePlan} from '@/features/plan/usePlan';
-import type {TodayStackParamList} from '@/navigation/types';
+import type {WorkoutStackParamList} from '@/navigation/types';
 import {
   useTodaySessionQuery,
   useTodayPlanQuery,
@@ -60,11 +60,11 @@ const longDate = (ms: number) =>
     month: 'long',
   });
 
-export function TodayScreen() {
+export function WorkoutHomeScreen() {
   const {colors} = useTheme();
   const insets = useSafeAreaInsets();
   const navigation =
-    useNavigation<NativeStackNavigationProp<TodayStackParamList>>();
+    useNavigation<NativeStackNavigationProp<WorkoutStackParamList>>();
 
   const {data: session, isPending: sessionPending} = useTodaySessionQuery();
   const {data: plan, isPending: planPending} = useTodayPlanQuery();
@@ -149,7 +149,7 @@ export function TodayScreen() {
 
         <Button
           label="Continue workout"
-          onPress={() => navigation.navigate('Workout')}
+          onPress={() => navigation.navigate('Session')}
         />
         <Button
           label="Finish here"
@@ -204,7 +204,7 @@ export function TodayScreen() {
     );
   }
 
-  // ---- Today is already done ---------------------------------------------
+  // ---- the day is already done ---------------------------------------------
   //
   // Complaint 10 put the summary here rather than behind a button. It then
   // turned out to be too much of one: a percentage, four verdict chips and a
@@ -381,7 +381,7 @@ export function TodayScreen() {
         disabled={start.isPending}
         onPress={() =>
           start.mutate(undefined, {
-            onSuccess: () => navigation.navigate('Workout'),
+            onSuccess: () => navigation.navigate('Session'),
           })
         }
       />

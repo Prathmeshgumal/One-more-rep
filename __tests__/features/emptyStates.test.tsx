@@ -7,7 +7,7 @@ import {runMigrations} from '@/db/migrate';
 import {ThemeProvider} from '@/theme';
 import {DatabaseContextTestProvider} from '@/providers/DatabaseGate';
 import {PlanWeekScreen} from '@/features/plan/PlanWeekScreen';
-import {TodayScreen} from '@/features/workout/TodayScreen';
+import {WorkoutHomeScreen} from '@/features/workout/WorkoutHomeScreen';
 import {CalendarScreen} from '@/features/history/CalendarScreen';
 import {ExerciseHistoryScreen} from '@/features/history/ExerciseHistoryScreen';
 import {createTestDb} from '../helpers/testDb';
@@ -73,7 +73,7 @@ describe('empty states', () => {
   });
 
   it('points at the Plan tab when there is no plan for today', async () => {
-    const view = await wrap(<TodayScreen />);
+    const view = await wrap(<WorkoutHomeScreen />);
     expect(await view.findByText(/no plan yet/i)).toBeTruthy();
   });
 

@@ -14,7 +14,7 @@ import {
 } from '@/repositories/sessionRepo';
 import {ThemeProvider} from '@/theme';
 import {DatabaseContextTestProvider} from '@/providers/DatabaseGate';
-import {TodayScreen} from '@/features/workout/TodayScreen';
+import {WorkoutHomeScreen} from '@/features/workout/WorkoutHomeScreen';
 import {createTestDb} from '../../helpers/testDb';
 
 const mockNavigate = jest.fn();
@@ -32,7 +32,7 @@ jest.mock('@react-navigation/native', () => ({
   },
 }));
 
-describe('TodayScreen', () => {
+describe('WorkoutHomeScreen', () => {
   let ctx: ReturnType<typeof createTestDb>;
   let client: QueryClient;
 
@@ -42,7 +42,7 @@ describe('TodayScreen', () => {
         <QueryClientProvider client={client}>
           <DatabaseContextTestProvider db={ctx.db}>
             <NavigationContainer>
-              <TodayScreen />
+              <WorkoutHomeScreen />
             </NavigationContainer>
           </DatabaseContextTestProvider>
         </QueryClientProvider>
@@ -154,7 +154,7 @@ describe('TodayScreen', () => {
     await waitFor(async () => {
       expect(await getActiveSession(ctx.db)).toBeDefined();
     });
-    expect(mockNavigate).toHaveBeenCalledWith('Workout');
+    expect(mockNavigate).toHaveBeenCalledWith('Session');
   });
 
   // §20 and design 08: after a process kill, the screen offers to continue

@@ -1,7 +1,7 @@
 import React from 'react';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
-import {TodayScreen} from '@/features/workout/TodayScreen';
-import {WorkoutScreen} from '@/features/workout/WorkoutScreen';
+import {WorkoutHomeScreen} from '@/features/workout/WorkoutHomeScreen';
+import {SessionScreen} from '@/features/workout/SessionScreen';
 import {ExerciseSummaryScreen} from '@/features/workout/ExerciseSummaryScreen';
 import {WorkoutCompleteScreen} from '@/features/workout/WorkoutCompleteScreen';
 import {WorkoutExercisePickerScreen} from '@/features/workout/WorkoutExercisePickerScreen';
@@ -15,9 +15,9 @@ import {PlanHistoryScreen} from '@/features/plan/PlanHistoryScreen';
 import {CalendarScreen} from '@/features/history/CalendarScreen';
 import {DayDetailScreen} from '@/features/history/DayDetailScreen';
 import {ExerciseHistoryScreen} from '@/features/history/ExerciseHistoryScreen';
-import type {TodayStackParamList} from './types';
+import type {WorkoutStackParamList} from './types';
 
-const Stack = createNativeStackNavigator<TodayStackParamList>();
+const Stack = createNativeStackNavigator<WorkoutStackParamList>();
 
 /**
  * The Today tab, which is now most of the app.
@@ -28,11 +28,11 @@ const Stack = createNativeStackNavigator<TodayStackParamList>();
  * either, and lets a day of history open from the plan without crossing a
  * navigator boundary.
  */
-export function TodayStack() {
+export function WorkoutStack() {
   return (
     <Stack.Navigator screenOptions={{headerShown: false}}>
-      <Stack.Screen name="TodayHome" component={TodayScreen} />
-      <Stack.Screen name="Workout" component={WorkoutScreen} />
+      <Stack.Screen name="WorkoutHome" component={WorkoutHomeScreen} />
+      <Stack.Screen name="Session" component={SessionScreen} />
       <Stack.Screen name="ExerciseSummary" component={ExerciseSummaryScreen} />
       <Stack.Screen name="WorkoutComplete" component={WorkoutCompleteScreen} />
       <Stack.Screen

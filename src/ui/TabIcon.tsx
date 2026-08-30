@@ -15,7 +15,7 @@ import type {RootTabParamList} from '@/navigation/types';
  * tint prop drives both the glyph and its label.
  */
 const PATHS: Record<keyof RootTabParamList, string> = {
-  Today: 'M4 5h16v15H4zM4 10h16M9 3v4M15 3v4',
+  Workout: 'M4 5h16v15H4zM4 10h16M9 3v4M15 3v4',
   Settings: 'M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6M4 12h2M18 12h2M12 4v2M12 18v2',
 };
 
@@ -53,6 +53,6 @@ export const TAB_ICON: Record<
   keyof RootTabParamList,
   (props: {color: string}) => React.ReactElement
 > = {
-  Today: ({color}) => <TabIcon name="Today" color={color} />,
+  Workout: ({color}) => <TabIcon name="Workout" color={color} />,
   Settings: ({color}) => <TabIcon name="Settings" color={color} />,
 };

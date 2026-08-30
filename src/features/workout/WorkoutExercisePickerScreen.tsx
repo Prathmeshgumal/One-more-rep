@@ -17,7 +17,7 @@ import {weekdayIndex} from '@/domain/weekday';
 import {addExercises} from '@/domain/planDraft';
 import {useEditPlan} from '@/features/plan/usePlan';
 import {useLastCreatedExercise} from '@/features/exercises/useLastCreatedExercise';
-import type {TodayStackParamList} from '@/navigation/types';
+import type {WorkoutStackParamList} from '@/navigation/types';
 import {useTodaySessionQuery, useAddExercise} from './useSession';
 import {useSwapExercise} from './useSessionEditing';
 
@@ -32,7 +32,7 @@ export function WorkoutExercisePickerScreen() {
   const {colors} = useTheme();
   const insets = useSafeAreaInsets();
   const navigation =
-    useNavigation<NativeStackNavigationProp<TodayStackParamList>>();
+    useNavigation<NativeStackNavigationProp<WorkoutStackParamList>>();
 
   const params = useRoute().params as
     | {mode?: 'add' | 'swap'; performedExerciseId?: string}

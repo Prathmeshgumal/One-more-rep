@@ -9,7 +9,7 @@ import {Button} from '@/ui/Button';
 import {ProgressBar} from '@/ui/ProgressBar';
 import {useTheme, space} from '@/theme';
 import {useSettingsQuery} from '@/features/settings/useSettings';
-import type {TodayStackParamList} from '@/navigation/types';
+import type {WorkoutStackParamList} from '@/navigation/types';
 import {WorkoutExerciseCard} from './WorkoutExerciseCard';
 import {ExerciseActions} from './ExerciseActions';
 import {useActiveSet} from './useActiveSet';
@@ -29,11 +29,11 @@ import {
   useMoveExercise,
 } from './useSessionEditing';
 
-export function WorkoutScreen() {
+export function SessionScreen() {
   const {colors} = useTheme();
   const insets = useSafeAreaInsets();
   const navigation =
-    useNavigation<NativeStackNavigationProp<TodayStackParamList>>();
+    useNavigation<NativeStackNavigationProp<WorkoutStackParamList>>();
 
   const {data: session} = useTodaySessionQuery();
   const {data: settings} = useSettingsQuery();
