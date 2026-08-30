@@ -4,7 +4,7 @@ import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
 import {NavigationContainer} from '@react-navigation/native';
 import {sql} from 'drizzle-orm';
 import {runMigrations} from '@/db/migrate';
-import {createPlan, editPlan} from '@/repositories/planRepo';
+import {createPlan, editPlan, getActivePlan} from '@/repositories/planRepo';
 import {addExercises, renameDay, setRestDay} from '@/domain/planDraft';
 import {
   startWorkout,
@@ -83,9 +83,41 @@ describe('TodayScreen', () => {
     );
   };
 
-  it('points at the Plan tab when there is no plan at all', async () => {
-    const view = await renderScreen();
-    expect(await view.findByText(/No plan yet/i)).toBeTruthy();
+  describe('before there is a plan', () => {
+    it('says so', async () => {
+      const view = await renderScreen();
+      expect(await view.findByText(/No plan yet/i)).toBeTruthy();
+    });
+
+    // A button that opens a screen whose only content is another button is a
+    // step for its own sake.
+    it('hides the plan button, and offers the plan itself', async () => {
+      const view = await renderScreen();
+      await view.findByText(/No plan yet/i);
+
+      expect(view.queryByLabelText('Weekly plan')).toBeNull();
+      expect(view.getByText('Create plan')).toBeTruthy();
+      // History still opens, because looking back is always allowed.
+      expect(view.getByLabelText('History')).toBeTruthy();
+    });
+
+    it('creates the week and opens it in one tap', async () => {
+      const view = await renderScreen();
+      await fireEvent.press(await view.findByText('Create plan'));
+
+      await waitFor(async () => {
+        expect(await getActivePlan(ctx.db)).toBeTruthy();
+      });
+      expect(mockNavigate).toHaveBeenCalledWith('PlanWeek');
+    });
+
+    it('brings the plan button back once there is a plan', async () => {
+      await planToday();
+      const view = await renderScreen();
+      await view.findByText('Push Day');
+      expect(view.getByLabelText('Weekly plan')).toBeTruthy();
+      expect(view.queryByText('Create plan')).toBeNull();
+    });
   });
 
   it('says so when today has nothing set up', async () => {

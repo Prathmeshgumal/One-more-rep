@@ -16,6 +16,7 @@ import {LedgerTable, type LedgerRow} from '@/ui/LedgerTable';
 import {SessionCounts} from './SessionSummary';
 import type {SessionExercise} from '@/repositories/sessionRepo';
 import {useSettingsQuery} from '@/features/settings/useSettings';
+import {useCreatePlan} from '@/features/plan/usePlan';
 import type {TodayStackParamList} from '@/navigation/types';
 import {
   useTodaySessionQuery,
@@ -69,6 +70,7 @@ export function TodayScreen() {
   const {data: plan, isPending: planPending} = useTodayPlanQuery();
   const {data: settings} = useSettingsQuery();
   const unit = settings?.unit ?? 'kg';
+  const createPlan = useCreatePlan();
   const start = useStartWorkout();
   const finish = useFinishWorkout();
 
@@ -101,11 +103,15 @@ export function TodayScreen() {
           label="History"
           onPress={() => navigation.navigate('HistoryCalendar')}
         />
-        <IconButton
-          glyph="plan"
-          label="Weekly plan"
-          onPress={() => navigation.navigate('PlanWeek')}
-        />
+        {/* Nothing to open before a plan exists. The empty state below offers
+            the whole action instead of a button that leads to another button. */}
+        {plan ? (
+          <IconButton
+            glyph="plan"
+            label="Weekly plan"
+            onPress={() => navigation.navigate('PlanWeek')}
+          />
+        ) : null}
       </View>
       {children}
     </ScrollView>
@@ -246,14 +252,31 @@ export function TodayScreen() {
   }
 
   // ---- No plan at all (§40) ----------------------------------------------
+  //
+  // A first launch used to land here and describe what to press somewhere
+  // else. It offers the thing itself now: one tap makes the week and opens it,
+  // because "you have no plan" and "make a plan" are the same moment.
   if (!plan || !day) {
     return frame(
       <View style={styles.blank}>
         <AppText variant="h2">No plan yet</AppText>
         <AppText variant="body" color="muted" style={styles.centred}>
-          Build a weekly routine with the plan button above, and today's
-          workout will appear here.
+          Set up a weekly routine, then track what you actually lift against
+          it.
         </AppText>
+        <View style={styles.fullWidth}>
+          <Button
+            label="Create plan"
+            disabled={createPlan.isPending}
+            onPress={() =>
+              createPlan.mutate(undefined, {
+                // Straight into the week, because an empty plan is not the
+                // destination — it is the first half of one action.
+                onSuccess: () => navigation.navigate('PlanWeek'),
+              })
+            }
+          />
+        </View>
       </View>,
     );
   }
