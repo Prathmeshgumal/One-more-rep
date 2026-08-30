@@ -749,6 +749,29 @@ shoulders — the thing a screenshot showed and no assertion did.
 
 ---
 
+## D41 · A note is a thousand characters
+
+There was no ceiling on an exercise note at all. The field is `TEXT` and the
+sheet had no `maxLength`, so a note could be arbitrarily long — and it is
+rendered in full by the workout screen, the peek, the ledger, the finished day
+and the day detail, none of which truncate. One pasted paragraph would have
+broken the layout of five screens.
+
+A thousand characters is roughly two hundred words: far past anything anyone
+types standing up between sets, and short enough that the field cannot quietly
+become a training diary living inside a row.
+
+`NOTE_MAX_LENGTH` sits in `src/constants.ts` because two things enforce it and
+they must not disagree. The input stops at it; `setExerciseNotes` throws past
+it, and throws rather than truncating — truncation would throw away words
+somebody wrote without telling them, and the sheet makes the repository case
+unreachable from the app anyway.
+
+The counter stays hidden until the last fifth of the field. A character count
+over a twelve-word note is noise about a limit nobody is near.
+
+---
+
 ## Outstanding
 
 **The device walk for v4.** D35–D39 are verified against 868 tests and

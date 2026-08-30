@@ -11,3 +11,17 @@ export const APP_NAME = 'One More Rep';
  * at all.
  */
 export const APP_VERSION = '1.0.0';
+
+/**
+ * The longest a note on an exercise may be.
+ *
+ * A note is "shoulder felt off, dropped to 15kg" — a sentence or two written
+ * between sets, on a phone, with a barbell waiting. A thousand characters is
+ * roughly two hundred words: far past anything anyone types standing up, and
+ * short enough that the field cannot become somewhere a training diary
+ * quietly accumulates inside a row that every history screen renders in full.
+ *
+ * The input stops at this; the repository refuses past it. Two enforcements
+ * of one number, which is why the number lives here rather than in either.
+ */
+export const NOTE_MAX_LENGTH = 1000;

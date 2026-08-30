@@ -11,6 +11,7 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {AppText} from '@/ui/Text';
 import {Button} from '@/ui/Button';
 import {useTheme, space, radius, type as typeScale} from '@/theme';
+import {NOTE_MAX_LENGTH} from '@/constants';
 
 /**
  * A note on one exercise, written on purpose.
@@ -38,6 +39,7 @@ export function NoteSheet({
   const insets = useSafeAreaInsets();
   const [draft, setDraft] = useState(note ?? '');
   const [keyboard, setKeyboard] = useState(0);
+  const remaining = NOTE_MAX_LENGTH - draft.length;
 
   useEffect(() => {
     const show = Keyboard.addListener('keyboardDidShow', e =>
@@ -94,6 +96,7 @@ export function NoteSheet({
           placeholder="How did it feel? What did you change?"
           placeholderTextColor={colors.faint}
           accessibilityLabel="Note"
+          maxLength={NOTE_MAX_LENGTH}
           style={[
             styles.field,
             typeScale.body,
@@ -104,6 +107,20 @@ export function NoteSheet({
             },
           ]}
         />
+        {/* Silent until it is nearly relevant. A counter over a note that is
+            twelve words long is noise about a limit nobody is near; the last
+            fifth of the field is where knowing becomes worth the ink. */}
+        {remaining <= NOTE_MAX_LENGTH / 5 ? (
+          <AppText
+            variant="printed"
+            color={remaining <= 50 ? 'short' : 'faint'}
+            style={styles.counter}>
+            {remaining === 0
+              ? 'that is the whole note'
+              : `${remaining} characters left`}
+          </AppText>
+        ) : null}
+
         <View style={styles.actions}>
           <Button label="Cancel" variant="ghost" size="sm" onPress={onClose} />
           <Button
@@ -136,5 +153,6 @@ const styles = StyleSheet.create({
     padding: space.md,
     textAlignVertical: 'top',
   },
+  counter: {textAlign: 'right', marginTop: -space.sm},
   actions: {flexDirection: 'row', justifyContent: 'flex-end', gap: space.sm},
 });
