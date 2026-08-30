@@ -173,10 +173,48 @@ describe('ExercisePickerScreen', () => {
     );
   });
 
-  it('offers it without a search too, just less prominently', async () => {
+  it('offers it without a search too', async () => {
     const view = await renderScreen();
     await view.findByText('Bench Press');
     expect(view.getByText('Create a new exercise')).toBeTruthy();
+  });
+
+  /**
+   * It was the list's footer, under four hundred exercises, which is the same
+   * as not existing — reported from the phone as "there is no option to add a
+   * custom exercise". It belongs above the results, where you can see it
+   * without scrolling the whole library.
+   */
+  it('pins it above the results rather than under them', async () => {
+    const view = await renderScreen();
+    const first = await view.findByText('Bench Press');
+    const create = view.getByLabelText('Create a new exercise');
+
+    expect(first).toBeTruthy();
+    expect(create).toBeTruthy();
+
+    // Reading order in the rendered tree, which is the whole complaint: the
+    // row existed, it was just four hundred results further down.
+    const strings: string[] = [];
+    const walk = (node: unknown): void => {
+      if (typeof node === 'string') {
+        strings.push(node);
+        return;
+      }
+      if (Array.isArray(node)) {
+        node.forEach(walk);
+        return;
+      }
+      if (node && typeof node === 'object' && 'children' in node) {
+        walk((node as {children: unknown}).children);
+      }
+    };
+    walk(view.toJSON());
+
+    expect(strings.indexOf('Create a new exercise')).toBeGreaterThan(-1);
+    expect(strings.indexOf('Create a new exercise')).toBeLessThan(
+      strings.indexOf('Bench Press'),
+    );
   });
 
   it('carries the search text into the editor', async () => {

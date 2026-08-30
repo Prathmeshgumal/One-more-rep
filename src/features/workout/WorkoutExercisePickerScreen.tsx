@@ -21,6 +21,7 @@ import {weekdayIndex} from '@/domain/weekday';
 import {addExercises} from '@/domain/planDraft';
 import {useEditPlan} from '@/features/plan/usePlan';
 import {useLastCreatedExercise} from '@/features/exercises/useLastCreatedExercise';
+import {CreateExerciseRow} from '@/features/exercises/CreateExerciseRow';
 import type {WorkoutStackParamList} from '@/navigation/types';
 import {useTodaySessionQuery, useAddExercise} from './useSession';
 import {useSwapExercise} from './useSessionEditing';
@@ -146,6 +147,12 @@ export function WorkoutExercisePickerScreen() {
           />
         ))}
       </View>
+      {/* Above the results, not under four hundred of them. */}
+      <CreateExerciseRow
+        search={search}
+        destination={isSwap ? 'this slot' : 'this workout'}
+        onPress={openEditor}
+      />
     </View>
   );
 
@@ -160,9 +167,6 @@ export function WorkoutExercisePickerScreen() {
           styles.content,
           {paddingTop: insets.top + space.xl},
         ]}
-        ListFooterComponent={
-          <CreateExerciseCard search={search} onPress={openEditor} />
-        }
         renderItem={({item}) => (
           <Card
             onPress={() => {
@@ -236,25 +240,3 @@ const styles = StyleSheet.create({
   header: {gap: space.md, marginBottom: space.xs},
   chips: {flexDirection: 'row', flexWrap: 'wrap', gap: space.sm},
 });
-
-/** The same escape hatch the plan's picker offers (complaint 5). */
-function CreateExerciseCard({
-  search,
-  onPress,
-}: {
-  search: string;
-  onPress: () => void;
-}) {
-  return (
-    <Card onPress={onPress}>
-      <AppText variant="bodyStrong" color="plate">
-        {search.trim() === ''
-          ? 'Create a new exercise'
-          : `Create "${search.trim()}"`}
-      </AppText>
-      <AppText variant="small" color="muted">
-        Adds it to your library, and to this workout
-      </AppText>
-    </Card>
-  );
-}

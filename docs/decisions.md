@@ -700,9 +700,34 @@ impure one that gets used.
 
 ---
 
+## D39 · Creating an exercise, from where you needed one
+
+Reported from the phone: "I don't see an option to add a custom exercise
+either in any of the screens apart from the exercise library."
+
+It was in both pickers already, and had been since complaint 5 — as the
+`ListFooterComponent`. Under four hundred exercises. Reaching it meant
+scrolling the entire library past every movement you had just failed to find,
+which is the same as it not being there, and the report is the correct verdict
+on it.
+
+One `CreateExerciseRow`, shared by both pickers, pinned in the header under
+the filter chips and above the results. It is a dashed row rather than the
+`Card` it was: at the top of a list of cards another card reads as the first
+result, and the one thing this must not look like is an exercise named
+"Create a new exercise".
+
+It still names what you typed — `Create "Zercher Squat"` — because the moment
+you need it is the moment a search came back empty, and retyping the name into
+the editor is a tax on having already said it once. The plan's picker used to
+move the card between header and footer depending on whether the search found
+anything; one fixed position is better than a control that relocates.
+
+---
+
 ## Outstanding
 
-**The device walk for v4.** D35–D38 are verified against 863 tests and
+**The device walk for v4.** D35–D39 are verified against 868 tests and
 jsdom. A fade that appears at the right moment, nine tiles at 111 × 88 and a
 pinned chip row are all things that only answer on glass.
 
