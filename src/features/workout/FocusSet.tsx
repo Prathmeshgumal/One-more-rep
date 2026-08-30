@@ -9,6 +9,23 @@ import {weightInPlay} from './weightInPlay';
 export type FocusMode = 'live' | 'amending' | 'skipped';
 
 /**
+ * What this set was aiming at, in the words the screen uses.
+ *
+ * Exported because the number pad shows it too: opening the pad must not
+ * change what you are being told about the set you are filling in.
+ */
+export function targetLabel(
+  set: {targetReps: number | null; targetWeight: number | null},
+  unit: string,
+): string {
+  return set.targetReps === null
+    ? 'bonus set · no target'
+    : `target ${set.targetReps}${
+        set.targetWeight !== null ? ` × ${set.targetWeight} ${unit}` : ''
+      }`;
+}
+
+/**
  * A stepper shoulder. 64dp for reps, 44dp for weight — reps change between
  * every set, weight changes between exercises, and the sizes say so.
  *
@@ -71,6 +88,8 @@ export function FocusSet({
   previousLabel,
   onStepReps,
   onStepWeight,
+  onEditReps,
+  onEditWeight,
   onUndoSkip,
 }: {
   cursor: SetCursor;
@@ -83,6 +102,9 @@ export function FocusSet({
   previousLabel: string | null;
   onStepReps: (delta: number) => void;
   onStepWeight: (delta: number) => void;
+  /** Both numbers are pressable; these open the pad on one of them. */
+  onEditReps: () => void;
+  onEditWeight: () => void;
   onUndoSkip: () => void;
 }) {
   const {colors} = useTheme();
@@ -91,12 +113,7 @@ export function FocusSet({
   const numeralColor: ColorToken =
     mode === 'amending' ? 'short' : mode === 'skipped' ? 'skip' : 'ink';
 
-  const target =
-    set.targetReps === null
-      ? 'bonus set · no target'
-      : `target ${set.targetReps}${
-          set.targetWeight !== null ? ` × ${set.targetWeight} ${unit}` : ''
-        }`;
+  const target = targetLabel(set, unit);
 
   // Amending shows what is on record beside what you are changing it to, so
   // you can always see what you are moving away from.
@@ -161,7 +178,13 @@ export function FocusSet({
                   size={44}
                   onPress={() => onStepWeight(-increment)}
                 />
-                <View
+                {/* The value is the way in to typing it: 20 kg to 60 is
+                    sixteen presses of a shoulder, done without looking. */}
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`Weight ${weight ?? 0} ${unit}`}
+                  accessibilityHint="Type a weight"
+                  onPress={onEditWeight}
                   style={[
                     styles.weight,
                     {
@@ -173,7 +196,7 @@ export function FocusSet({
                   <AppText variant="monoSmall" color="muted">
                     {unit}
                   </AppText>
-                </View>
+                </Pressable>
                 <Step
                   label={`Increase weight by ${increment} ${unit}`}
                   glyph="＋"
@@ -184,13 +207,16 @@ export function FocusSet({
             </>
           ) : null}
 
-          <AppText
-            variant="focus"
-            color={numeralColor}
-            style={styles.numeral}
-            accessibilityLabel={`${reps} reps`}>
-            {String(reps)}
-          </AppText>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`${reps} reps`}
+            accessibilityHint="Type a rep count"
+            onPress={onEditReps}
+            style={styles.numeral}>
+            <AppText variant="focus" color={numeralColor}>
+              {String(reps)}
+            </AppText>
+          </Pressable>
           <AppText variant="printed" color="muted">
             reps
           </AppText>

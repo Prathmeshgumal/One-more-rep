@@ -7,12 +7,13 @@ import {AppText} from '@/ui/Text';
 import {useTheme, space, radius} from '@/theme';
 import {useSettingsQuery} from '@/features/settings/useSettings';
 import type {WorkoutStackParamList} from '@/navigation/types';
-import {FocusSet, type FocusMode} from './FocusSet';
+import {FocusSet, targetLabel, type FocusMode} from './FocusSet';
 import {FocusActions} from './FocusActions';
 import {UndoBanner} from './UndoBanner';
 import {SetRail} from './SetRail';
 import {SessionPeek} from './SessionPeek';
 import {NoteSheet} from './NoteSheet';
+import {NumberPad} from '@/ui/NumberPad';
 import {ExerciseActions} from './ExerciseActions';
 import {FinishSheet} from './FinishSheet';
 import {useActiveSet} from './useActiveSet';
@@ -85,6 +86,8 @@ export function SessionScreen() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [noteOpen, setNoteOpen] = useState(false);
   const [finishOpen, setFinishOpen] = useState(false);
+  /** Which of the two numbers the pad is open on, if either. */
+  const [editing, setEditing] = useState<'reps' | 'weight' | null>(null);
 
   // Memoised because the record and advance callbacks close over it: a fresh
   // array every render would rebuild them every render, and the undo timer
@@ -397,6 +400,10 @@ export function SessionScreen() {
       }`
     : null;
 
+  const padCaption = previousLabel
+    ? `${targetLabel(cursor.set, unit)} · ${previousLabel}`
+    : targetLabel(cursor.set, unit);
+
   const done = recordedCount(cursors);
   const everythingDecided = allDecided(cursors);
 
@@ -486,6 +493,8 @@ export function SessionScreen() {
         previousLabel={previousLabel}
         onStepReps={active.stepReps}
         onStepWeight={active.stepWeight}
+        onEditReps={() => setEditing('reps')}
+        onEditWeight={() => setEditing('weight')}
         onUndoSkip={onUndoSkip}
       />
 
@@ -526,6 +535,40 @@ export function SessionScreen() {
           onAdvance={onAdvance}
         />
       </View>
+
+      {/* One pad, told which number it is on. Both write through the store's
+          absolute setters — a typed 62.5 is not expressible as a delta from
+          whatever happened to be there before. */}
+      <NumberPad
+        visible={editing === 'reps'}
+        title="reps"
+        value={active.reps}
+        min={1}
+        max={999}
+        caption={padCaption}
+        confirmLabel={v => `Set ${v} reps`}
+        onSubmit={v => {
+          active.setReps(v);
+          setEditing(null);
+        }}
+        onClose={() => setEditing(null)}
+      />
+      <NumberPad
+        visible={editing === 'weight'}
+        title="weight"
+        value={active.weight ?? 0}
+        unit={unit}
+        min={0}
+        max={999}
+        allowDecimal
+        caption={padCaption}
+        confirmLabel={v => `Set ${v} ${unit}`}
+        onSubmit={v => {
+          active.setWeight(v);
+          setEditing(null);
+        }}
+        onClose={() => setEditing(null)}
+      />
 
       <SessionPeek
         visible={peekOpen}

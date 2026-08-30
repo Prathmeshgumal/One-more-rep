@@ -237,6 +237,51 @@ describe('SessionScreen', () => {
     expect(view.getByLabelText('Increase weight by 0.5 kg')).toBeTruthy();
   });
 
+  /**
+   * U5: the shoulders are right for a rep either side of the target and wrong
+   * for everything else. 20 kg to 60 is sixteen presses.
+   */
+  describe('typing a number', () => {
+    it('types a rep count straight onto the set', async () => {
+      const view = await renderScreen();
+      await fireEvent.press(await view.findByLabelText('10 reps'));
+      await fireEvent.press(view.getByLabelText('1'));
+      await fireEvent.press(view.getByLabelText('5'));
+      await fireEvent.press(view.getByText('Set 15 reps'));
+      expect(await view.findByLabelText('15 reps')).toBeTruthy();
+    });
+
+    it('types a weight, decimal and all', async () => {
+      const view = await renderScreen();
+      await fireEvent.press(await view.findByLabelText('Weight 30 kg'));
+      await fireEvent.press(view.getByLabelText('6'));
+      await fireEvent.press(view.getByLabelText('2'));
+      await fireEvent.press(view.getByLabelText('Decimal point'));
+      await fireEvent.press(view.getByLabelText('5'));
+      await fireEvent.press(view.getByText('Set 62.5 kg'));
+      expect(await view.findByLabelText('Weight 62.5 kg')).toBeTruthy();
+    });
+
+    it('records what was typed', async () => {
+      const view = await renderScreen();
+      await fireEvent.press(await view.findByLabelText('10 reps'));
+      await fireEvent.press(view.getByLabelText('7'));
+      await fireEvent.press(view.getByText('Set 7 reps'));
+      await fireEvent.press(await view.findByLabelText('Record 7 × 30 kg'));
+      await waitFor(async () => {
+        expect((await sets())[0]!.actualReps).toBe(7);
+      });
+    });
+
+    it('leaves the number alone when cancelled', async () => {
+      const view = await renderScreen();
+      await fireEvent.press(await view.findByLabelText('10 reps'));
+      await fireEvent.press(view.getByLabelText('4'));
+      await fireEvent.press(view.getByText('Cancel'));
+      expect(await view.findByLabelText('10 reps')).toBeTruthy();
+    });
+  });
+
   it('leaves the workout when closed', async () => {
     const view = await renderScreen();
     await fireEvent.press(await view.findByLabelText('Close workout'));
