@@ -592,7 +592,86 @@ taps, where it still offers the full `Undo skip`.
 
 ---
 
+## D35 · The top fade only appears once something is under it
+
+The gradient covering the cut edge of a scrolling list was drawn
+unconditionally, so a list sitting at rest had its first 28dp washed out too.
+On the workout screen that band is exactly the date line, and `SUNDAY, 30
+AUGUST` came out half-erased on a screen nobody had scrolled. Reported from
+the phone.
+
+A fade is a way of saying "there is more above this"; when there is not, it
+should not be there. `useScrollFade` tracks the offset and crossfades the
+gradient in past 2dp — a threshold rather than zero, because an overscroll
+bounce is not a scroll — and both `Screen` and the workout home screen drive
+it.
+
+---
+
+## D36 · The exercise menu is a grid, not a list
+
+Reported as "too confusing, random colours, don't know what happens when we
+use what thing", and three separate faults were behind it.
+
+Ochre meant two opposite things on one sheet: `Finish this exercise` was ochre
+because it *ends* something, and the three disabled rows' explanations were
+ochre because they are *refusals*. The loudest colour marked both what you can
+do and what you cannot.
+
+The dead rows shouted louder than the live ones. A disabled row got two lines
+and a colour; an available row got one line of plain white. Four fifths of the
+ink was spent on things you cannot press.
+
+And eight peers with no grouping: adding a set, reordering the exercise and
+deleting it from the workout are three kinds of act at three stakes, drawn
+identically.
+
+Twelve arrangements were drawn at 393dp and the tile grid was chosen. Nine
+tiles at 111 × 88 — over five times the area of the 44dp row they replace,
+which is a target designed for a cursor — each with a glyph you can find
+without reading, in an order fixed regardless of state, because a tile that
+moves between openings is a tile you have to read again every time.
+
+The trade the grid makes is that a tile has nowhere to print a reason, which
+is the one thing the list did well. So an unavailable tile stays pressable and
+spends the press explaining itself into a reserved line under the grid, and
+the ninth tile collects every reason at once. Only refusals are ochre now, and
+only once you have asked for one. `ActionSheet` had no other caller and went
+with it.
+
+---
+
+## D37 · Settings is sections behind a pinned index
+
+Reported as looking "like a page to select different options and not really
+like app settings", which was exactly right: everything on it *was* a chooser.
+The exercise library — the only place on the page you actually go — was drawn
+as the same bordered box as a radio button for "kg", and nine option cards
+spent 1100dp to answer four questions.
+
+Eight layouts were drawn and the jump index was chosen. Lifting, Appearance
+and About, each a bounded group; the title and a chip row pinned outside the
+`ScrollView`, the way `WorkoutHomeScreen` already pins its calendar and plan
+buttons — an index that scrolls away is an index you scroll back up to use.
+This is why Settings no longer uses `Screen`, whose header scrolls by design.
+
+The chips both drive the scroll and follow it, so the index cannot lie once
+you scroll by hand. Every option card becomes a `Segmented` on the row it
+belongs to: four settings do not justify a chooser you have to open to read.
+
+Three sections do not need an index, and the study said so. It was built
+anyway because the fourth section is the one about your data — 28 sessions
+living in one file on one phone, which this page ought to be saying something
+about and currently says nothing. Backup and restore were drawn in the study
+and are **not** built; they are real work, not a redraw.
+
+---
+
 ## Outstanding
+
+**The device walk for v4.** D35–D37 are verified against 853 tests and
+jsdom. A fade that appears at the right moment, nine tiles at 111 × 88 and a
+pinned chip row are all things that only answer on glass.
 
 **The device walk for v3.** D30's sync is verified against 14 repository tests
 and jsdom. Editing a target mid-workout and watching it land is a phone test.
