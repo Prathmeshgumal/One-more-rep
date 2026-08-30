@@ -8,7 +8,7 @@ import {Button} from '@/ui/Button';
 import {Card} from '@/ui/Card';
 import {IconButton} from '@/ui/IconButton';
 import {ProgressBar} from '@/ui/ProgressBar';
-import {ScrollFade} from '@/ui/ScrollFade';
+import {ScrollFade, useScrollFade} from '@/ui/ScrollFade';
 import {useTheme, space, radius} from '@/theme';
 import {WEEKDAY_NAMES, weekdayIndex} from '@/domain/weekday';
 import {targetLine} from '@/domain/format';
@@ -41,6 +41,7 @@ const longDate = (ms: number) =>
 export function WorkoutHomeScreen() {
   const {colors} = useTheme();
   const insets = useSafeAreaInsets();
+  const fade = useScrollFade();
   const navigation =
     useNavigation<NativeStackNavigationProp<WorkoutStackParamList>>();
 
@@ -110,12 +111,16 @@ export function WorkoutHomeScreen() {
         ) : null}
       </View>
       <View style={styles.scroller}>
-        <ScrollView contentContainerStyle={styles.content}>
+        <ScrollView
+          {...fade.scrollProps}
+          contentContainerStyle={styles.content}>
           {children}
         </ScrollView>
         {/* Content ran out under the pinned bar on a hard line straight
-            through a row of type, which reads as a rendering fault. */}
-        <ScrollFade />
+            through a row of type, which reads as a rendering fault. Only
+            while there is something under it: at rest it sat directly on the
+            date line and half-erased it. */}
+        <ScrollFade visible={fade.faded} />
       </View>
     </View>
   );
