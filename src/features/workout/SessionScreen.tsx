@@ -9,6 +9,7 @@ import {useSettingsQuery} from '@/features/settings/useSettings';
 import type {WorkoutStackParamList} from '@/navigation/types';
 import {FocusSet, targetLabel, type FocusMode} from './FocusSet';
 import {FocusActions} from './FocusActions';
+import {FocusUtility} from './FocusUtility';
 import {UndoBanner} from './UndoBanner';
 import {SetRail} from './SetRail';
 import {SessionPeek} from './SessionPeek';
@@ -500,24 +501,16 @@ export function SessionScreen() {
 
       {/* The peek is the only route to the shape of the day, so it gets a
           visible control rather than relying on a gesture nobody is told
-          about. */}
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Show the whole session"
-        onPress={() => setPeekOpen(true)}
-        style={styles.hints}>
-        <AppText variant="monoSmall" color="faint">
-          {focusIndex > 0 ? `← set ${cursors[focusIndex - 1]!.setNumber}` : ' '}
-        </AppText>
-        <AppText variant="monoSmall" color="muted">
-          ▲ the whole session
-        </AppText>
-        <AppText variant="monoSmall" color="faint">
-          {focusIndex < cursors.length - 1
-            ? `set ${cursors[focusIndex + 1]!.setNumber} →`
-            : ' '}
-        </AppText>
-      </Pressable>
+          about — and exactly one, rather than three that all opened it. */}
+      <FocusUtility
+        done={done}
+        total={cursors.length}
+        exerciseName={cursor.exercise.name}
+        hasNote={Boolean(cursor.exercise.notes)}
+        nextLabel={nextLabel}
+        onOpenSession={() => setPeekOpen(true)}
+        onOpenNote={() => setNoteOpen(true)}
+      />
 
       <View style={{paddingBottom: insets.bottom}}>
         <FocusActions
@@ -681,12 +674,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: space.md,
     paddingVertical: space.sm,
     borderRadius: radius.sm,
-  },
-  hints: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: space.xl,
-    paddingBottom: space.sm,
   },
   undo: {position: 'absolute', left: 0, right: 0},
 });

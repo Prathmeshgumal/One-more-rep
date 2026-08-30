@@ -4,7 +4,7 @@ import {AppText} from '@/ui/Text';
 import {useTheme, space, radius} from '@/theme';
 import type {FocusMode} from './FocusSet';
 
-export const ACTION_BAR_HEIGHT = 76;
+export const ACTION_BAR_HEIGHT = 56;
 
 /**
  * The one control you touch, in the one place it always is.
@@ -12,6 +12,11 @@ export const ACTION_BAR_HEIGHT = 76;
  * Its label states the consequence — "Record 12 reps", never a bare tick — so
  * there is no question about what was just written on a screen that is about
  * to be replaced by the next set.
+ *
+ * 56dp, not the 76 this started at. Two buttons carrying two lines each came
+ * to 92dp with their padding, a tenth of the screen, and the second line was
+ * saying where the *next* set is — which is a fact about the session, not
+ * about this button. It lives in the utility row above now.
  */
 export function FocusActions({
   mode,
@@ -53,7 +58,6 @@ export function FocusActions({
     mode === 'amending'
       ? {
           label: 'Save change',
-          caption: 'back to the live set',
           onPress: onSaveAmendment,
           tone: colors.short,
           ink: colors.plateInk,
@@ -61,14 +65,12 @@ export function FocusActions({
       : mode === 'skipped'
       ? {
           label: nextLabel ? `Go to ${nextLabel}` : 'Back to the workout',
-          caption: null,
           onPress: onAdvance,
           tone: colors.plate,
           ink: colors.plateInk,
         }
       : {
           label: recordLabel,
-          caption: nextLabel ? `then ${nextLabel}` : 'the last set',
           onPress: onRecord,
           tone: colors.plate,
           ink: colors.plateInk,
@@ -96,14 +98,9 @@ export function FocusActions({
           busy && styles.busy,
           {backgroundColor: primary.tone},
         ]}>
-        <AppText variant="h3" style={{color: primary.ink}}>
+        <AppText variant="h3" style={{color: primary.ink}} numberOfLines={1}>
           {primary.label}
         </AppText>
-        {primary.caption ? (
-          <AppText variant="monoSmall" style={{color: primary.ink}}>
-            {primary.caption}
-          </AppText>
-        ) : null}
       </Pressable>
 
       {secondary ? (
@@ -114,11 +111,8 @@ export function FocusActions({
           disabled={busy}
           onPress={secondary.onPress}
           style={[styles.secondary, {borderColor: colors.rule}]}>
-          <AppText variant="h3" color="ink2">
-            {secondary.glyph}
-          </AppText>
-          <AppText variant="monoSmall" color="muted">
-            {secondary.label}
+          <AppText variant="body" color="ink2">
+            {`${secondary.glyph} ${secondary.label}`}
           </AppText>
         </Pressable>
       ) : null}
@@ -139,16 +133,15 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 2,
+    paddingHorizontal: space.md,
   },
   busy: {opacity: 0.6},
   secondary: {
-    width: 96,
+    width: 88,
     height: ACTION_BAR_HEIGHT,
     borderRadius: radius.lg,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: space.xs,
   },
 });

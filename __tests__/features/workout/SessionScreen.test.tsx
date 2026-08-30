@@ -282,6 +282,68 @@ describe('SessionScreen', () => {
     });
   });
 
+  /**
+   * The strip under the set was one Pressable laid out as
+   * `← set 2 · ▲ the whole session · set 1 →`, so three things that looked
+   * like buttons all opened the peek. The arrows were labels, not controls.
+   */
+  describe('the utility row', () => {
+    it('offers one session button, not a row of arrows', async () => {
+      const view = await renderScreen();
+      await view.findByText('Bench Press');
+      expect(view.getByLabelText('Show the whole session')).toBeTruthy();
+      expect(view.queryByText('← set 1')).toBeNull();
+      expect(view.queryByText('set 2 →')).toBeNull();
+      expect(view.queryByText('▲ the whole session')).toBeNull();
+    });
+
+    it('states how far through the session it is', async () => {
+      const view = await renderScreen();
+      expect(await view.findByText('▲ session 0/6')).toBeTruthy();
+    });
+
+    it('opens the peek', async () => {
+      const view = await renderScreen();
+      await fireEvent.press(
+        await view.findByLabelText('Show the whole session'),
+      );
+      expect(
+        await view.findByText('0 of 6 sets recorded · tap any set to go there'),
+      ).toBeTruthy();
+    });
+
+    // Two taps and a scan of eight menu rows is far enough that "left
+    // shoulder tight" never got written down.
+    it('opens the note sheet without going through the menu', async () => {
+      const view = await renderScreen();
+      await fireEvent.press(
+        await view.findByLabelText('Add a note to Bench Press'),
+      );
+      expect(await view.findByLabelText('Note')).toBeTruthy();
+    });
+
+    it('shows the note as a state once there is one', async () => {
+      const view = await renderScreen();
+      await fireEvent.press(
+        await view.findByLabelText('Add a note to Bench Press'),
+      );
+      await fireEvent.changeText(
+        await view.findByLabelText('Note'),
+        'left shoulder tight',
+      );
+      await fireEvent.press(view.getByText('Save note'));
+      expect(
+        await view.findByLabelText('Edit the note on Bench Press'),
+      ).toBeTruthy();
+    });
+
+    // The line the Record button used to carry as a second row of type.
+    it('carries where the primary button goes next', async () => {
+      const view = await renderScreen();
+      expect(await view.findByText('then set 2')).toBeTruthy();
+    });
+  });
+
   it('leaves the workout when closed', async () => {
     const view = await renderScreen();
     await fireEvent.press(await view.findByLabelText('Close workout'));
