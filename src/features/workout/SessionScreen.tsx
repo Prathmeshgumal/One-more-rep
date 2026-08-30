@@ -16,6 +16,7 @@ import {NoteSheet} from './NoteSheet';
 import {ExerciseActions} from './ExerciseActions';
 import {FinishSheet} from './FinishSheet';
 import {useActiveSet} from './useActiveSet';
+import {weightInPlay} from './weightInPlay';
 import {
   flattenSets,
   firstPendingIndex,
@@ -193,7 +194,9 @@ export function SessionScreen() {
     }
     // Read before the write, not after: this is what Undo restores.
     const snapshot = await snapshotSet(db, cursor.set.id);
-    const weight = cursor.exercise.weightApplicable ? active.weight : null;
+    const weight = weightInPlay(cursor.exercise, cursor.set)
+      ? active.weight
+      : null;
     const reps = active.reps;
     complete.mutate(
       {setId: cursor.set.id, actualReps: reps, actualWeight: weight},
@@ -236,7 +239,9 @@ export function SessionScreen() {
       {
         setId: cursor.set.id,
         actualReps: active.reps,
-        actualWeight: cursor.exercise.weightApplicable ? active.weight : null,
+        actualWeight: weightInPlay(cursor.exercise, cursor.set)
+          ? active.weight
+          : null,
       },
       {onSuccess: () => setFocusIndex(live)},
     );
@@ -511,7 +516,7 @@ export function SessionScreen() {
           reps={active.reps}
           weight={active.weight}
           unit={unit}
-          weightApplicable={cursor.exercise.weightApplicable}
+          weightInPlay={weightInPlay(cursor.exercise, cursor.set)}
           nextLabel={nextLabel}
           busy={complete.isPending || skip.isPending || restore.isPending}
           onRecord={onRecord}

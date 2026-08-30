@@ -3,6 +3,7 @@ import {Pressable, StyleSheet, View} from 'react-native';
 import {AppText} from '@/ui/Text';
 import {useTheme, space, radius, type ColorToken} from '@/theme';
 import type {SetCursor} from './sessionCursor';
+import {weightInPlay} from './weightInPlay';
 
 /** What the screen is doing, which is not what the set says about itself. */
 export type FocusMode = 'live' | 'amending' | 'skipped';
@@ -142,8 +143,9 @@ export function FocusSet({
       ) : (
         <>
           {/* A bodyweight movement gets no weight control at all, rather than
-              a zero in one — §26's rule, kept. */}
-          {exercise.weightApplicable ? (
+              a zero in one — §26's rule, kept. The set has the casting vote:
+              a plate planned onto a body-only movement is still a plate. */}
+          {weightInPlay(exercise, set) ? (
             <View style={styles.load}>
               <Step
                 label={`Decrease weight by ${increment} ${unit}`}

@@ -18,7 +18,7 @@ export function FocusActions({
   reps,
   weight,
   unit,
-  weightApplicable,
+  weightInPlay,
   nextLabel,
   busy = false,
   onRecord,
@@ -31,7 +31,8 @@ export function FocusActions({
   reps: number;
   weight: number | null;
   unit: string;
-  weightApplicable: boolean;
+  /** Whether this set has a weight worth naming in the label. */
+  weightInPlay: boolean;
   /** Where the primary button goes next, when it is a move rather than a write. */
   nextLabel: string | null;
   busy?: boolean;
@@ -44,7 +45,7 @@ export function FocusActions({
   const {colors} = useTheme();
 
   const recordLabel =
-    weightApplicable && weight !== null && weight > 0
+    weightInPlay && weight !== null && weight > 0
       ? `Record ${reps} × ${weight} ${unit}`
       : `Record ${reps} reps`;
 

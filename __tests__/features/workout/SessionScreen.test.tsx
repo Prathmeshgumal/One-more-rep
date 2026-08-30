@@ -57,6 +57,18 @@ describe('SessionScreen', () => {
     return session.exercises[0]!.sets;
   };
 
+  /**
+   * Makes the first exercise genuinely bodyweight — the catalogue flag *and*
+   * the targets the plan put on it. Clearing only the flag leaves a set
+   * carrying 30 kg, which is a weighted set by any honest reading.
+   */
+  const bodyweight = async () => {
+    await ctx.db.run(
+      sql`UPDATE exercises SET weight_applicable = 0 WHERE id = 'bench'`,
+    );
+    await ctx.db.run(sql`UPDATE performed_sets SET target_weight = NULL`);
+  };
+
   beforeEach(async () => {
     ctx = createTestDb();
     await runMigrations(ctx.db);
@@ -202,14 +214,27 @@ describe('SessionScreen', () => {
   });
 
   // A bodyweight movement gets no weight control at all, rather than a zero
-  // in one — §26's rule, kept from the screen this replaces.
+  // in one — §26's rule, kept from the screen this replaces. "Bodyweight"
+  // now means the catalogue says so *and* no weight was planned onto it.
   it('offers no weight control on a bodyweight movement', async () => {
+    await bodyweight();
+    const view = await renderScreen();
+    await view.findByText('Bench Press');
+    expect(view.queryByLabelText('Increase weight by 0.5 kg')).toBeNull();
+  });
+
+  /**
+   * The set has the casting vote over the catalogue. A 0.5 kg plate held on a
+   * sit-up went into the plan quite happily and then rendered as text that
+   * could not be edited, because `exercises.json` calls a sit-up body only.
+   */
+  it('offers a weight control when the plan gave a body-only set a target', async () => {
     await ctx.db.run(
       sql`UPDATE exercises SET weight_applicable = 0 WHERE id = 'bench'`,
     );
     const view = await renderScreen();
     await view.findByText('Bench Press');
-    expect(view.queryByLabelText('Increase weight by 0.5 kg')).toBeNull();
+    expect(view.getByLabelText('Increase weight by 0.5 kg')).toBeTruthy();
   });
 
   it('leaves the workout when closed', async () => {
@@ -259,9 +284,7 @@ describe('SessionScreen', () => {
     // A bodyweight movement has no weight to record, and writing a zero would
     // invent a load nobody lifted (§26).
     it('writes no weight for a bodyweight movement', async () => {
-      await ctx.db.run(
-        sql`UPDATE exercises SET weight_applicable = 0 WHERE id = 'bench'`,
-      );
+      await bodyweight();
       const view = await renderScreen();
       await fireEvent.press(await view.findByLabelText('Record 10 reps'));
       await waitFor(async () => {
