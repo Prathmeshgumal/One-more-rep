@@ -1,5 +1,5 @@
 import React from 'react';
-import {ActionSheet, type SheetAction} from '@/ui/ActionSheet';
+import {ActionGrid, type GridAction} from '@/ui/ActionGrid';
 import type {SessionExercise, SessionSet} from '@/repositories/sessionRepo';
 
 /**
@@ -12,10 +12,16 @@ import type {SessionExercise, SessionSet} from '@/repositories/sessionRepo';
  * one door for all of it: which does mean this is the one control a new user
  * has to find, and the reason it is a plain `⋯` rather than anything clever.
  *
- * Every row stays on the sheet whether or not it currently applies, with its
- * reason printed underneath when it does not. Hiding a control that was there
- * a minute ago leaves somebody hunting for it, and "not yet, because" answers
- * the question that hiding it would raise.
+ * It is a grid of tiles rather than a column of rows, because eight identical
+ * lines of text told you nothing about which of them you wanted, and a 44dp
+ * row is a target designed for a cursor. The order below is fixed and never
+ * depends on state — a tile that moves between openings is a tile you have to
+ * read again every time.
+ *
+ * Every action stays on the grid whether or not it currently applies, and an
+ * unavailable one explains itself when pressed. Hiding a control that was
+ * there a minute ago leaves somebody hunting for it, and "not yet, because"
+ * answers the question that hiding it would raise.
  *
  * The rules it enforces are U7 (a swap is refused once a set has been decided,
  * because those sets belong to the old movement) and U8 (only an exercise
@@ -59,10 +65,60 @@ export function ExerciseActions({
   const anyRecorded = exercise.sets.some(s => s.status === 'completed');
   const isPlanned = exercise.plannedExerciseId !== null;
 
-  const actions: SheetAction[] = [
+  const actions: GridAction[] = [
     {
       label: 'Add a set',
+      short: 'Add set',
+      glyph: '＋',
       onPress: onAddSet,
+    },
+    {
+      label: exercise.notes ? 'Edit the note' : 'Add a note',
+      short: 'Note',
+      glyph: '✎',
+      onPress: onNote,
+    },
+    {
+      /**
+       * U11. Finishing and skipping are different acts, and the difference is
+       * whether anything actually happened. The control used to say "Skip"
+       * always, and marked a part-done exercise skipped — which understates
+       * the work, and came back from the phone as a complaint.
+       *
+       * Greyed rather than gone once nothing is pending: with nothing left to
+       * close it could only do nothing, which is exactly how it was reported
+       * as "Finish this exercise isn't working".
+       */
+      label: anyRecorded ? 'Finish this exercise' : 'Skip this exercise',
+      short: anyRecorded ? 'Finish' : 'Skip',
+      glyph: '✓',
+      onPress: onFinish,
+      disabled: !anyPending,
+      reason: 'Every set is already decided',
+    },
+    {
+      label: 'Move up',
+      short: 'Up',
+      glyph: '▲',
+      onPress: () => onMove(-1),
+      disabled: isFirst,
+      reason: 'Already first',
+    },
+    {
+      label: 'Move down',
+      short: 'Down',
+      glyph: '▼',
+      onPress: () => onMove(1),
+      disabled: isLast,
+      reason: 'Already last',
+    },
+    {
+      label: 'Swap for another exercise',
+      short: 'Swap',
+      glyph: '⇄',
+      onPress: onSwap,
+      disabled: anyDecided,
+      reason: 'A set is already recorded — finish it and add the new one',
     },
     {
       /**
@@ -72,56 +128,19 @@ export function ExerciseActions({
        * bonus set only ever reduces the credit claimed.
        */
       label: `Remove set ${setNumber}`,
+      short: 'Del set',
+      glyph: '−',
       onPress: onRemoveSet,
-      quiet: true,
       disabled: !set.isUnplanned || exercise.sets.length <= 1,
       reason: !set.isUnplanned
         ? 'This set is in the plan — skip it instead'
         : 'An exercise needs a set. Remove the exercise instead.',
     },
     {
-      /**
-       * U11. Finishing and skipping are different acts, and the difference is
-       * whether anything actually happened. The control used to say "Skip"
-       * always, and marked a part-done exercise skipped — which understates
-       * the work, and came back from the phone as a complaint.
-       *
-       * Disabled rather than hidden once nothing is pending: with nothing left
-       * to close it could only do nothing, which is exactly how it was
-       * reported as "Finish this exercise isn't working".
-       */
-      label: anyRecorded ? 'Finish this exercise' : 'Skip this exercise',
-      onPress: onFinish,
-      quiet: true,
-      disabled: !anyPending,
-      reason: 'Every set is already decided',
-    },
-    {
-      label: 'Swap for another exercise',
-      onPress: onSwap,
-      disabled: anyDecided,
-      reason: 'A set is already recorded — finish it and add the new one',
-    },
-    {
-      label: exercise.notes ? 'Edit the note' : 'Add a note',
-      onPress: onNote,
-    },
-    {
-      label: 'Move up',
-      onPress: () => onMove(-1),
-      disabled: isFirst,
-      reason: 'Already first',
-    },
-    {
-      label: 'Move down',
-      onPress: () => onMove(1),
-      disabled: isLast,
-      reason: 'Already last',
-    },
-    {
       label: 'Remove from this workout',
+      short: 'Remove',
+      glyph: '✕',
       onPress: onRemove,
-      quiet: true,
       disabled: isPlanned || anyDecided,
       reason: isPlanned
         ? 'This exercise is in the plan — skip it instead'
@@ -130,7 +149,7 @@ export function ExerciseActions({
   ];
 
   return (
-    <ActionSheet
+    <ActionGrid
       visible={visible}
       title={exercise.name}
       actions={actions}

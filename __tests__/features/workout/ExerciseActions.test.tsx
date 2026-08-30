@@ -79,25 +79,52 @@ describe('ExerciseActions', () => {
     }
   });
 
-  // U7. The recorded sets belong to the old movement.
+  /**
+   * U7. The recorded sets belong to the old movement.
+   *
+   * A tile has nowhere to print a reason, so pressing an unavailable one
+   * explains itself instead of acting. A greyed control that does literally
+   * nothing when pressed is the one thing worse than a greyed control.
+   */
   it('explains why swap is unavailable rather than hiding it', async () => {
     const onSwap = jest.fn();
     const view = await renderActions({
       exercise: exercise({sets: [done(1), set(2), set(3)]}),
       onSwap,
     });
-    const row = view.getByLabelText('Swap for another exercise');
-    expect(row.props.accessibilityState.disabled).toBe(true);
-    expect(view.getByText(/already recorded/i)).toBeTruthy();
-    await fireEvent.press(row);
+    const tile = view.getByLabelText('Swap for another exercise');
+    expect(tile.props.accessibilityState.disabled).toBe(true);
+
+    await fireEvent.press(tile);
     expect(onSwap).not.toHaveBeenCalled();
+    expect(view.getByText(/already recorded/i)).toBeTruthy();
+  });
+
+  /** ...and one tile collects every reason at once. */
+  it('lists every reason behind the Why tile', async () => {
+    const view = await renderActions({
+      exercise: exercise({sets: [done(1), set(2), set(3)]}),
+      isFirst: true,
+    });
+    await fireEvent.press(view.getByLabelText('Why are some greyed out?'));
+    expect(view.getByText(/Swap for another exercise —/)).toBeTruthy();
+    expect(view.getByText(/Move up — Already first/)).toBeTruthy();
+  });
+
+  it('says so when nothing is greyed out', async () => {
+    const view = await renderActions({
+      exercise: exercise({plannedExerciseId: null, sets: [set(1), set(2)]}),
+      set: set(1, {isUnplanned: true}),
+    });
+    expect(view.getByText('Everything here is available')).toBeTruthy();
   });
 
   // U8. Erasing a planned exercise would shrink the denominator of "% of plan".
   it('refuses to remove a planned exercise, and says to skip it', async () => {
     const view = await renderActions();
-    const row = view.getByLabelText('Remove from this workout');
-    expect(row.props.accessibilityState.disabled).toBe(true);
+    const tile = view.getByLabelText('Remove from this workout');
+    expect(tile.props.accessibilityState.disabled).toBe(true);
+    await fireEvent.press(tile);
     expect(view.getByText(/This exercise is in the plan/i)).toBeTruthy();
   });
 
@@ -162,9 +189,12 @@ describe('ExerciseActions', () => {
     const view = await renderActions({
       exercise: exercise({sets: [done(1), done(2), done(3)]}),
     });
-    const row = view.getByLabelText('Finish this exercise');
-    expect(row.props.accessibilityState.disabled).toBe(true);
-    expect(view.getByText('Every set is already decided')).toBeTruthy();
+    const tile = view.getByLabelText('Finish this exercise');
+    expect(tile.props.accessibilityState.disabled).toBe(true);
+    await fireEvent.press(tile);
+    expect(
+      view.getByText('Finish this exercise — Every set is already decided'),
+    ).toBeTruthy();
   });
 
   it('names the note action for what it will do', async () => {
@@ -184,8 +214,9 @@ describe('ExerciseActions', () => {
    */
   it('refuses to remove a planned set, and says to skip it', async () => {
     const view = await renderActions();
-    const row = view.getByLabelText('Remove set 1');
-    expect(row.props.accessibilityState.disabled).toBe(true);
+    const tile = view.getByLabelText('Remove set 1');
+    expect(tile.props.accessibilityState.disabled).toBe(true);
+    await fireEvent.press(tile);
     expect(view.getByText(/This set is in the plan/i)).toBeTruthy();
   });
 

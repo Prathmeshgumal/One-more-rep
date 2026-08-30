@@ -309,7 +309,8 @@ describe('SessionScreen', () => {
       await fireEvent.press(
         await view.findByLabelText('Actions for Bench Press'),
       );
-      expect(await view.findByText('Add a set')).toBeTruthy();
+      // The tile prints "Add set"; the whole sentence is what it announces.
+      expect(await view.findByLabelText('Add a set')).toBeTruthy();
     });
 
     it('opens the peek', async () => {
