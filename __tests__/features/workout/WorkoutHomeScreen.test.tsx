@@ -79,7 +79,10 @@ describe('WorkoutHomeScreen', () => {
   const planToday = async () => {
     await createPlan(ctx.db);
     await editPlan(ctx.db, d =>
-      addExercises(renameDay(d, today(), 'Push Day'), today(), ['bench', 'fly']),
+      addExercises(renameDay(d, today(), 'Push Day'), today(), [
+        'bench',
+        'fly',
+      ]),
     );
   };
 
@@ -208,8 +211,14 @@ describe('WorkoutHomeScreen', () => {
       await planToday();
       const session = await startWorkout(ctx.db);
       const sets = session.exercises[0]!.sets;
-      await completeSet(ctx.db, sets[0]!.id, {actualReps: 10, actualWeight: 30});
-      await completeSet(ctx.db, sets[1]!.id, {actualReps: 12, actualWeight: 30});
+      await completeSet(ctx.db, sets[0]!.id, {
+        actualReps: 10,
+        actualWeight: 30,
+      });
+      await completeSet(ctx.db, sets[1]!.id, {
+        actualReps: 12,
+        actualWeight: 30,
+      });
       await finishWorkout(ctx.db, session.id);
     };
 

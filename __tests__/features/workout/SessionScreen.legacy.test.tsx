@@ -84,7 +84,10 @@ describe.skip('SessionScreen (legacy, replaced by the focus flow)', () => {
     );
     await createPlan(ctx.db);
     await editPlan(ctx.db, d =>
-      addExercises(renameDay(d, today(), 'Push Day'), today(), ['bench', 'fly']),
+      addExercises(renameDay(d, today(), 'Push Day'), today(), [
+        'bench',
+        'fly',
+      ]),
     );
     // A real target weight, so the pre-fill has something to pre-fill from.
     // addExercises defaults to 3 x 10 with no weight, which would make every
@@ -373,7 +376,9 @@ describe.skip('SessionScreen (legacy, replaced by the focus flow)', () => {
   it('reopens a skipped set when it is tapped', async () => {
     const view = await renderScreen();
     await fireEvent.press(await view.findByText('Skip set'));
-    await waitFor(async () => expect((await sets())[0]!.status).toBe('skipped'));
+    await waitFor(async () =>
+      expect((await sets())[0]!.status).toBe('skipped'),
+    );
 
     await fireEvent.press(view.getByLabelText('Edit set 1'));
     await waitFor(() =>
@@ -389,9 +394,7 @@ describe.skip('SessionScreen (legacy, replaced by the focus flow)', () => {
   it('reopens a recorded set so a wrong number can be corrected', async () => {
     const view = await renderScreen();
     await fireEvent.press(await view.findByLabelText('Complete set'));
-    await waitFor(async () =>
-      expect((await sets())[0]!.actualWeight).toBe(30),
-    );
+    await waitFor(async () => expect((await sets())[0]!.actualWeight).toBe(30));
 
     await fireEvent.press(view.getByLabelText('Edit set 1'));
     await waitFor(() => expect(view.getByLabelText('Weight')).toBeTruthy());
@@ -409,16 +412,16 @@ describe.skip('SessionScreen (legacy, replaced by the focus flow)', () => {
   it('goes back to the first pending set once the correction is saved', async () => {
     const view = await renderScreen();
     await fireEvent.press(await view.findByLabelText('Complete set'));
-    await waitFor(async () => expect((await sets())[0]!.status).toBe('completed'));
+    await waitFor(async () =>
+      expect((await sets())[0]!.status).toBe('completed'),
+    );
 
     await fireEvent.press(view.getByLabelText('Edit set 1'));
     await waitFor(() => expect(view.queryByLabelText('Edit set 1')).toBeNull());
     await fireEvent.press(view.getByLabelText('Complete set'));
 
     // Set 2 is active again, not set 1 forever.
-    await waitFor(() =>
-      expect(view.getByLabelText('Edit set 1')).toBeTruthy(),
-    );
+    await waitFor(() => expect(view.getByLabelText('Edit set 1')).toBeTruthy());
     expect(view.getAllByLabelText('Complete set')).toHaveLength(1);
   });
 
@@ -448,7 +451,9 @@ describe.skip('SessionScreen (legacy, replaced by the focus flow)', () => {
   it('finishing a part-done exercise records it as completed', async () => {
     const view = await renderScreen();
     await fireEvent.press(await view.findByLabelText('Complete set'));
-    await waitFor(() => expect(view.getByText('Finish this exercise')).toBeTruthy());
+    await waitFor(() =>
+      expect(view.getByText('Finish this exercise')).toBeTruthy(),
+    );
 
     await fireEvent.press(view.getByText('Finish this exercise'));
 

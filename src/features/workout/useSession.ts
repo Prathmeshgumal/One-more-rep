@@ -32,8 +32,7 @@ export function useTodaySessionQuery() {
     // Null rather than undefined: TanStack Query treats an undefined result as
     // a failed query, which would make "no workout yet" and "the database
     // threw" render identically.
-    queryFn: async () =>
-      (await getSessionForDate(db, Date.now())) ?? null,
+    queryFn: async () => (await getSessionForDate(db, Date.now())) ?? null,
     staleTime: Infinity,
   });
 }

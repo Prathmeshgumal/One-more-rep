@@ -1,6 +1,10 @@
 import React, {useState} from 'react';
 import {FlatList, StyleSheet, View} from 'react-native';
-import {useNavigation, useRoute, useFocusEffect} from '@react-navigation/native';
+import {
+  useNavigation,
+  useRoute,
+  useFocusEffect,
+} from '@react-navigation/native';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {AppText} from '@/ui/Text';
@@ -191,7 +195,9 @@ export function WorkoutExercisePickerScreen() {
                     // reading two rows in plan_versions later — that is why.
                     editPlan.mutate(
                       draft =>
-                        addExercises(draft, weekdayIndex(new Date()), [item.id]),
+                        addExercises(draft, weekdayIndex(new Date()), [
+                          item.id,
+                        ]),
                       {onSuccess: () => navigation.goBack()},
                     );
                   },

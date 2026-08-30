@@ -65,7 +65,10 @@ describe('the workout summaries', () => {
     );
     await createPlan(ctx.db);
     await editPlan(ctx.db, d =>
-      addExercises(renameDay(d, today(), 'Push Day'), today(), ['bench', 'fly']),
+      addExercises(renameDay(d, today(), 'Push Day'), today(), [
+        'bench',
+        'fly',
+      ]),
     );
     // Real targets, so set 3 below is a genuine mixed case decided by volume
     // rather than a bodyweight comparison on reps alone.
@@ -208,9 +211,7 @@ describe('the workout summaries', () => {
     // recording them as skipped.
     it('warns about what has not been recorded before finishing', async () => {
       const view = await wrap(<WorkoutCompleteScreen />);
-      expect(
-        await view.findByText(/6 sets not recorded/i),
-      ).toBeTruthy();
+      expect(await view.findByText(/6 sets not recorded/i)).toBeTruthy();
     });
 
     it('reads a session that is already finished without offering to save', async () => {

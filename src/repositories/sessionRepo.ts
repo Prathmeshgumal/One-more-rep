@@ -164,7 +164,7 @@ async function loadSession(
       substitutedFromName:
         e.substitutedFromExerciseId === null
           ? null
-          : (swappedNames.get(e.substitutedFromExerciseId) ?? null),
+          : swappedNames.get(e.substitutedFromExerciseId) ?? null,
       sets: setsByExercise.get(e.id) ?? [],
     })),
   };
@@ -320,8 +320,8 @@ async function refreshExerciseStatus(
   const status: ItemStatus = pending
     ? 'pending'
     : anyCompleted
-      ? 'completed'
-      : 'skipped';
+    ? 'completed'
+    : 'skipped';
 
   await db
     .update(performedExercises)
@@ -382,6 +382,64 @@ export async function skipSet(db: AppDatabase, setId: string): Promise<void> {
       actualReps: null,
       actualWeight: null,
       completedAt: null,
+    })
+    .where(eq(performedSets.id, setId));
+  await refreshExerciseStatus(db, set.performedExerciseId);
+}
+
+/**
+ * What a set was, before something changed it.
+ *
+ * Deliberately the whole of the mutable half of the row rather than a delta:
+ * restoring "the previous reps" would leave a set that had been skipped and
+ * then recorded sitting in an impossible state, completed with no numbers.
+ */
+export type SetSnapshot = {
+  status: ItemStatus;
+  actualReps: number | null;
+  actualWeight: number | null;
+  completedAt: number | null;
+};
+
+/** Reads a set as it stands, for an undo that has not happened yet. */
+export async function snapshotSet(
+  db: AppDatabase,
+  setId: string,
+): Promise<SetSnapshot> {
+  const row = await requireSet(db, setId);
+  return {
+    status: row.status,
+    actualReps: row.actualReps,
+    actualWeight: row.actualWeight,
+    completedAt: row.completedAt,
+  };
+}
+
+/**
+ * Puts a set back exactly as it was.
+ *
+ * The focus flow records into a screen that then leaves — the next set
+ * replaces it entirely, so the evidence of what you just did is gone before
+ * you can check it. An unreversible tap is not acceptable under those
+ * conditions, and this is what the undo behind it writes.
+ *
+ * Not the same thing as skipping or completing: those two derive a status
+ * from an intention, and this one restores whatever the status happened to
+ * be, pending included.
+ */
+export async function restoreSet(
+  db: AppDatabase,
+  setId: string,
+  snapshot: SetSnapshot,
+): Promise<void> {
+  const set = await requireSet(db, setId);
+  await db
+    .update(performedSets)
+    .set({
+      status: snapshot.status,
+      actualReps: snapshot.actualReps,
+      actualWeight: snapshot.actualWeight,
+      completedAt: snapshot.completedAt,
     })
     .where(eq(performedSets.id, setId));
   await refreshExerciseStatus(db, set.performedExerciseId);
@@ -598,7 +656,10 @@ export async function moveExercise(
   const current = await requireExercise(db, performedExerciseId);
 
   const siblings = await db
-    .select({id: performedExercises.id, orderIndex: performedExercises.orderIndex})
+    .select({
+      id: performedExercises.id,
+      orderIndex: performedExercises.orderIndex,
+    })
     .from(performedExercises)
     .where(eq(performedExercises.workoutSessionId, current.workoutSessionId))
     .orderBy(asc(performedExercises.orderIndex));
@@ -682,10 +743,7 @@ export async function addSet(
  * completed and renders as an empty card; the honest action there is to remove
  * the exercise, which the menu already offers.
  */
-export async function removeSet(
-  db: AppDatabase,
-  setId: string,
-): Promise<void> {
+export async function removeSet(db: AppDatabase, setId: string): Promise<void> {
   const set = await requireSet(db, setId);
 
   if (!set.isUnplanned) {
@@ -698,9 +756,7 @@ export async function removeSet(
     .from(performedSets)
     .where(eq(performedSets.performedExerciseId, set.performedExerciseId));
   if (siblings.length <= 1) {
-    throw new Error(
-      'An exercise needs a set. Remove the exercise instead.',
-    );
+    throw new Error('An exercise needs a set. Remove the exercise instead.');
   }
 
   await db.delete(performedSets).where(eq(performedSets.id, setId));

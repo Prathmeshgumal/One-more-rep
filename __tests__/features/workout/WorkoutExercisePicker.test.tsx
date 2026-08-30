@@ -209,14 +209,12 @@ describe('WorkoutExercisePickerScreen, adding to the plan as well', () => {
     const view = await renderScreen();
     await fireEvent.press(await view.findByLabelText('Also add to the plan'));
     await fireEvent.press(view.getByText('Parallel Bar Dip'));
-    await waitFor(async () =>
-      expect(await planNames()).toHaveLength(2),
-    );
+    await waitFor(async () => expect(await planNames()).toHaveLength(2));
 
     const after = (await getActiveSession(ctx.db))!;
-    expect(
-      after.exercises.filter(e => e.plannedExerciseId !== null),
-    ).toEqual(plannedBefore);
+    expect(after.exercises.filter(e => e.plannedExerciseId !== null)).toEqual(
+      plannedBefore,
+    );
   });
 
   it('in swap mode, replaces rather than appends', async () => {

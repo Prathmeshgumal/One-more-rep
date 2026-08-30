@@ -227,12 +227,12 @@ line below is ticked.
 | opens on the first exercise that still has a pending set | 2.2 ✅ |
 | realigns when the screen is focused again | 2.2 ✅ |
 | leaves the workout when closed | 2.2 ✅ |
-| writes the actuals when the set is completed | 3.2 |
-| advances to the next set once one is recorded | 3.2 |
-| shows a recorded set with its verdict | 3.2 |
-| does not move focus out from under a recorded set | 3.2 |
-| skips a set without recording anything | 3.4 |
-| reopens a skipped set when it is tapped | 3.4 |
+| writes the actuals when the set is completed | 3.2 ✅ |
+| advances to the next set once one is recorded | 3.2 ✅ |
+| shows a recorded set with its verdict | 4.1 — the peek and the rail carry it |
+| does not move focus out from under a recorded set | 3.2 ✅ |
+| skips a set without recording anything | 3.4 ✅ |
+| reopens a skipped set when it is tapped | 3.4 ✅ |
 | adds a bonus set with no target | 4.2 |
 | removes a bonus set added by mistake | 4.2 |
 | offers no way to remove a planned set | 4.2 |

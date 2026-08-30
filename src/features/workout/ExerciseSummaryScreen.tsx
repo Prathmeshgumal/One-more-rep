@@ -63,7 +63,9 @@ export function ExerciseSummaryScreen() {
     const comparison = compareSet(set);
     return {
       setNumber: set.setNumber,
-      target: set.isUnplanned ? 'bonus' : pair(set.targetReps, set.targetWeight),
+      target: set.isUnplanned
+        ? 'bonus'
+        : pair(set.targetReps, set.targetWeight),
       actual: pair(set.actualReps, set.actualWeight),
       result:
         comparison.status === 'skipped'
@@ -131,8 +133,8 @@ export function ExerciseSummaryScreen() {
                 volumeGap === null || volumeGap === 0
                   ? 'ink'
                   : volumeGap > 0
-                    ? 'gain'
-                    : 'short'
+                  ? 'gain'
+                  : 'short'
               }>
               {volumeGap === null
                 ? '—'

@@ -144,7 +144,11 @@ export function WorkoutHomeScreen() {
               {`of ${sets.length} sets recorded`}
             </AppText>
           </View>
-          <ProgressBar value={done} total={sets.length} label="Workout progress" />
+          <ProgressBar
+            value={done}
+            total={sets.length}
+            label="Workout progress"
+          />
         </View>
 
         <Button
@@ -261,8 +265,7 @@ export function WorkoutHomeScreen() {
       <View style={styles.blank}>
         <AppText variant="h2">No plan yet</AppText>
         <AppText variant="body" color="muted" style={styles.centred}>
-          Set up a weekly routine, then track what you actually lift against
-          it.
+          Set up a weekly routine, then track what you actually lift against it.
         </AppText>
         <View style={styles.fullWidth}>
           <Button
@@ -305,7 +308,7 @@ export function WorkoutHomeScreen() {
             <AppText variant="bodyStrong">
               {tomorrow.isRestDay
                 ? 'Rest day'
-                : (tomorrow.customName ?? WEEKDAY_NAMES[tomorrow.weekday]!)}
+                : tomorrow.customName ?? WEEKDAY_NAMES[tomorrow.weekday]!}
             </AppText>
             {!tomorrow.isRestDay && tomorrow.exercises.length > 0 ? (
               <AppText variant="printed" color="muted">

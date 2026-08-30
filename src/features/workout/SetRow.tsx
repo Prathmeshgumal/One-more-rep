@@ -84,8 +84,8 @@ export function SetRow({
     targetReps === null
       ? 'bonus set'
       : targetWeight === null
-        ? `target ${targetReps}`
-        : `target ${targetReps} × ${targetWeight.toFixed(1)}`;
+      ? `target ${targetReps}`
+      : `target ${targetReps} × ${targetWeight.toFixed(1)}`;
 
   const comparison = compareSet({
     targetReps,
@@ -113,7 +113,7 @@ export function SetRow({
    */
   const ghosting = !isActive;
   const shownWeight =
-    actualWeight ?? (ghosting ? (targetWeight ?? fallbackWeight ?? null) : null);
+    actualWeight ?? (ghosting ? targetWeight ?? fallbackWeight ?? null : null);
   const shownReps = actualReps ?? (ghosting ? targetReps : null);
 
   const editable = done && onEdit !== undefined;
@@ -249,8 +249,8 @@ export function SetRow({
               isUnplanned
                 ? 'Bonus'
                 : comparison.status === 'achieved'
-                  ? 'Achieved'
-                  : describeComparison(comparison, unit)
+                ? 'Achieved'
+                : describeComparison(comparison, unit)
             }
           />
         ) : null}

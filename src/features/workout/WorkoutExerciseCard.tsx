@@ -90,8 +90,8 @@ export function WorkoutExerciseCard({
   const verdict = !finished
     ? null
     : exercise.status === 'skipped'
-      ? ('skipped' as const)
-      : aggregate.status;
+    ? ('skipped' as const)
+    : aggregate.status;
 
   return (
     <View
@@ -182,9 +182,9 @@ export function WorkoutExerciseCard({
                 setNumber={set.setNumber}
                 targetReps={set.targetReps}
                 targetWeight={set.targetWeight}
-                actualReps={isActive ? (activeReps ?? null) : set.actualReps}
+                actualReps={isActive ? activeReps ?? null : set.actualReps}
                 actualWeight={
-                  isActive ? (activeWeight ?? null) : set.actualWeight
+                  isActive ? activeWeight ?? null : set.actualWeight
                 }
                 status={set.status}
                 isUnplanned={set.isUnplanned}
@@ -335,7 +335,12 @@ const styles = StyleSheet.create({
   headerText: {flex: 1, gap: 2},
   headerMeta: {alignItems: 'flex-end', gap: space.xs},
   body: {paddingHorizontal: space.md, paddingBottom: space.md, gap: space.sm},
-  more: {position: 'absolute', top: space.sm, right: space.sm, padding: space.sm},
+  more: {
+    position: 'absolute',
+    top: space.sm,
+    right: space.sm,
+    padding: space.sm,
+  },
   note: {
     borderWidth: 1,
     borderRadius: radius.sm,

@@ -2,10 +2,7 @@ import React from 'react';
 import {render, fireEvent} from '@testing-library/react-native';
 import {ThemeProvider} from '@/theme';
 import {ExerciseActions} from '@/features/workout/ExerciseActions';
-import type {
-  SessionExercise,
-  SessionSet,
-} from '@/repositories/sessionRepo';
+import type {SessionExercise, SessionSet} from '@/repositories/sessionRepo';
 
 const set = (n: number, over: Partial<SessionSet> = {}): SessionSet => ({
   id: `s${n}`,

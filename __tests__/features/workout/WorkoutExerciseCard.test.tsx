@@ -3,10 +3,7 @@ import {Text} from 'react-native';
 import {render, fireEvent, act} from '@testing-library/react-native';
 import {ThemeProvider} from '@/theme';
 import {WorkoutExerciseCard} from '@/features/workout/WorkoutExerciseCard';
-import type {
-  SessionExercise,
-  SessionSet,
-} from '@/repositories/sessionRepo';
+import type {SessionExercise, SessionSet} from '@/repositories/sessionRepo';
 
 const set = (n: number, over: Partial<SessionSet> = {}): SessionSet => ({
   id: `s${n}`,
@@ -39,7 +36,9 @@ const exercise = (over: Partial<SessionExercise> = {}): SessionExercise => ({
 const done = (n: number) =>
   set(n, {status: 'completed', actualReps: 10, actualWeight: 60});
 
-const renderCard = (props: Partial<React.ComponentProps<typeof WorkoutExerciseCard>> = {}) =>
+const renderCard = (
+  props: Partial<React.ComponentProps<typeof WorkoutExerciseCard>> = {},
+) =>
   render(
     <ThemeProvider>
       <WorkoutExerciseCard

@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {Pressable, StyleSheet, View} from 'react-native';
 import {useNavigation, useFocusEffect} from '@react-navigation/native';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
@@ -8,15 +8,26 @@ import {useTheme, space, radius} from '@/theme';
 import {useSettingsQuery} from '@/features/settings/useSettings';
 import type {WorkoutStackParamList} from '@/navigation/types';
 import {FocusSet, type FocusMode} from './FocusSet';
+import {FocusActions} from './FocusActions';
+import {UndoBanner} from './UndoBanner';
 import {SetRail} from './SetRail';
 import {useActiveSet} from './useActiveSet';
 import {
   flattenSets,
   firstPendingIndex,
+  nextPendingAfter,
   recordedCount,
   type SetCursor,
 } from './sessionCursor';
-import {useTodaySessionQuery, usePreviousPerformanceQuery} from './useSession';
+import {
+  useTodaySessionQuery,
+  usePreviousPerformanceQuery,
+  useCompleteSet,
+  useSkipSet,
+} from './useSession';
+import {useRestoreSet} from './useSessionEditing';
+import {useDatabase} from '@/providers/DatabaseGate';
+import {snapshotSet, type SetSnapshot} from '@/repositories/sessionRepo';
 
 /**
  * The workout, one set at a time.
@@ -40,10 +51,20 @@ export function SessionScreen() {
   const {data: session, isFetching} = useTodaySessionQuery();
   const {data: settings} = useSettingsQuery();
   const active = useActiveSet();
+  const db = useDatabase();
+  const complete = useCompleteSet();
+  const skip = useSkipSet();
+  const restore = useRestoreSet();
 
   const [focusIndex, setFocusIndex] = useState(0);
 
-  const cursors = session ? flattenSets(session) : [];
+  // Memoised because the record and advance callbacks close over it: a fresh
+  // array every render would rebuild them every render, and the undo timer
+  // hangs off one of them.
+  const cursors = useMemo(
+    () => (session ? flattenSets(session) : []),
+    [session],
+  );
   const cursor: SetCursor | undefined = cursors[focusIndex];
 
   const {data: previous} = usePreviousPerformanceQuery(
@@ -102,6 +123,113 @@ export function SessionScreen() {
     });
   }, [cursor, active]);
 
+  /**
+   * What the last write overwrote, so it can be put back.
+   *
+   * Held here rather than in the store: it describes this screen's last four
+   * seconds, not the set, and it must not survive leaving the workout — an
+   * Undo offered after a remount would restore a set you had long moved past.
+   */
+  const [undo, setUndo] = useState<{
+    setId: string;
+    index: number;
+    snapshot: SetSnapshot;
+    message: string;
+  } | null>(null);
+
+  const clearUndo = useCallback(() => setUndo(null), []);
+
+  const onUndo = useCallback(() => {
+    if (!undo) {
+      return;
+    }
+    const {setId, snapshot, index} = undo;
+    setUndo(null);
+    restore.mutate(
+      {setId, snapshot},
+      // Back to the set it came from, not to wherever the advance landed:
+      // undoing a record and staying on the next set would leave you looking
+      // at a different exercise than the one you just corrected.
+      {onSuccess: () => setFocusIndex(index)},
+    );
+  }, [undo, restore]);
+
+  /**
+   * Records the set, then moves to the next one still to be decided.
+   *
+   * Forward only — `nextPendingAfter` never wraps — so a set skipped on
+   * purpose stays skipped unless you go back to it deliberately.
+   */
+  const onRecord = useCallback(async () => {
+    if (!cursor) {
+      return;
+    }
+    // Read before the write, not after: this is what Undo restores.
+    const snapshot = await snapshotSet(db, cursor.set.id);
+    const weight = cursor.exercise.weightApplicable ? active.weight : null;
+    const reps = active.reps;
+    complete.mutate(
+      {setId: cursor.set.id, actualReps: reps, actualWeight: weight},
+      {
+        onSuccess: () => {
+          setUndo({
+            setId: cursor.set.id,
+            index: cursor.index,
+            snapshot,
+            message: `Set ${cursor.setNumber} recorded — ${reps} reps`,
+          });
+          const next = nextPendingAfter(cursors, cursor.index);
+          if (next !== null) {
+            setFocusIndex(next);
+          }
+        },
+      },
+    );
+  }, [cursor, cursors, db, active, complete]);
+
+  /** §21: skipped, with actuals left empty. Never pretend it happened. */
+  const onSkip = useCallback(async () => {
+    if (!cursor) {
+      return;
+    }
+    const snapshot = await snapshotSet(db, cursor.set.id);
+    skip.mutate(cursor.set.id, {
+      onSuccess: () =>
+        setUndo({
+          setId: cursor.set.id,
+          index: cursor.index,
+          snapshot,
+          message: `Set ${cursor.setNumber} skipped`,
+        }),
+    });
+  }, [cursor, db, skip]);
+
+  /** The body's own Undo, on a set that is already skipped. */
+  const onUndoSkip = useCallback(() => {
+    if (!cursor) {
+      return;
+    }
+    restore.mutate({
+      setId: cursor.set.id,
+      snapshot: {
+        status: 'pending',
+        actualReps: null,
+        actualWeight: null,
+        completedAt: null,
+      },
+    });
+  }, [cursor, restore]);
+
+  const onAdvance = useCallback(() => {
+    if (!cursor) {
+      return;
+    }
+    const next = nextPendingAfter(cursors, cursor.index);
+    if (next !== null) {
+      setFocusIndex(next);
+    }
+  }, [cursor, cursors]);
+
   if (!session || !cursor) {
     return <View style={[styles.root, {backgroundColor: colors.paper}]} />;
   }
@@ -131,6 +259,16 @@ export function SessionScreen() {
     : null;
 
   const done = recordedCount(cursors);
+
+  // Names where the primary button goes, so it can say so. Crossing into
+  // another exercise names the exercise; staying inside one names the set.
+  const nextIndex = nextPendingAfter(cursors, cursor.index);
+  const next = nextIndex === null ? null : cursors[nextIndex]!;
+  const nextLabel = !next
+    ? null
+    : next.exercise.id === cursor.exercise.id
+    ? `set ${next.setNumber}`
+    : next.exercise.name;
 
   return (
     <View
@@ -179,10 +317,10 @@ export function SessionScreen() {
         previousLabel={previousLabel}
         onStepReps={active.stepReps}
         onStepWeight={active.stepWeight}
-        onUndoSkip={() => undefined}
+        onUndoSkip={onUndoSkip}
       />
 
-      <View style={[styles.hints, {paddingBottom: insets.bottom + space.sm}]}>
+      <View style={styles.hints}>
         <AppText variant="monoSmall" color="faint">
           {focusIndex > 0 ? `← set ${cursors[focusIndex - 1]!.setNumber}` : ' '}
         </AppText>
@@ -192,6 +330,37 @@ export function SessionScreen() {
             : ' '}
         </AppText>
       </View>
+
+      <View style={{paddingBottom: insets.bottom}}>
+        <FocusActions
+          mode={mode}
+          reps={active.reps}
+          weight={active.weight}
+          unit={unit}
+          weightApplicable={cursor.exercise.weightApplicable}
+          nextLabel={nextLabel}
+          busy={complete.isPending || skip.isPending || restore.isPending}
+          onRecord={onRecord}
+          onSkip={onSkip}
+          onSaveAmendment={onRecord}
+          onCancelAmendment={onAdvance}
+          onAdvance={onAdvance}
+        />
+      </View>
+
+      {undo ? (
+        // Keyed on the message: recording a second set inside the window
+        // restarts the timer against the new one rather than inheriting
+        // whatever was left of the old one's four seconds.
+        <View style={[styles.undo, {top: insets.top + 52}]}>
+          <UndoBanner
+            key={undo.message}
+            message={undo.message}
+            onUndo={onUndo}
+            onExpire={clearUndo}
+          />
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -217,5 +386,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingHorizontal: space.xl,
+    paddingBottom: space.sm,
   },
+  undo: {position: 'absolute', left: 0, right: 0},
 });

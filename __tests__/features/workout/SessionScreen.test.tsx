@@ -1,5 +1,5 @@
 import React from 'react';
-import {render, fireEvent, act} from '@testing-library/react-native';
+import {render, fireEvent, act, waitFor} from '@testing-library/react-native';
 import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
 import {NavigationContainer} from '@react-navigation/native';
 import {sql} from 'drizzle-orm';
@@ -214,5 +214,160 @@ describe('SessionScreen', () => {
     const view = await renderScreen();
     await fireEvent.press(await view.findByLabelText('Close workout'));
     expect(mockGoBack).toHaveBeenCalled();
+  });
+
+  describe('recording', () => {
+    // The button states its consequence rather than showing a bare tick,
+    // because the screen it was pressed on is about to be replaced.
+    it('names what it is about to write', async () => {
+      const view = await renderScreen();
+      expect(await view.findByLabelText('Record 10 × 30 kg')).toBeTruthy();
+    });
+
+    it('writes the actuals when the set is recorded', async () => {
+      const view = await renderScreen();
+      await fireEvent.press(await view.findByLabelText('Record 10 × 30 kg'));
+      await waitFor(async () => {
+        const first = (await sets())[0]!;
+        expect(first.status).toBe('completed');
+        expect(first.actualReps).toBe(10);
+        expect(first.actualWeight).toBe(30);
+      });
+    });
+
+    it('advances to the next set once one is recorded', async () => {
+      const view = await renderScreen();
+      await fireEvent.press(await view.findByLabelText('Record 10 × 30 kg'));
+      expect(
+        await view.findByText('Exercise 1 of 2 · set 2 of 3'),
+      ).toBeTruthy();
+    });
+
+    it('crosses into the next exercise when this one is done', async () => {
+      const session = (await getActiveSession(ctx.db))!;
+      for (const s of session.exercises[0]!.sets.slice(0, 2)) {
+        await completeSet(ctx.db, s.id, {actualReps: 10, actualWeight: 30});
+      }
+      const view = await renderScreen();
+      await view.findByText('Exercise 1 of 2 · set 3 of 3');
+      await fireEvent.press(view.getByLabelText('Record 10 × 30 kg'));
+      expect(await view.findByText('Cable Fly')).toBeTruthy();
+    });
+
+    // A bodyweight movement has no weight to record, and writing a zero would
+    // invent a load nobody lifted (§26).
+    it('writes no weight for a bodyweight movement', async () => {
+      await ctx.db.run(
+        sql`UPDATE exercises SET weight_applicable = 0 WHERE id = 'bench'`,
+      );
+      const view = await renderScreen();
+      await fireEvent.press(await view.findByLabelText('Record 10 reps'));
+      await waitFor(async () => {
+        expect((await sets())[0]!.actualWeight).toBeNull();
+      });
+    });
+
+    it('says where it is going next', async () => {
+      const view = await renderScreen();
+      await view.findByText('Bench Press');
+      expect(view.getByText('then set 2')).toBeTruthy();
+    });
+
+    // Crossing an exercise boundary names the exercise, not the set number --
+    // "then set 1" would be true and useless.
+    it('names the exercise when the next set is in a different one', async () => {
+      const session = (await getActiveSession(ctx.db))!;
+      for (const s of session.exercises[0]!.sets.slice(0, 2)) {
+        await completeSet(ctx.db, s.id, {actualReps: 10, actualWeight: 30});
+      }
+      const view = await renderScreen();
+      await view.findByText('Exercise 1 of 2 · set 3 of 3');
+      expect(view.getByText('then Cable Fly')).toBeTruthy();
+    });
+  });
+
+  describe('skipping', () => {
+    // §21: skipped, with actuals left empty. Never pretend it happened.
+    it('records nothing when a set is skipped', async () => {
+      const view = await renderScreen();
+      await fireEvent.press(await view.findByLabelText('Skip'));
+      await waitFor(async () => {
+        const first = (await sets())[0]!;
+        expect(first.status).toBe('skipped');
+        expect(first.actualReps).toBeNull();
+      });
+    });
+
+    // Skipping stays on the set rather than moving on, so the decision is
+    // visible and can be taken back in one tap.
+    it('stays on the skipped set and offers to undo it', async () => {
+      const view = await renderScreen();
+      await fireEvent.press(await view.findByLabelText('Skip'));
+      expect(await view.findByText('Skipped')).toBeTruthy();
+      expect(view.getByLabelText('Undo skip')).toBeTruthy();
+      expect(view.getByText('Exercise 1 of 2 · set 1 of 3')).toBeTruthy();
+    });
+
+    it('puts a skipped set back when the skip is undone', async () => {
+      const view = await renderScreen();
+      await fireEvent.press(await view.findByLabelText('Skip'));
+      await fireEvent.press(await view.findByLabelText('Undo skip'));
+      await waitFor(async () => {
+        expect((await sets())[0]!.status).toBe('pending');
+      });
+    });
+
+    it('offers no skip on a set that is already decided', async () => {
+      const session = (await getActiveSession(ctx.db))!;
+      await completeSet(ctx.db, session.exercises[0]!.sets[0]!.id, {
+        actualReps: 10,
+        actualWeight: 30,
+      });
+      const view = await renderScreen();
+      await view.findByText('Bench Press');
+      await fireEvent.press(view.getByLabelText('Go to set 1 of Bench Press'));
+      expect(view.queryByLabelText('Skip')).toBeNull();
+    });
+  });
+
+  describe('undo', () => {
+    it('offers to take back the set it just wrote', async () => {
+      const view = await renderScreen();
+      await fireEvent.press(await view.findByLabelText('Record 10 × 30 kg'));
+      expect(await view.findByText('Set 1 recorded — 10 reps')).toBeTruthy();
+    });
+
+    it('puts the set back exactly as it was', async () => {
+      const view = await renderScreen();
+      await fireEvent.press(await view.findByLabelText('Record 10 × 30 kg'));
+      await fireEvent.press(await view.findByLabelText('Undo'));
+      await waitFor(async () => {
+        const first = (await sets())[0]!;
+        expect(first.status).toBe('pending');
+        expect(first.actualReps).toBeNull();
+        expect(first.completedAt).toBeNull();
+      });
+    });
+
+    /**
+     * Undoing has to return you to the set it came from. Staying on the set
+     * the advance landed on would leave you looking at a different exercise
+     * from the one you just put back.
+     */
+    it('returns to the set it came from', async () => {
+      const view = await renderScreen();
+      await fireEvent.press(await view.findByLabelText('Record 10 × 30 kg'));
+      await view.findByText('Exercise 1 of 2 · set 2 of 3');
+      await fireEvent.press(await view.findByLabelText('Undo'));
+      expect(
+        await view.findByText('Exercise 1 of 2 · set 1 of 3'),
+      ).toBeTruthy();
+    });
+
+    it('offers to take back a skip too', async () => {
+      const view = await renderScreen();
+      await fireEvent.press(await view.findByLabelText('Skip'));
+      expect(await view.findByText('Set 1 skipped')).toBeTruthy();
+    });
   });
 });
