@@ -139,6 +139,63 @@ describe('DayDetailScreen', () => {
     expect(view.getByText(/780 kg total volume/)).toBeTruthy();
   });
 
+  /**
+   * Start-to-Save ran from whenever the app was opened to whenever it was
+   * closed, so it counted changing, warming up and the drive home. The sets
+   * carry their own timestamps and nothing used to read them.
+   */
+  describe('the timing line', () => {
+    /** Sets at +5:00, +6:30 and +8:00; the session saved 30 minutes in. */
+    const trainOnAClock = async () => {
+      const start = TRAINED + 9 * 3600_000;
+      const session = await startWorkout(ctx.db, {now: start});
+      const sets = session.exercises[0]!.sets;
+      await completeSet(
+        ctx.db,
+        sets[0]!.id,
+        {actualReps: 10, actualWeight: 30},
+        {now: start + 5 * 60_000},
+      );
+      await completeSet(
+        ctx.db,
+        sets[1]!.id,
+        {actualReps: 12, actualWeight: 30},
+        {now: start + 6.5 * 60_000},
+      );
+      await completeSet(
+        ctx.db,
+        sets[2]!.id,
+        {actualReps: 12, actualWeight: 30},
+        {now: start + 8 * 60_000},
+      );
+      await finishWorkout(ctx.db, session.id, {now: start + 30 * 60_000});
+    };
+
+    it('leads with the span the sets were actually lifted across', async () => {
+      await trainOnAClock();
+      const view = await renderScreen();
+      await view.findByText('Push Day');
+      expect(view.getByText(/3 min lifting/)).toBeTruthy();
+    });
+
+    it('keeps start-to-save as the wider figure beside it', async () => {
+      await trainOnAClock();
+      const view = await renderScreen();
+      await view.findByText('Push Day');
+      expect(view.getByText(/30 min in the gym/)).toBeTruthy();
+    });
+
+    // Both gaps are 90 seconds, which whole-minute rounding would call
+    // "2 min" — the same answer it gives for 148 seconds. This is what
+    // formatRest exists for.
+    it('reports the typical rest between sets', async () => {
+      await trainOnAClock();
+      const view = await renderScreen();
+      await view.findByText('Push Day');
+      expect(view.getByText(/90 s typical rest/)).toBeTruthy();
+    });
+  });
+
   it('lays every exercise out as a ledger of target against actual', async () => {
     await trainWithAGap();
     const view = await renderScreen();

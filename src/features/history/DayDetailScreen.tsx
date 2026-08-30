@@ -11,7 +11,8 @@ import {space} from '@/theme';
 import {compareSet, describeComparison} from '@/domain/setComparison';
 import {sessionVolume} from '@/domain/sessionProgress';
 import {formatLongDate} from '@/domain/dateLabels';
-import {formatDuration, groupDigits} from '@/domain/format';
+import {formatDuration, formatRest, groupDigits} from '@/domain/format';
+import {sessionTiming} from '@/domain/sessionTiming';
 import type {ResolvedDay} from '@/domain/dayResolver';
 import type {Session} from '@/repositories/sessionRepo';
 import {useSettingsQuery} from '@/features/settings/useSettings';
@@ -31,12 +32,36 @@ const pair = (reps: number | null, weight: number | null): string => {
   return weight === null ? `${reps}` : `${reps} × ${weight.toFixed(1)}`;
 };
 
-/** The one line under the heading: how long it took, and how much moved. */
+/**
+ * The one line under the heading: how long it took, and how much moved.
+ *
+ * The working span leads, because it is the honest one. Start-to-Save runs
+ * from whenever you opened the app to whenever you remembered to close it —
+ * it counted changing, warming up and the drive home — so it keeps its place
+ * only as the wider figure beside the span you were actually lifting across.
+ *
+ * A session abandoned overnight never gets a `completedAt`, and used to show
+ * no duration at all. Its sets still carry theirs.
+ */
 function subtitleFor(session: Session, unit: string): string {
+  const timing = sessionTiming(session);
   const parts: string[] = [];
-  if (session.completedAt !== null) {
-    parts.push(formatDuration(session.completedAt - session.startedAt));
+
+  if (timing.working !== null) {
+    parts.push(`${formatDuration(timing.working)} lifting`);
+    if (timing.total !== null) {
+      parts.push(`${formatDuration(timing.total)} in the gym`);
+    }
+  } else if (timing.total !== null) {
+    parts.push(formatDuration(timing.total));
   }
+
+  // The number that can change how you train, and it was already in the
+  // database. Median, so one trip to the water fountain cannot move it.
+  if (timing.medianRest !== null) {
+    parts.push(`${formatRest(timing.medianRest)} typical rest`);
+  }
+
   const volume = sessionVolume(session.exercises);
   if (volume > 0) {
     parts.push(`${groupDigits(volume)} ${unit} total volume`);

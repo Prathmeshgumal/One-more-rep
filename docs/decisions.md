@@ -527,6 +527,71 @@ ledger says so by staying empty rather than by claiming you lifted nought.
 
 ---
 
+## D32 · Time, measured from the sets rather than the buttons
+
+The only duration in the app was `completedAt - startedAt`: from pressing
+Start to pressing Save. That measures the wrong thing at both ends — changing,
+warming up, and however long it took to remember to close the app — and it
+showed **nothing at all** for a session abandoned overnight, because an
+abandoned session never gets a `completedAt`.
+
+Every recorded set already carried its own timestamp, and nothing read the
+column. `sessionTiming` reads it:
+
+- **working** — first recorded set to last. Immune to both ends, and it
+  survives a session that was never saved. It understates by roughly one set,
+  because a set is stamped when you press Record, which is after you did it;
+  nothing recovers that without a timer nobody starts mid-set.
+- **medianRest** — the middle gap. Median, not mean: one trip to the water
+  fountain drags a mean anywhere it likes.
+- **longestRest** — so that trip stays visible rather than being smoothed away.
+- **total** — kept, as the wider figure beside the span.
+
+**Timestamps are sorted, not taken in row order.** Set 3 can be recorded before
+set 2 — the rail, the peek and the edge taps all allow it — and a span taken
+from the first and last rows comes out negative.
+
+**No threshold.** Discarding rests over some cutoff would give a tidier
+"active time" and would require inventing a number for what counts as leaving
+the floor; fifteen minutes is a long rest for one person and a normal one for
+someone doing heavy singles. A visible twenty-minute gap is more honest than a
+tidy figure that deleted it.
+
+`formatRest` keeps seconds under two minutes. 92 s and 148 s are both "2 min"
+to `formatDuration`, and the difference between them is the entire reason to
+look.
+
+---
+
+## D33 · A correction must not move when the work happened
+
+`completeSet` wrote `completedAt: Date.now()` on every call, amendments
+included — so correcting Tuesday's set 2 on Thursday stamped Thursday onto
+Tuesday's workout. The act of fixing a typo destroyed the only evidence of
+when the set was performed.
+
+It keeps whatever is already there. A set recorded for the first time, or one
+returning from skipped, has nothing to keep and takes `now`.
+
+Found while designing D32, which is the point: nothing read the column, so
+nothing caught it. A field written by one path and read by none has no
+feedback loop at all, and this one had been wrong since it was added.
+
+---
+
+## D34 · Skipping moves on
+
+Skip left you standing on the set you had just skipped, with the primary
+button offering "Go to Cable Fly". Leaving a set behind took two taps, and the
+second asked a question the first had answered. Reported from the phone.
+
+It now advances on the same rule as recording — forward to the next undecided
+set, the finish sheet when there is none. The four-second Undo is the way
+back, and the skipped set stays reachable from the rail, the peek and the edge
+taps, where it still offers the full `Undo skip`.
+
+---
+
 ## Outstanding
 
 **The device walk for v3.** D30's sync is verified against 14 repository tests
