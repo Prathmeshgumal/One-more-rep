@@ -365,3 +365,47 @@ at 150.
 pressable produced several identical "Correct set 1" buttons with nothing to
 tell them apart. Found by a test that could not disambiguate them either — the
 test failure and the accessibility flaw were the same bug.
+
+---
+
+## D25 · The tab bar is hidden during a workout, from the tab navigator
+
+**Decided:** `tabBarStyle: {display: 'none'}` when the focused child route is
+`Session`.
+
+**Why:** the bar is 65dp of the one third of the screen a thumb reaches
+comfortably, and nothing on it can be used mid-set. All it offered during a
+workout was a way to fall out of one by mis-tapping. The ✕ in the session header
+is the way out.
+
+**Read off the focused route rather than declared on the stack screen:**
+`tabBarStyle` belongs to the tab navigator, and a nested native-stack screen
+cannot set it — TypeScript refused the first attempt, correctly.
+
+---
+
+## D26 · What was deleted, and what was checked first
+
+**Deleted:** `WorkoutExerciseCard.tsx`, `SetRow.tsx`, `WorkoutCompleteScreen.tsx`,
+`ExerciseSummaryScreen.tsx`, and the two test files that covered them.
+
+**Checked before deleting:** the image export the finish screen carried also
+lives on `DayDetailScreen`; every one of the legacy suite's 33 behaviours was
+ticked off the plan's table first. 30 were restored through the new controls,
+one was dropped because nothing expands any more, one became moot because every
+set is now reachable, and one moved to the finish sheet.
+
+**The legacy test file was kept skipped for four phases** precisely so this
+could be checked rather than assumed. A deleted test is a behaviour nobody
+remembers losing.
+
+---
+
+## Outstanding
+
+**The device walk.** Everything above is verified against jsdom and a release
+bundle that builds. The 112px numeral, the rail's tick widths and every sheet
+height are things that only really answer on glass, and the last time this app
+changed shape six bugs were found by running it on hardware that ~700 tests had
+missed. Nothing is finished until a real session has been walked start → save →
+correct on the phone.

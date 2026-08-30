@@ -12,6 +12,15 @@ and make a workout editable after it has been saved.
 
 **Branch:** `focus-workout-flow`. Commit after every task.
 
+**Status: phases 0–7 complete and committed.** 759 tests pass with none
+skipped, typecheck and lint are clean, the release bundle builds, and the
+migration-safety suite still holds. The one thing outstanding is the device
+walk — a real session start → save → correct on the phone, which is where six
+bugs were caught the last time this app changed shape.
+
+The decisions taken along the way, with their reasons, are in
+`docs/decisions.md`.
+
 ---
 
 ## Naming

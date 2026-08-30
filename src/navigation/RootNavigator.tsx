@@ -1,5 +1,6 @@
 import React from 'react';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
+import {getFocusedRouteNameFromRoute} from '@react-navigation/native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {WorkoutStack} from './WorkoutStack';
 import {SettingsStack} from './SettingsStack';
@@ -34,13 +35,28 @@ export function RootNavigator() {
         headerShown: false,
         tabBarActiveTintColor: colors.plate,
         tabBarInactiveTintColor: colors.faint,
-        tabBarStyle: {
-          backgroundColor: colors.surface,
-          borderTopColor: colors.rule,
-          height: 62 + bottom,
-          paddingTop: 10,
-          paddingBottom: bottom,
-        },
+        /**
+         * Hidden while a workout is open.
+         *
+         * The bar is 65dp of the one third of the screen a thumb reaches
+         * comfortably, and nothing on it can be used mid-set — all it offered
+         * during a workout was a way to fall out of one by mis-tapping. The ✕
+         * in the session header is the way out.
+         *
+         * Read off the focused child rather than declared on the stack screen:
+         * tabBarStyle belongs to this navigator, and a nested native-stack
+         * screen cannot set it.
+         */
+        tabBarStyle:
+          getFocusedRouteNameFromRoute(route) === 'Session'
+            ? {display: 'none' as const}
+            : {
+                backgroundColor: colors.surface,
+                borderTopColor: colors.rule,
+                height: 62 + bottom,
+                paddingTop: 10,
+                paddingBottom: bottom,
+              },
         tabBarLabelStyle: {
           fontFamily: font.sansSemi,
           fontSize: 10,
