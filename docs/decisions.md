@@ -324,3 +324,44 @@ add.
 
 **Checked before deleting:** the image export it shared with the finish screen
 also lives on `DayDetailScreen`, so nothing was lost with them.
+
+---
+
+## D23 · A saved workout is corrected in place, not reopened
+
+**Decided:** tapping a set row on a finished day opens `AmendSetSheet`. The
+session stays `completed` throughout.
+
+**Why:** this is the feature asked for at the start — "the user must also be
+able to edit the workout even after saving it". Nothing in the data model was
+ever stopping it: `completeSet` overwrites regardless of session status, and
+always has. Only the screens declined to offer it.
+
+**Reopening was the alternative and was rejected as the *first* step.** It is
+more powerful — you could undo a skip, add an exercise — but it introduces a day
+that is finished and then is not, which the adherence figures, the calendar and
+the day resolver all read. Correction in place covers the real case (a wrong
+number) and costs no new states.
+
+**The bigger jobs are still reachable:** `Edit workout` opens the focus screen
+on the saved session, where every set is already in amend mode because every set
+is `completed`. That fell out of the design rather than needing to be built.
+
+**"Mark as skipped" rather than a delete**, for a set recorded that should not
+have been: deleting it would shrink the denominator and flatter the workout,
+which is the same asymmetry as D16.
+
+**Both screens, not one.** The day detail matters more than the workout home
+here — a mistake is noticed days later, looking back, not with your heart rate
+at 150.
+
+---
+
+## D24 · `LedgerTable` rows take a caption
+
+**Decided:** an optional `caption` folded into each row's accessibility label.
+
+**Why:** the day-detail screen draws one table per exercise, so making rows
+pressable produced several identical "Correct set 1" buttons with nothing to
+tell them apart. Found by a test that could not disambiguate them either — the
+test failure and the accessibility flaw were the same bug.

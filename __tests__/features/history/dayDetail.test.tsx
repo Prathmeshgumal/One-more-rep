@@ -149,6 +149,49 @@ describe('DayDetailScreen', () => {
     expect(view.getByText('+2 reps')).toBeTruthy();
   });
 
+  /**
+   * This screen is where a mistake is actually noticed — days later, looking
+   * back. Nobody spots a typo with their heart rate at 150, so making the
+   * table correctable here matters more than making it correctable mid-set.
+   */
+  it('corrects a set recorded days ago', async () => {
+    await trainWithAGap();
+    const view = await renderScreen();
+    await view.findByText('Push Day');
+
+    await fireEvent.press(
+      view.getByLabelText('Correct set 1 of Machine Chest Press'),
+    );
+    expect(await view.findByText(/Machine Chest Press · set 1/)).toBeTruthy();
+    expect(view.getByText(/recorded as 10/)).toBeTruthy();
+
+    await fireEvent.press(view.getByLabelText('Increase Reps'));
+    await fireEvent.press(view.getByText('Save change'));
+
+    await waitFor(async () => {
+      const after = (await getSessionForDate(ctx.db, TRAINED))!;
+      expect(after.exercises[0]!.sets[0]!.actualReps).toBe(11);
+    });
+  });
+
+  // The session stays completed throughout: no reopening, so adherence, the
+  // calendar and the day resolver are untouched by a correction.
+  it('leaves the day finished while correcting it', async () => {
+    await trainWithAGap();
+    const view = await renderScreen();
+    await view.findByText('Push Day');
+
+    await fireEvent.press(
+      view.getByLabelText('Correct set 1 of Machine Chest Press'),
+    );
+    await fireEvent.press(await view.findByText('Save change'));
+
+    await waitFor(async () => {
+      const after = (await getSessionForDate(ctx.db, TRAINED))!;
+      expect(after.status).toBe('completed');
+    });
+  });
+
   it('writes an em dash where a set was skipped', async () => {
     await trainWithAGap();
     const view = await renderScreen();
@@ -231,7 +274,9 @@ describe('DayDetailScreen', () => {
     await finishWorkout(ctx.db, session.id, {now: TRAINED + 10 * 3600_000});
 
     const view = await renderScreen();
-    expect(await view.findByText(/swapped from Machine Chest Press/)).toBeTruthy();
+    expect(
+      await view.findByText(/swapped from Machine Chest Press/),
+    ).toBeTruthy();
     expect(view.getByText('Cable Fly')).toBeTruthy();
   });
 

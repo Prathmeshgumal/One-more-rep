@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {ScrollView, StyleSheet, View} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
@@ -11,10 +11,10 @@ import {ProgressBar} from '@/ui/ProgressBar';
 import {useTheme, space, radius} from '@/theme';
 import {WEEKDAY_NAMES, weekdayIndex} from '@/domain/weekday';
 import {targetLine} from '@/domain/format';
-import {compareSet, describeComparison} from '@/domain/setComparison';
-import {LedgerTable, type LedgerRow} from '@/ui/LedgerTable';
 import {SessionCounts} from './SessionSummary';
-import type {SessionExercise} from '@/repositories/sessionRepo';
+import {SessionLedger} from './SessionLedger';
+import {AmendSetSheet} from './AmendSetSheet';
+import type {SessionSet} from '@/repositories/sessionRepo';
 import {useSettingsQuery} from '@/features/settings/useSettings';
 import {useCreatePlan} from '@/features/plan/usePlan';
 import type {WorkoutStackParamList} from '@/navigation/types';
@@ -23,32 +23,9 @@ import {
   useTodayPlanQuery,
   useStartWorkout,
   useFinishWorkout,
+  useCompleteSet,
+  useSkipSet,
 } from './useSession';
-
-/** "10 × 30.0", or an em dash where nothing was recorded — as design 14. */
-const pair = (reps: number | null, weight: number | null): string => {
-  if (reps === null) {
-    return '—';
-  }
-  return weight === null ? `${reps}` : `${reps} × ${weight.toFixed(1)}`;
-};
-
-/** The same rows the day-detail ledger draws, from a live session. */
-function ledgerRows(exercise: SessionExercise, unit: string): LedgerRow[] {
-  return exercise.sets.map(set => {
-    const comparison = compareSet(set);
-    return {
-      setNumber: set.setNumber,
-      target: set.isUnplanned ? '—' : pair(set.targetReps, set.targetWeight),
-      actual: pair(set.actualReps, set.actualWeight),
-      result:
-        comparison.status === 'skipped'
-          ? 'Skipped'
-          : describeComparison(comparison, unit),
-      status: comparison.status,
-    };
-  });
-}
 
 const plural = (n: number, one: string, many: string) =>
   `${n} ${n === 1 ? one : many}`;
@@ -73,6 +50,26 @@ export function WorkoutHomeScreen() {
   const createPlan = useCreatePlan();
   const start = useStartWorkout();
   const finish = useFinishWorkout();
+  const correct = useCompleteSet();
+  const skipSet = useSkipSet();
+
+  /**
+   * The set being corrected on a day that is already saved.
+   *
+   * completeSet has always overwritten regardless of the session status --
+   * nothing in the data model was stopping this. Only the screens declined to
+   * offer it, so a number typed wrong on Tuesday was wrong forever.
+   */
+  const [amending, setAmending] = useState<{
+    set: SessionSet;
+    performedExerciseId: string;
+  } | null>(null);
+  const amendingExercise = session?.exercises.find(
+    e => e.id === amending?.performedExerciseId,
+  );
+  const amendingNumber = amendingExercise
+    ? amendingExercise.sets.findIndex(s => s.id === amending?.set.id) + 1
+    : 0;
 
   const now = Date.now();
   const weekday = weekdayIndex(new Date(now));
@@ -233,23 +230,62 @@ export function WorkoutHomeScreen() {
         <SessionCounts session={session} />
 
         <AppText variant="eyebrow" color="muted">
-          Every set
+          Every set · tap one to correct it
         </AppText>
-        {session.exercises.map(exercise => (
-          <View key={exercise.id} style={styles.block}>
-            <AppText variant="printed" color="muted">
-              {exercise.name}
-            </AppText>
-            <LedgerTable rows={ledgerRows(exercise, unit)} />
-          </View>
-        ))}
+        {/* The same ledger the workout and the calendar draw, and the rows are
+            live: a wrong number recorded on Tuesday used to be wrong forever,
+            because no screen offered a way back in. */}
+        <SessionLedger
+          session={session}
+          unit={unit}
+          onSelectSet={(set, performedExerciseId) =>
+            setAmending({set, performedExerciseId})
+          }
+        />
 
         <Button
-          label="All exercises"
+          label="Edit workout"
           variant="secondary"
+          // For the jobs a single correction cannot do — undoing a skip,
+          // adding an exercise. The session stays completed; the focus screen
+          // opens every set in amend mode, which is exactly right for a day
+          // that is already saved.
+          onPress={() => navigation.navigate('Session')}
+        />
+        <Button
+          label="All exercises"
+          variant="ghost"
+          size="sm"
           // History is in this stack now, so the full day is a plain push
           // rather than a jump across tabs.
           onPress={() => navigation.navigate('DayDetail', {date: session.date})}
+        />
+
+        <AmendSetSheet
+          visible={amending !== null}
+          set={amending?.set ?? null}
+          setNumber={amendingNumber}
+          exerciseName={amendingExercise?.name ?? ''}
+          weightApplicable={amendingExercise?.weightApplicable ?? false}
+          unit={unit}
+          increment={settings?.defaultIncrement ?? 0.5}
+          busy={correct.isPending || skipSet.isPending}
+          onSave={actuals => {
+            if (amending) {
+              correct.mutate(
+                {setId: amending.set.id, ...actuals},
+                {onSuccess: () => setAmending(null)},
+              );
+            }
+          }}
+          onSkip={() => {
+            if (amending) {
+              skipSet.mutate(amending.set.id, {
+                onSuccess: () => setAmending(null),
+              });
+            }
+          }}
+          onClose={() => setAmending(null)}
         />
       </>,
     );
@@ -406,7 +442,6 @@ const styles = StyleSheet.create({
     marginBottom: space.xs,
   },
   headerBlock: {gap: 2, marginBottom: space.sm},
-  block: {gap: space.sm},
   line: {flexDirection: 'row', alignItems: 'center', gap: space.md},
   grow: {flex: 1},
   stack: {gap: space.sm, marginBottom: space.sm},

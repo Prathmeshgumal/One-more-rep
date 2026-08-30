@@ -10,6 +10,7 @@ import {
   startWorkout,
   completeSet,
   getActiveSession,
+  getSessionForDate,
   finishWorkout,
 } from '@/repositories/sessionRepo';
 import {ThemeProvider} from '@/theme';
@@ -265,9 +266,76 @@ describe('WorkoutHomeScreen', () => {
       await view.findByText(/Push Day done/i);
 
       expect(view.getByText('Bench Press')).toBeTruthy();
-      // The recorded pair, set by set, not just a count.
-      expect(view.getByText('10 × 30.0')).toBeTruthy();
-      expect(view.getByText('12 × 30.0')).toBeTruthy();
+      // The recorded pair, set by set, not just a count. The same ledger row
+      // the workout screen and the calendar draw, so the app says one thing.
+      expect(view.getByText('10 · 30 kg')).toBeTruthy();
+      expect(view.getByText('12 · 30 kg')).toBeTruthy();
+    });
+
+    /**
+     * A number typed wrong on Tuesday used to be wrong forever. Nothing in the
+     * data model was stopping this -- completeSet has always overwritten
+     * regardless of the session status -- only the screens declined to offer
+     * it.
+     */
+    it('corrects a set on a day that is already saved', async () => {
+      await finishedDay();
+      const view = await renderScreen();
+      await view.findByText(/Push Day done/i);
+
+      await fireEvent.press(view.getByLabelText('Set 1, 10 · 30 kg'));
+      expect(await view.findByText(/Bench Press · set 1/)).toBeTruthy();
+      expect(view.getByText(/recorded as 10/)).toBeTruthy();
+
+      await fireEvent.press(view.getByLabelText('Increase Reps'));
+      await fireEvent.press(view.getByText('Save change'));
+
+      await waitFor(async () => {
+        const after = await getSessionForDate(ctx.db, Date.now());
+        expect(after!.exercises[0]!.sets[0]!.actualReps).toBe(11);
+      });
+    });
+
+    // The session stays completed throughout -- no reopening, so adherence,
+    // the calendar and the day resolver are untouched by a correction.
+    it('leaves the day finished while correcting it', async () => {
+      await finishedDay();
+      const view = await renderScreen();
+      await view.findByText(/Push Day done/i);
+
+      await fireEvent.press(view.getByLabelText('Set 1, 10 · 30 kg'));
+      await fireEvent.press(await view.findByText('Save change'));
+
+      await waitFor(async () => {
+        const after = await getSessionForDate(ctx.db, Date.now());
+        expect(after!.status).toBe('completed');
+      });
+    });
+
+    // A set recorded that should not have been. Marking it skipped is the
+    // honest correction -- deleting it would shrink the denominator.
+    it('can mark a recorded set as skipped instead', async () => {
+      await finishedDay();
+      const view = await renderScreen();
+      await view.findByText(/Push Day done/i);
+
+      await fireEvent.press(view.getByLabelText('Set 1, 10 · 30 kg'));
+      await fireEvent.press(await view.findByText('Mark as skipped'));
+
+      await waitFor(async () => {
+        const after = await getSessionForDate(ctx.db, Date.now());
+        const set = after!.exercises[0]!.sets[0]!;
+        expect(set.status).toBe('skipped');
+        expect(set.actualReps).toBeNull();
+      });
+    });
+
+    it('offers the workout screen for the bigger jobs', async () => {
+      await finishedDay();
+      const view = await renderScreen();
+      await view.findByText(/Push Day done/i);
+      await fireEvent.press(view.getByText('Edit workout'));
+      expect(mockNavigate).toHaveBeenCalledWith('Session');
     });
 
     it('opens the full day, which is in this stack now', async () => {

@@ -17,6 +17,9 @@ import type {Session} from '@/repositories/sessionRepo';
 import {useSettingsQuery} from '@/features/settings/useSettings';
 import type {HistoryStackParamList} from '@/navigation/types';
 import {useDayQuery, useDaySessionQuery} from './useHistory';
+import {AmendSetSheet} from '@/features/workout/AmendSetSheet';
+import {useCompleteSet, useSkipSet} from '@/features/workout/useSession';
+import type {SessionSet} from '@/repositories/sessionRepo';
 import {DayImageCard, CARD_WIDTH} from './DayImageCard';
 import {useSaveDayImage} from './useSaveDayImage';
 
@@ -64,6 +67,22 @@ export function DayDetailScreen() {
   const {data: day} = useDayQuery(date);
   const {data: session, isPending} = useDaySessionQuery(date);
   const {data: settings} = useSettingsQuery();
+  const correct = useCompleteSet();
+  const skipSet = useSkipSet();
+
+  /**
+   * The set being corrected.
+   *
+   * This screen is where a mistake is actually noticed — days later, looking
+   * back. Nobody spots a typo with their heart rate at 150, so making the
+   * table correctable here matters more than making it correctable in the
+   * workout. The session stays completed throughout: no reopening, so
+   * adherence, the calendar and the resolver are untouched.
+   */
+  const [amending, setAmending] = useState<{
+    set: SessionSet;
+    performedExerciseId: string;
+  } | null>(null);
   const unit = settings?.unit ?? 'kg';
 
   const shot = useRef<React.ComponentRef<typeof View>>(null);
@@ -170,18 +189,58 @@ export function DayDetailScreen() {
                 </AppText>
               ) : null}
             </View>
-            <LedgerTable rows={rows} />
+            <LedgerTable
+              rows={rows}
+              caption={exercise.name}
+              onSelectRow={setNumber => {
+                const set = exercise.sets.find(x => x.setNumber === setNumber);
+                if (set) {
+                  setAmending({set, performedExerciseId: exercise.id});
+                }
+              }}
+            />
             {exercise.notes ? (
-              <AppText
-                testID="exercise-note"
-                variant="printed"
-                color="muted">
+              <AppText testID="exercise-note" variant="printed" color="muted">
                 {exercise.notes}
               </AppText>
             ) : null}
           </View>
         );
       })}
+
+      {(() => {
+        const ex = session.exercises.find(
+          e => e.id === amending?.performedExerciseId,
+        );
+        return (
+          <AmendSetSheet
+            visible={amending !== null}
+            set={amending?.set ?? null}
+            setNumber={amending?.set.setNumber ?? 0}
+            exerciseName={ex?.name ?? ''}
+            weightApplicable={ex?.weightApplicable ?? false}
+            unit={unit}
+            increment={settings?.defaultIncrement ?? 0.5}
+            busy={correct.isPending || skipSet.isPending}
+            onSave={actuals => {
+              if (amending) {
+                correct.mutate(
+                  {setId: amending.set.id, ...actuals},
+                  {onSuccess: () => setAmending(null)},
+                );
+              }
+            }}
+            onSkip={() => {
+              if (amending) {
+                skipSet.mutate(amending.set.id, {
+                  onSuccess: () => setAmending(null),
+                });
+              }
+            }}
+            onClose={() => setAmending(null)}
+          />
+        );
+      })()}
 
       <Button
         label={capturing ? 'Saving…' : 'Save image'}
