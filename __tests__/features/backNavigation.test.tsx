@@ -33,6 +33,9 @@ const PUSHED: readonly string[] = [
   'features/history/DayDetailScreen.tsx',
   'features/history/ExerciseHistoryScreen.tsx',
   'features/workout/WorkoutExercisePickerScreen.tsx',
+  // Naming an open workout. Back has to work here and mean it: nothing is
+  // written until Start, so leaving costs the user nothing.
+  'features/workout/NameWorkoutScreen.tsx',
 ];
 
 /**

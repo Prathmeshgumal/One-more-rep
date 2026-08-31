@@ -77,6 +77,25 @@ export function WorkoutHomeScreen() {
   const weekday = weekdayIndex(new Date(now));
   const day = plan?.days[weekday];
 
+  /**
+   * The way into a workout nothing planned.
+   *
+   * Drawn once and used by every state that can reach it, for the same reason
+   * `frame` exists: four copies of this button is four places for one of them
+   * to be forgotten. It is deliberately not offered on a day that already has
+   * a session — only one session may exist per date, so there the offer is
+   * "add an exercise" to the one already open, which the finished and
+   * in-progress states make themselves.
+   */
+  const openWorkoutButton = (variant: 'secondary' | 'ghost') => (
+    <Button
+      label="Start without a plan"
+      variant={variant}
+      size={variant === 'ghost' ? 'sm' : undefined}
+      onPress={() => navigation.navigate('NameWorkout')}
+    />
+  );
+
   if (sessionPending || planPending) {
     return <View style={[styles.root, {backgroundColor: colors.paper}]} />;
   }
@@ -314,7 +333,7 @@ export function WorkoutHomeScreen() {
         <AppText variant="body" color="muted" style={styles.centred}>
           Set up a weekly routine, then track what you actually lift against it.
         </AppText>
-        <View style={styles.fullWidth}>
+        <View style={[styles.fullWidth, styles.stack]}>
           <Button
             label="Create plan"
             disabled={createPlan.isPending}
@@ -326,6 +345,9 @@ export function WorkoutHomeScreen() {
               })
             }
           />
+          {/* The ledger has to work for somebody who never makes a plan. This
+              is the only screen they would ever see otherwise. */}
+          {openWorkoutButton('secondary')}
         </View>
       </View>,
     );
@@ -368,6 +390,9 @@ export function WorkoutHomeScreen() {
             ) : null}
           </Card>
         </View>
+        {/* Trained anyway. A rest day is what was planned, not a lock —
+            startOpenWorkout is the one path that does not consult the plan. */}
+        <View style={styles.fullWidth}>{openWorkoutButton('ghost')}</View>
       </View>,
     );
   }
@@ -386,6 +411,9 @@ export function WorkoutHomeScreen() {
           Add exercises to this day with the plan button above, or mark it a
           rest day.
         </AppText>
+        {/* Or do neither. Setting the day up properly is a job for later; what
+            is happening now is a workout. */}
+        <View style={styles.fullWidth}>{openWorkoutButton('secondary')}</View>
       </View>,
     );
   }
@@ -435,6 +463,9 @@ export function WorkoutHomeScreen() {
           })
         }
       />
+      {/* Below the plan and quieter than it: the plan is still the thing to
+          do. This is for the day you walk in and do something else. */}
+      {openWorkoutButton('ghost')}
     </>,
   );
 }

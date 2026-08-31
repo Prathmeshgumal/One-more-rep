@@ -4,6 +4,7 @@ import {useNavigation, useFocusEffect} from '@react-navigation/native';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {AppText} from '@/ui/Text';
+import {Button} from '@/ui/Button';
 import {useTheme, space, radius} from '@/theme';
 import {useSettingsQuery} from '@/features/settings/useSettings';
 import type {WorkoutStackParamList} from '@/navigation/types';
@@ -416,6 +417,48 @@ export function SessionScreen() {
     });
   }, [cursor, cursors, addSet]);
 
+  /**
+   * A workout started without a plan begins with nothing in it, which is a
+   * state a planned session can never reach — it materializes every exercise
+   * up front. Without this the screen falls through to the blank view below
+   * and the workout looks broken at the moment it starts.
+   */
+  if (session && session.exercises.length === 0) {
+    return (
+      <View
+        style={[
+          styles.root,
+          styles.blank,
+          {backgroundColor: colors.paper, paddingTop: insets.top + space.xl},
+        ]}>
+        <AppText variant="eyebrow" color="muted">
+          {session.dayName}
+        </AppText>
+        <AppText variant="h2" style={styles.blankTitle}>
+          Nothing recorded yet
+        </AppText>
+        <AppText variant="body" color="muted" style={styles.blankBody}>
+          Add the first exercise. Sets, reps and weight all get filled in as
+          you go.
+        </AppText>
+        <View style={styles.blankAction}>
+          <Button
+            label="Add exercise"
+            onPress={() =>
+              navigation.navigate('WorkoutExercisePicker', {mode: 'add'})
+            }
+          />
+          <Button
+            label="Leave"
+            variant="ghost"
+            size="sm"
+            onPress={() => navigation.goBack()}
+          />
+        </View>
+      </View>
+    );
+  }
+
   if (!session || !cursor) {
     return <View style={[styles.root, {backgroundColor: colors.paper}]} />;
   }
@@ -723,6 +766,15 @@ const HEADER_HEIGHT = 56;
 const styles = StyleSheet.create({
   root: {flex: 1},
   body: {flex: 1},
+  blank: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: space.xl,
+    gap: space.md,
+  },
+  blankTitle: {textAlign: 'center'},
+  blankBody: {textAlign: 'center'},
+  blankAction: {alignSelf: 'stretch', gap: space.sm, marginTop: space.sm},
   /**
    * 56, not 45. Everything in this bar was a size below what it should have
    * been — a 15px day name over an 11px count, beside an 11px FINISH — against

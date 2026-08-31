@@ -108,22 +108,43 @@ export function SessionSummary({
       <SessionCounts session={session} />
 
       <Card>
-        <AppText variant="eyebrow" color="muted">
-          Against target
-        </AppText>
-        {(
-          [
-            ['achieved', counts.achieved],
-            ['exceeded', counts.exceeded],
-            ['below', counts.below],
-            ['skipped', counts.skipped],
-          ] as const
-        ).map(([status, count]) => (
-          <View key={status} style={styles.row}>
-            <StatusChip status={status} />
-            <AppText variant="inkNum">{String(count)}</AppText>
-          </View>
-        ))}
+        {/* Every verdict is measured against a target, so with nothing planned
+            all four counts are structurally zero. Four zeros under the words
+            "against target" reads as a workout where nothing landed, which is
+            the opposite of what happened — so the card drops to the one figure
+            that still means something. */}
+        {percent === null ? (
+          <>
+            <AppText variant="eyebrow" color="muted">
+              What you did
+            </AppText>
+            <View style={styles.row}>
+              <AppText variant="printed" color="muted">
+                sets recorded
+              </AppText>
+              <AppText variant="inkNum">{String(doneSets.length)}</AppText>
+            </View>
+          </>
+        ) : (
+          <>
+            <AppText variant="eyebrow" color="muted">
+              Against target
+            </AppText>
+            {(
+              [
+                ['achieved', counts.achieved],
+                ['exceeded', counts.exceeded],
+                ['below', counts.below],
+                ['skipped', counts.skipped],
+              ] as const
+            ).map(([status, count]) => (
+              <View key={status} style={styles.row}>
+                <StatusChip status={status} />
+                <AppText variant="inkNum">{String(count)}</AppText>
+              </View>
+            ))}
+          </>
+        )}
         <View style={[styles.divider, {backgroundColor: colors.ruleSoft}]} />
         <View style={styles.row}>
           <AppText variant="printed" color="muted">
