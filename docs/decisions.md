@@ -772,6 +772,75 @@ over a twelve-word note is noise about a limit nobody is near.
 
 ---
 
+## D42 · 87 MB was four CPU architectures and an unminified dex
+
+**Decided:** release builds ship ARM only, split one APK per architecture, with
+R8 and the resource shrinker on. The arm64 APK is **26.8 MB**, down from 87.1.
+
+**What the 87 MB actually was.** Measured before changing anything:
+
+| | before | after (arm64) |
+|---|---|---|
+| native libs | 78.5 MB across four ABIs | 20.8 MB, one ABI |
+| dex | 16.7 MB | 3.7 MB |
+| `resources.arsc` | 1.2 MB | 0.5 MB |
+| JS bundle | 3.9 MB | 3.9 MB |
+
+Half the download — `x86` and `x86_64`, 43 MB — existed so the app could run on
+an emulator. No phone can use a byte of it. That was the single largest item,
+and it was pure waste on every copy ever sent to anybody.
+
+**Why splits rather than one ARM APK.** Keeping both ARM architectures in one
+file would have landed at ~48 MB. Split, a device downloads the architecture it
+can run: 27 MB for arm64, 21 MB for armeabi-v7a. Nobody downloads an
+instruction set their phone cannot execute.
+
+**Why R8 was off and is now on.** It was the React Native template default,
+never revisited. Off, the dex carried every class of React Native, AndroidX,
+Fresco, OkHttp and the Kotlin standard library — the great majority never
+called. React Native's AAR contributes the keep rules for its own JNI and
+TurboModule surface, so `proguard-rules.pro` only has to name the libraries
+shipping none of their own: op-sqlite above all, which is nearly all JNI and
+whose loss would mean the app could not open its own database.
+
+**Debug is deliberately untouched.** It still builds `x86_64` and stays a
+single APK, so the emulator and `run-android` work exactly as before. The cost
+of shrinking the release build should not be paid every time somebody runs the
+app locally.
+
+**What was measured and rejected.** Moving the 776 KB exercise seed to
+`JSON.parse` of a string literal — the usual advice — was compiled both ways:
+the object literal is **659 KB** of Hermes bytecode, the string form **1.55 MB**.
+Hermes serialises object literals into a constant buffer, while a string
+literal is stored as UTF-16. That advice is about JSC and V8; here it would
+have more than doubled the cost. The existing `require` stands.
+
+Also rejected: `useLegacyPackaging true`, which would DEFLATE the native libs
+and show an APK near 15 MB. The libraries are then extracted at install, so the
+space actually used on the phone goes *up*. That is a smaller number, not a
+smaller app.
+
+**The floor.** Native code is now 75% of the APK and is what React Native's new
+architecture costs with these dependencies. The next real reduction is dropping
+a dependency, not another build flag.
+
+**The guard.** `npm run apk:verify` now checks every APK in the release
+directory and fails if one carries an `x86` slice or crosses 40 MB. Nothing
+else makes a download getting slowly worse visible.
+
+**Verified on the emulator**, not just built: the minified build was installed
+via `-PreleaseAbis=x86_64` and walked. It launches, both font families load,
+SVG icons render, navigation pushes, and SQLite seeded all **873 exercises**
+and listed them — which is the op-sqlite JNI path R8 was most likely to break.
+
+**And walked on the phone.** Installed over the 87 MB copy with `adb install
+-r` on arm64 hardware: the signing fingerprint is unchanged, so the update was
+accepted in place and every logged session survived it — a finished Push Day,
+8 of 8 exercises and 18 of 19 sets, weights, bonus sets and a skipped set all
+still there.
+
+---
+
 ## Outstanding
 
 **The device walk for v4.** D35–D39 are verified against 868 tests and
