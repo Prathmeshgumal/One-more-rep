@@ -832,7 +832,12 @@ else makes a download getting slowly worse visible.
 via `-PreleaseAbis=x86_64` and walked. It launches, both font families load,
 SVG icons render, navigation pushes, and SQLite seeded all **873 exercises**
 and listed them — which is the op-sqlite JNI path R8 was most likely to break.
-The device walk on real hardware is still owed.
+
+**And walked on the phone.** Installed over the 87 MB copy with `adb install
+-r` on arm64 hardware: the signing fingerprint is unchanged, so the update was
+accepted in place and every logged session survived it — a finished Push Day,
+8 of 8 exercises and 18 of 19 sets, weights, bonus sets and a skipped set all
+still there.
 
 ---
 
