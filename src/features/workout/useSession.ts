@@ -3,6 +3,7 @@ import {useDatabase} from '@/providers/DatabaseGate';
 import {
   getSessionForDate,
   startWorkout,
+  startOpenWorkout,
   finishWorkout,
   completeSet,
   skipSet,
@@ -89,6 +90,20 @@ export function useSessionMutation<TArgs>(
 
 export const useStartWorkout = () =>
   useSessionMutation<void>(db => startWorkout(db));
+
+/**
+ * Starts a session with no plan behind it (design: Open Workout).
+ *
+ * Separate from `useStartWorkout` rather than an optional argument on it: the
+ * two refuse on opposite grounds. `startWorkout` insists there is a plan for
+ * today and that today is not a rest day; this one never looks. Folding them
+ * together would mean one function whose validation depends on a flag, which
+ * is the shape that lets a rest-day check quietly stop running.
+ */
+export const useStartOpenWorkout = () =>
+  useSessionMutation<{name: string}>((db, {name}) =>
+    startOpenWorkout(db, {name}),
+  );
 
 export const useFinishWorkout = () =>
   useSessionMutation<string>((db, sessionId) => finishWorkout(db, sessionId));

@@ -25,3 +25,19 @@ export const APP_VERSION = '1.1.0';
  * of one number, which is why the number lives here rather than in either.
  */
 export const NOTE_MAX_LENGTH = 1000;
+
+/**
+ * The longest name an open workout may carry.
+ *
+ * A session started without a plan has no day to take its name from, so the
+ * user supplies one — "Arms & shoulders", "Legs, short one". It is rendered
+ * as a heading on the workout screen, in the finish summary and against every
+ * row of history, none of which truncate, so it has to stay heading-sized.
+ *
+ * Sixty characters is about eight words: past any real workout name and short
+ * enough that no screen has to plan for a second line of it.
+ *
+ * The input stops at this; the repository refuses past it. Two enforcements
+ * of one number, which is why the number lives here rather than in either.
+ */
+export const WORKOUT_NAME_MAX_LENGTH = 60;

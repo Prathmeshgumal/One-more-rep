@@ -34,6 +34,15 @@ export type WorkoutStackParamList = {
    */
   Session: undefined;
   /**
+   * Naming a workout that no plan describes, before any of it is recorded.
+   *
+   * A screen rather than a prompt on the way past, because the name is written
+   * into `day_name_snapshot` at the moment the session is created and is what
+   * history calls the day forever after. Cancelling here has to leave nothing
+   * behind, which it does: nothing is written until Start is pressed.
+   */
+  NameWorkout: undefined;
+  /**
    * `swap` replaces the movement in one slot rather than appending a new
    * exercise (U6); `performedExerciseId` names the slot.
    */

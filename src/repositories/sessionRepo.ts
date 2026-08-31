@@ -8,7 +8,7 @@ import {
   type ItemStatus,
 } from '@/db/schema';
 import type {AppDatabase} from '@/db/types';
-import {NOTE_MAX_LENGTH} from '@/constants';
+import {NOTE_MAX_LENGTH, WORKOUT_NAME_MAX_LENGTH} from '@/constants';
 import {startOfLocalDay, weekdayIndex, WEEKDAY_NAMES} from '@/domain/weekday';
 import {getPlanForDate} from './planRepo';
 
@@ -294,6 +294,73 @@ export async function startWorkout(
     await db.run(sql.raw('ROLLBACK'));
     throw error instanceof Error ? error : new Error(String(error));
   }
+
+  const created = await getSessionForDate(db, date);
+  if (!created) {
+    throw new Error('The workout could not be started.');
+  }
+  return created;
+}
+
+/**
+ * Starts a workout that no plan describes.
+ *
+ * The plan is not consulted at all — not to name the day, not to check whether
+ * today is a rest day, not to copy targets. That is the entire point: you
+ * walked in and are doing something else, and the session has to be able to
+ * say so on a Sunday, on a rest day, or on a phone that has never had a plan.
+ *
+ * What it deliberately shares with `startWorkout` is everything else. The row
+ * is the same kind of row, found by the same `getSessionForDate`, and filled
+ * by the same `addExercise` that already handles unplanned work — so history,
+ * the domain functions and every screen keep working without asking which
+ * kind of session they are looking at. The distinction lives entirely in the
+ * two provenance columns being NULL, which is what the schema comment on
+ * `workout_sessions` has always described as "a fully ad-hoc workout".
+ *
+ * It starts with no exercises. There was nothing to materialize, and inventing
+ * a placeholder would put a row in history that the user never performed.
+ */
+export async function startOpenWorkout(
+  db: AppDatabase,
+  opts: {name: string; now?: number},
+): Promise<Session> {
+  const now = opts.now ?? Date.now();
+  const date = startOfLocalDay(now);
+
+  // Trimmed before it is judged, so trailing space cannot spend the budget or
+  // disguise an empty name as a valid one.
+  const name = opts.name.trim();
+  if (name.length === 0) {
+    throw new Error('A workout needs a name.');
+  }
+  if (name.length > WORKOUT_NAME_MAX_LENGTH) {
+    // Refused rather than truncated, for the same reason `setExerciseNotes`
+    // refuses: silently dropping words somebody typed is worse than saying no.
+    throw new Error(
+      `A workout name may be at most ${WORKOUT_NAME_MAX_LENGTH} characters.`,
+    );
+  }
+
+  // One session per date is an invariant the rest of the app leans on:
+  // getSessionForDate returns a single row and history draws one card a day.
+  // Extra work on a day that already has a session joins it via addExercise.
+  const existing = await getSessionForDate(db, date);
+  if (existing) {
+    throw new Error('A workout has already been started for today.');
+  }
+
+  const sessionId = newId('ws');
+  await db.insert(workoutSessions).values({
+    id: sessionId,
+    date,
+    planVersionId: null,
+    planDayId: null,
+    dayNameSnapshot: name,
+    status: 'in_progress',
+    startedAt: now,
+    completedAt: null,
+  });
 
   const created = await getSessionForDate(db, date);
   if (!created) {

@@ -841,6 +841,67 @@ still there.
 
 ---
 
+## D43 · A workout with no plan, which the schema had been waiting for
+
+**Decided:** `startOpenWorkout` — a session that consults no plan at all — plus
+a naming screen, an empty-session state, and a summary that reports what
+happened rather than a percentage of nothing.
+
+**The app only worked forwards from a plan.** Every way into a session went
+through `startWorkout`, which refuses three ways: no plan for today, today is a
+rest day, today has nothing on it. Walking into the gym and doing something
+unplanned was the one thing the ledger could not record — and it is a normal
+thing to do.
+
+**Almost none of this was new.** The data model was built for it and said so:
+`workout_sessions.plan_version_id` and `plan_day_id` are nullable and
+deliberately do not cascade, under a comment reading "a fully ad-hoc workout
+has neither". `performed_exercises.planned_exercise_id` is already NULL for
+unplanned work, sets already carry `is_unplanned`, `addExercise` already
+inserts with no planned parent and opens one set to record into, and
+`completionPercent` already returns null when nothing was planned. No
+migration. The gap was an entry point and four screens' worth of states.
+
+**Why a separate function rather than a flag on `startWorkout`.** The two
+refuse on opposite grounds — one insists a plan exists, the other never looks.
+Folding them together makes one function whose validation depends on an
+argument, which is the shape that lets a rest-day check quietly stop running.
+
+**Why the name is asked for, not generated.** It is written into
+`day_name_snapshot`, which is what every history screen calls that day forever
+afterwards. "Open workout" three Mondays running is not a history worth
+keeping. It costs one screen before the first set, and nothing is written until
+Start is pressed, so backing out leaves today untouched.
+
+**Why no second session.** One session per date is an invariant the app leans
+on — `getSessionForDate` returns one row and history draws one card a day. So
+`startOpenWorkout` refuses when today already has a session, the entry point is
+not offered on such a day, and extra work after a finished plan joins the
+existing session through `addExercise`, which adherence already excludes.
+
+**Two screens would have been wrong without a change.** `SessionScreen` fell
+through to a blank view when there was no cursor, which a planned session can
+never reach because it materializes everything up front — an open one starts
+empty, so the workout looked broken at the moment it began. And the finish
+summary's "against target" card is four counts of verdicts measured against
+targets: with nothing planned all four are structurally zero, and four zeros
+under those words reads as a session where nothing landed, which is the
+opposite of what happened.
+
+**Verified in 26 tests**, thirteen on the repository and thirteen on the
+screens: the plan columns stay NULL, the same `getSessionForDate` and
+`getActiveSession` find it, names are trimmed and refused rather than
+truncated, it works on a rest day where `startWorkout` throws, it refuses a
+second session, the entry point appears on the four states that can reach it
+and is absent once a session exists, and the empty session offers the picker
+instead of a blank screen.
+
+**The device walk is owed.** Everything above answers in jsdom. The naming
+screen's keyboard, and what recording set after set actually feels like with
+nothing pre-printed to aim at, are things that only answer on glass.
+
+---
+
 ## Outstanding
 
 **The device walk for v4.** D35–D39 are verified against 868 tests and
