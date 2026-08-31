@@ -55,9 +55,15 @@ react {
 }
 
 /**
- * Set this to true to Run Proguard on Release builds to minify the Java bytecode.
+ * Run R8 on release builds.
+ *
+ * Off, the app shipped 16 MB of dex: every class of React Native, AndroidX,
+ * Fresco, OkHttp and the Kotlin standard library, the overwhelming majority
+ * of which this app never calls. React Native's AAR carries the keep rules
+ * for its own JNI and TurboModule surface, so what R8 needs from us is only
+ * the handful of libraries that ship none -- see proguard-rules.pro.
  */
-def enableProguardInReleaseBuilds = false
+def enableProguardInReleaseBuilds = true
 
 /**
  * The preferred build flavor of JavaScriptCore (JSC)
@@ -88,6 +94,39 @@ android {
         versionCode 2
         versionName "1.1.0"
     }
+    // Emulator architectures are dead weight on a phone. x86 and x86_64 were
+    // 43 MB of the 91 MB APK -- half the download, for hardware no user of
+    // this app has. Release therefore ships ARM only, split one APK per ABI,
+    // so a device downloads the ~21 MB of native code it can actually run
+    // instead of both instruction sets at once.
+    //
+    // Debug is deliberately left alone: it still packages x86_64, so the
+    // local AVD keeps working, and it stays a single APK so `run-android`
+    // has one artifact to install.
+    splits {
+        abi {
+            enable gradle.startParameter.taskNames.any {
+                it.toLowerCase().contains("release")
+            }
+            reset()
+            // Overridable so a minified build can be put on the x86_64
+            // emulator: R8 runs on release only, so an emulator that can only
+            // load x86_64 is otherwise the one place its output cannot be
+            // tested. `-PreleaseAbis=x86_64` builds exactly that, and
+            // verify-apk.mjs still refuses to bless the result.
+            include(*(project.findProperty("releaseAbis")
+                ?: "arm64-v8a,armeabi-v7a").split(","))
+            universalApk false
+        }
+    }
+
+    // resources.arsc carried AndroidX's translations for some eighty locales.
+    // The app's own strings are English only, and it does not offer a
+    // language setting, so the rest is weight nobody reads.
+    androidResources {
+        localeFilters += ["en"]
+    }
+
     signingConfigs {
         debug {
             storeFile file('debug.keystore')
@@ -141,6 +180,10 @@ android {
                 signingConfig signingConfigs.debug
             }
             minifyEnabled enableProguardInReleaseBuilds
+            // Safe because the React Native Gradle plugin generates
+            // res/raw/keep.xml naming every drawable that only JS references,
+            // which is exactly what the shrinker cannot otherwise see.
+            shrinkResources enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
         }
     }

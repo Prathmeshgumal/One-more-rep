@@ -75,7 +75,18 @@ git add -A && git commit -m "chore: version x.y.z"
 npm run apk        # gradlew assembleRelease
 ```
 
-Output: `android/app/build/outputs/apk/release/app-release.apk`
+Output, one APK per architecture:
+
+```
+android/app/build/outputs/apk/release/app-arm64-v8a-release.apk    ~27 MB
+android/app/build/outputs/apk/release/app-armeabi-v7a-release.apk  ~21 MB
+```
+
+`app-arm64-v8a-release.apk` is the one to send anybody with a phone bought in
+the last several years. `armeabi-v7a` is there for 32-bit hardware only.
+
+There is deliberately no combined `app-release.apk` any more: a universal APK
+carries every architecture at once, which is what made the old build 87 MB.
 
 If the build fails on the keystore, it is almost always the two password lines
 in `~/.gradle/gradle.properties` disagreeing. A PKCS12 keystore uses **one**
@@ -113,8 +124,14 @@ The right answer looks like:
 ```
 signed by  CN=Prathmesh Gumal, ...
 SHA-256    37a5b0763b97020dbfa0a49c864e6a1a04670f4b90c6fdb456159032e9ee88bb
-OK — signed with a real key, and the version matches the source.
+abi        arm64-v8a
+OK — signed with a real key, ARM only, and the version matches the source.
 ```
+
+With no argument it checks **every** APK in the release directory, so both
+architectures have to pass. It also fails if an APK carries an `x86` slice
+(that would mean the ABI splits stopped applying) or if one crosses 40 MB —
+a ceiling, not a target, so the download cannot quietly grow back.
 
 **That fingerprint must never change.** If it does, every installed copy needs
 an uninstall to accept an update.
@@ -124,7 +141,7 @@ an uninstall to accept an update.
 ## 5. Install and walk it
 
 ```bash
-adb install -r android/app/build/outputs/apk/release/app-release.apk
+adb install -r android/app/build/outputs/apk/release/app-arm64-v8a-release.apk
 ```
 
 `-r` replaces in place and **keeps the data** — debug and release builds share
@@ -156,15 +173,18 @@ git push origin main --follow-tags
 Copy the APK somewhere with a useful name:
 
 ```bash
-cp android/app/build/outputs/apk/release/app-release.apk one-more-rep-X.Y.Z.apk
+cp android/app/build/outputs/apk/release/app-arm64-v8a-release.apk one-more-rep-X.Y.Z.apk
 ```
 
 `*.apk` is gitignored, so it will not land in the repository.
 
 Whoever receives it needs to allow installs from whatever app they got it
-through. It is about 87 MB because it carries all four CPU architectures;
-splitting per architecture would get that to roughly 25 MB each, and is worth
-doing if you send it around much.
+through. It is about 27 MB. It was 87 MB until the build stopped shipping all
+four CPU architectures in one file and started running R8 — see
+`docs/decisions.md`.
+
+If someone reports it will not install, they are most likely on 32-bit
+hardware and need the `armeabi-v7a` APK instead.
 
 ---
 

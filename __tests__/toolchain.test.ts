@@ -51,3 +51,48 @@ describe('the app version', () => {
     expect(Number(code)).toBeGreaterThan(0);
   });
 });
+
+/**
+ * The release APK was 87 MB: four CPU architectures in one file, and a dex
+ * nobody had ever run R8 over. It is 27 MB now (docs/decisions.md, D42).
+ *
+ * Every line of that is a build-file flag, which is exactly the kind of thing
+ * that gets flipped back while debugging something else and never flipped
+ * again. Nothing about a slowly growing download is visible from inside the
+ * app, so it is guarded here instead.
+ */
+describe('the release build stays small', () => {
+  const root = path.join(__dirname, '..');
+  const gradle = (): string =>
+    fs.readFileSync(path.join(root, 'android', 'app', 'build.gradle'), 'utf8');
+
+  it('runs R8 over release builds', () => {
+    expect(gradle()).toMatch(/def enableProguardInReleaseBuilds\s*=\s*true/);
+  });
+
+  // Without minification the shrinker cannot run at all, so these two travel
+  // together or the second is silently a no-op.
+  it('shrinks resources alongside the code', () => {
+    expect(gradle()).toMatch(/shrinkResources enableProguardInReleaseBuilds/);
+    expect(gradle()).toMatch(/minifyEnabled enableProguardInReleaseBuilds/);
+  });
+
+  // x86 and x86_64 exist for emulators. Shipping them to phones was 43 MB of
+  // the old 87 — half the download, for hardware no user has.
+  it('splits release APKs per ABI, and only ARM ones', () => {
+    const abi = /splits\s*\{[\s\S]*?abi\s*\{([\s\S]*?)\n {8}\}/.exec(gradle());
+    expect(abi).not.toBeNull();
+    const block = abi![1]!;
+    expect(block).toContain('arm64-v8a');
+    expect(block).toContain('armeabi-v7a');
+    expect(block).toMatch(/universalApk false/);
+    // The default list the build falls back to must name no emulator ABI.
+    const fallback = /\?:\s*"([^"]+)"/.exec(block)?.[1] ?? '';
+    expect(fallback).not.toMatch(/x86/);
+  });
+
+  // A universal APK would put both instruction sets back in one file.
+  it('has no universal APK to fall back into', () => {
+    expect(gradle()).not.toMatch(/universalApk true/);
+  });
+});
