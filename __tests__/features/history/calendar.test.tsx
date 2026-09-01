@@ -29,13 +29,35 @@ jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({navigate: mockNavigate, goBack: jest.fn()}),
 }));
 
-const TODAY = startOfLocalDay(Date.now());
+/**
+ * A fixed instant, mid-month, mid-week: Thursday 14 May 2026.
+ *
+ * This suite used to run against the real clock, and one of its premises —
+ * that the month already contains a training day that was missed — is false
+ * on the first of a month, where the only occurrence of the training weekday
+ * so far is today's, which the fixture completes. So adherence read 100% and
+ * the test failed, every 1st, on nothing having changed.
+ *
+ * Both `CalendarScreen` and `historyRepo` reach for `Date.now()` themselves,
+ * so pinning it is what makes the screen and the fixture agree on what month
+ * it is.
+ */
+const NOW = new Date(2026, 4, 14, 9).getTime();
+
+const TODAY = startOfLocalDay(NOW);
 const daysAgo = (n: number) => addLocalDays(TODAY, -n);
 const weekdayOf = (ms: number) => weekdayIndex(new Date(ms));
 
 describe('CalendarScreen', () => {
   let ctx: ReturnType<typeof createTestDb>;
   let client: QueryClient;
+
+  beforeAll(() => {
+    jest.spyOn(Date, 'now').mockReturnValue(NOW);
+  });
+  afterAll(() => {
+    jest.restoreAllMocks();
+  });
 
   const renderScreen = () =>
     render(
