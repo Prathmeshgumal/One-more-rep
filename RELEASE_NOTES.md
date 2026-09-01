@@ -76,8 +76,16 @@ using the app in a gym rather than by reading it.
 
 ## Install
 
-`one-more-rep-1.1.0.apk`, signed with the same key as 1.0.0, so it upgrades in
-place and your training history survives. Android 7.0 (API 24) and up.
+Two builds, one per processor, rather than one carrying both:
+
+| File                                 | Size    | For                                         |
+| ------------------------------------ | ------- | ------------------------------------------- |
+| `one-more-rep-1.1.0-arm64-v8a.apk`   | 26.8 MB | every phone made in roughly the last decade |
+| `one-more-rep-1.1.0-armeabi-v7a.apk` | 20.6 MB | older 32-bit devices                        |
+
+Take the **arm64-v8a** one unless you know you need the other. Both are signed
+with the same key as 1.0.0, so either upgrades in place and your training
+history survives. Android 7.0 (API 24) and up.
 
 Everything stays on your phone. There is still no account, no sync and no
 network call.
