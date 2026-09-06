@@ -282,6 +282,22 @@ export function WorkoutHomeScreen() {
           // that is already saved.
           onPress={() => navigation.navigate('Session')}
         />
+        {/* Extra work after the plan was finished — the commonest reason to
+            want an unplanned exercise, and the one the "start without a plan"
+            button cannot serve, because only one session may exist per date.
+            It joins this session instead, where adherence already excludes it.
+
+            The picker reads today's session rather than the *active* one, so
+            it works on a day already saved; the set it opens is recorded from
+            the same focus screen "Edit workout" leads to. */}
+        <Button
+          label="Add exercise"
+          variant="ghost"
+          size="sm"
+          onPress={() =>
+            navigation.navigate('WorkoutExercisePicker', {mode: 'add'})
+          }
+        />
         <Button
           label="All exercises"
           variant="ghost"
