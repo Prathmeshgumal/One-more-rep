@@ -8,6 +8,7 @@ import {createPlan, editPlan} from '@/repositories/planRepo';
 import {addExercises, renameDay, setRestDay} from '@/domain/planDraft';
 import {
   startOpenWorkout,
+  finishWorkout,
   getSessionForDate,
 } from '@/repositories/sessionRepo';
 import {ThemeProvider} from '@/theme';
@@ -77,9 +78,14 @@ describe('a workout with no plan', () => {
     });
 
     it('refuses a name that is only whitespace', async () => {
-      const {getByText, getByPlaceholderText} = await wrap(<NameWorkoutScreen />);
+      const {getByText, getByPlaceholderText} = await wrap(
+        <NameWorkoutScreen />,
+      );
 
-      await fireEvent.changeText(getByPlaceholderText('Arms & shoulders'), '    ');
+      await fireEvent.changeText(
+        getByPlaceholderText('Arms & shoulders'),
+        '    ',
+      );
       await fireEvent.press(getByText('Start recording'));
 
       await waitFor(() => expect(mockReplace).not.toHaveBeenCalled());
@@ -87,7 +93,9 @@ describe('a workout with no plan', () => {
     });
 
     it('creates the session and goes straight into it', async () => {
-      const {getByText, getByPlaceholderText} = await wrap(<NameWorkoutScreen />);
+      const {getByText, getByPlaceholderText} = await wrap(
+        <NameWorkoutScreen />,
+      );
 
       await fireEvent.changeText(
         getByPlaceholderText('Arms & shoulders'),
@@ -107,9 +115,14 @@ describe('a workout with no plan', () => {
      * being recorded.
      */
     it('does not leave the naming screen behind it', async () => {
-      const {getByText, getByPlaceholderText} = await wrap(<NameWorkoutScreen />);
+      const {getByText, getByPlaceholderText} = await wrap(
+        <NameWorkoutScreen />,
+      );
 
-      await fireEvent.changeText(getByPlaceholderText('Arms & shoulders'), 'Legs');
+      await fireEvent.changeText(
+        getByPlaceholderText('Arms & shoulders'),
+        'Legs',
+      );
       await fireEvent.press(getByText('Start recording'));
 
       await waitFor(() => expect(mockReplace).toHaveBeenCalled());
@@ -129,9 +142,9 @@ describe('a workout with no plan', () => {
 
     it('stops the input at the limit rather than letting the write fail', async () => {
       const {getByPlaceholderText} = await wrap(<NameWorkoutScreen />);
-      expect(
-        getByPlaceholderText('Arms & shoulders').props.maxLength,
-      ).toBe(WORKOUT_NAME_MAX_LENGTH);
+      expect(getByPlaceholderText('Arms & shoulders').props.maxLength).toBe(
+        WORKOUT_NAME_MAX_LENGTH,
+      );
     });
   });
 
@@ -181,6 +194,24 @@ describe('a workout with no plan', () => {
 
       await findByText('Morning');
       expect(queryByText('Start without a plan')).toBeNull();
+    });
+
+    /**
+     * What replaces it. Finishing the plan and then doing more is the
+     * commonest reason to want an unplanned exercise, and the one thing the
+     * start button cannot serve — so the finished day offers to join the
+     * session that already exists.
+     */
+    it('becomes "add exercise" on a day already finished', async () => {
+      const session = await startOpenWorkout(ctx.db, {name: 'Morning'});
+      await finishWorkout(ctx.db, session.id);
+
+      const {findByText} = await wrap(<WorkoutHomeScreen />);
+
+      await fireEvent.press(await findByText('Add exercise'));
+      expect(mockNavigate).toHaveBeenCalledWith('WorkoutExercisePicker', {
+        mode: 'add',
+      });
     });
   });
 
